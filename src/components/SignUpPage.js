@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: "#ffe4e1",
   },
   input: {
     width: '80%',

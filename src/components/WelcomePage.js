@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
 export default function WelcomePage() {
   const navigation = useNavigation();
 
@@ -22,6 +21,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f0f8ff',
   },
   title: {
     fontSize: 24,

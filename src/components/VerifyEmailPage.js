@@ -8,6 +8,9 @@ export default function VerifyEmailPage() {
   const handleReturnToSignIn = () => {
     navigation.navigate('SignIn');
   };
+  const handleContinueToQuestions = () => {
+    navigation.navigate('SignUpQuestion');  // 导航到 SignUpQuestion 页面
+  };
 
   return (
     <View style={styles.container}>
@@ -16,6 +19,7 @@ export default function VerifyEmailPage() {
         We've sent a verification link to your email. Please check your inbox and click the link to verify your account.
       </Text>
       <Button title="Return to Sign In" onPress={handleReturnToSignIn} />
+      <Button title="Continue" onPress={handleContinueToQuestions} />
     </View>
   );
 }
@@ -26,6 +30,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    backgroundColor: '#fafad2',
   },
   title: {
     fontSize: 24,
