@@ -5,7 +5,7 @@ import WelcomePage from './src/components/WelcomePage';
 import SignUpPage from './src/components/SignUpPage';
 import SignInPage from './src/components/SignInPage';
 import VerifyEmailPage from './src/components/VerifyEmailPage';
-//import "./src/styles.css";
+import SignUpQuestion from './src/components/SignUpQuestion';
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -14,8 +14,10 @@ export default function App() {
       <Stack.Navigator initialRouteName="STAC-IT">
         <Stack.Screen name="STAC-IT" component={WelcomePage} />
         <Stack.Screen name="SignUp" component={SignUpPage} />
+        <Stack.Screen name="SignUpQuestion" component={SignUpQuestion} />
         <Stack.Screen name="SignIn" component={SignInPage} />
         <Stack.Screen name="VerifyEmail" component={VerifyEmailPage} />
+      
       </Stack.Navigator>
     </NavigationContainer>
   );
