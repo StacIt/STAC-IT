@@ -6,6 +6,7 @@ import SignUpPage from './src/components/SignUpPage';
 import SignInPage from './src/components/SignInPage';
 import VerifyEmailPage from './src/components/VerifyEmailPage';
 import SignUpQuestion from './src/components/SignUpQuestion';
+import ChatbotPage from './src/components/ChatbotPage';
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         <Stack.Screen name="SignUpQuestion" component={SignUpQuestion} />
         <Stack.Screen name="SignIn" component={SignInPage} />
         <Stack.Screen name="VerifyEmail" component={VerifyEmailPage} />
+        <Stack.Screen name="Chatbot" component={ChatbotPage}/>
       
       </Stack.Navigator>
     </NavigationContainer>

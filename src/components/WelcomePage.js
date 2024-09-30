@@ -9,6 +9,7 @@ export default function WelcomePage() {
       <Text style={styles.title}>Welcome to STAC-IT</Text>
       <Button title="Sign Up" onPress={() => navigation.navigate('SignUp')} />
       <Button title="Sign In" onPress={() => navigation.navigate('SignIn')} />
+      <Button title="Chat Bot" onPress={() => navigation.navigate('Chatbot')} />
       <View style={styles.footer}>
         <Text>Privacy Policy | Terms of Service</Text>
       </View>
