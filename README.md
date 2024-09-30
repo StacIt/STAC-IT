@@ -3,6 +3,7 @@ npm install or nvm install 16
 npm install -g expo-cli or npm uninstall -g expo-cli
 npx expo start
 npm install react-router-dom
+npm install axios
 npm install --save-dev @babel/core @babel/preset-flow @babel/plugin-transform-flow-strip-types
 npm install @vitejs/plugin-react --save-dev
 npm install @rollup/plugin-babel --save-dev
