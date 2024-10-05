@@ -5,7 +5,7 @@ import Landing from './src/screens/Landing';
 import Login from './src/screens/Login';
 import CreateAccount from './src/screens/CreateAccount';
 import SignUpQuestions from './src/screens/SignUpQuestions';
-
+import ForgetPassword from './src/screens/ForgetPassword';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -30,6 +30,11 @@ export default function App() {
         <Stack.Screen
           name="SignUpQuestions"
           component={SignUpQuestions}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForgetPassword"
+          component={ForgetPassword}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

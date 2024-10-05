@@ -26,22 +26,23 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
             return;
         }
 
-        // Process the data (you could send it to Firebase or any other backend service)
         console.log({
             fullName,
             birthDate: birthDate.toLocaleDateString(),
             gender,
         });
 
-        // Navigate to the next screen or perform any further action
         alert('Sign-up questions submitted successfully!');
     };
+
+    const goBack = () => {
+        navigation.navigate("Login");
+    }
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Sign Up Questions</Text>
 
-            {/* Full Name Input */}
             <TextInput
                 style={styles.input}
                 placeholder="Full Name"
@@ -49,7 +50,6 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
                 onChangeText={setFullName}
             />
 
-            {/* Birth Date Picker */}
             <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                 <View style={styles.input}>
                     <Text>{birthDate.toLocaleDateString()}</Text>
@@ -65,7 +65,6 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
                 />
             )}
 
-            {/* Gender Picker */}
             <RNPickerSelect
                 onValueChange={(value) => setGender(value)}
                 items={[
@@ -80,9 +79,13 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
                 }}
             />
 
-            {/* Submit Button */}
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
                 <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+
+            {/* FOR DEMO PURPOSES */}
+            <TouchableOpacity style={styles.button} onPress={goBack}>
+                <Text style={styles.buttonText}>go back</Text>
             </TouchableOpacity>
         </View>
     );

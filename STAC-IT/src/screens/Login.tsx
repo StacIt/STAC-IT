@@ -53,15 +53,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   };
 
   const handlePasswordReset = async () => {
-      setLoading(true);
-      try {
-          await sendPasswordResetEmail(auth, email);
-          Alert.alert("Password Reset", "Check your email for password reset instructions!");
-      } catch (error) {
-          console.log(error);
-          Alert.alert("Password reset failed", "Check email and password again");
-      }
-      setLoading(false);
+      navigation.navigate("ForgetPassword");
   };
 
   return (
