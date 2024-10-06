@@ -24,10 +24,15 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const auth = FIREBASE_AUTH;
 
     const handleSignUp = async () => {
+        if (!acceptedTerms) {
+            alert("You must accept terms and conditions.");
+            return;
+        }
         setLoading(true);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -88,6 +93,14 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                     <ActivityIndicator size="small" color="#000000" />
                 ) : (
                     <>
+                        <View style={styles.checkboxContainer}>
+                            <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.checkbox}>
+                                {acceptedTerms ? <Text style={styles.checked}>✔️</Text> : <Text style={styles.unchecked}>⬜️</Text>}
+                            </TouchableOpacity>
+                            <Text style={styles.label}>
+                                I accept the <Text style={styles.link}>Terms and Conditions</Text>
+                            </Text>
+                        </View>
                         <TouchableOpacity style={styles.button} onPress={handleSignUp}>
                             <Text style={{ color: "white" }}>Sign Up</Text>
                         </TouchableOpacity>
@@ -100,6 +113,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                         <TouchableOpacity style={styles.button} onPress={handleResendVerification}>
                             <Text style={{ color: "white" }}>Resend Verification Email</Text>
                         </TouchableOpacity>
+                        
                     </>
                 )}
             </KeyboardAvoidingView>
@@ -130,5 +144,27 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
+    },
+    checkboxContainer: {
+        flexDirection: "row",
+        marginVertical: 8,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    checkbox: {
+        marginRight: 10,
+    },
+    checked: {
+        fontSize: 18,
+    },
+    unchecked: {
+        fontSize: 18,
+    },
+    label: {
+        fontSize: 14,
+    },
+    link: {
+        color: "#6200ea",
+        textDecorationLine: "underline",
     },
 });
