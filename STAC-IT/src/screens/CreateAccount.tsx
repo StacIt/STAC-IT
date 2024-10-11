@@ -16,6 +16,9 @@ import {
     sendEmailVerification,
 } from "@firebase/auth";
 
+import { doc, setDoc } from "firebase/firestore";
+import { FIREBASE_DB } from "../../FirebaseConfig";
+
 interface CreateAccountProps {
     navigation: NavigationProp<any>;
 }
@@ -37,11 +40,23 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-            
+
             // Send verification email
             await sendEmailVerification(user);
             alert("Check your email for a verification link. If it doesn't arrive in 5 minutes, check your spam folder.");
-            
+
+            // Save user data to Firestore
+            try {
+                await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+                    email: user.email,
+                    acceptedTerms: acceptedTerms,
+                    createdAt: new Date(),
+                });
+            } catch (firestoreError) {
+                console.error("Error adding document to Firestore: ", firestoreError);
+                alert("Failed to save user data.");
+            }
+
             countdownToLogin();
         } catch (error) {
             console.log(error);
@@ -113,7 +128,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                         <TouchableOpacity style={styles.button} onPress={handleResendVerification}>
                             <Text style={{ color: "white" }}>Resend Verification Email</Text>
                         </TouchableOpacity>
-                        
+
                     </>
                 )}
             </KeyboardAvoidingView>

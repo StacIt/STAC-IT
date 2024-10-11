@@ -8,6 +8,10 @@ interface SignUpQuestionsProps {
     navigation: NavigationProp<any>;
 }
 
+import { FIREBASE_AUTH } from "../../FirebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
+import { FIREBASE_DB } from "../../FirebaseConfig";
+
 const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
     const [fullName, setFullName] = useState('');
     const [birthDate, setBirthDate] = useState(new Date());
@@ -20,19 +24,31 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
         setBirthDate(currentDate);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!fullName || !gender) {
             alert('Please fill out all the fields.');
             return;
         }
 
-        console.log({
-            fullName,
-            birthDate: birthDate.toLocaleDateString(),
-            gender,
-        });
+        const user = FIREBASE_AUTH.currentUser;
 
-        alert('Sign-up questions submitted successfully!');
+        if (user) {
+            try {
+                // Save user data to Firestore
+                await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+                    fullName: fullName,
+                    birthDate: birthDate.toISOString(), 
+                    gender: gender
+                }, { merge: true }); 
+
+                alert('Sign-up questions submitted successfully!');
+
+            } catch (error) {
+                alert("Failed to save your data. Please try again.");
+            }
+        } else {
+            alert("User not logged in.");
+        }
     };
 
     const goBack = () => {
