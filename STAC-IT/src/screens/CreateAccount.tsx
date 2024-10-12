@@ -19,6 +19,7 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { FIREBASE_DB } from "../../FirebaseConfig";
 
+
 interface CreateAccountProps {
     navigation: NavigationProp<any>;
 }
@@ -30,10 +31,26 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const auth = FIREBASE_AUTH;
+    const validatePassword = (password: string) => {
+        const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
+        return regex.test(password);
+    };
+    const validateEmail = (email: string) => {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return regex.test(email);
+    };
 
     const handleSignUp = async () => {
         if (!acceptedTerms) {
             alert("You must accept terms and conditions.");
+            return;
+        }
+        if (!validateEmail(email)) {
+            alert("Please enter a valid email address.");
+            return;
+        }
+        if (!validatePassword(password)) {
+            alert("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
             return;
         }
         setLoading(true);
@@ -52,6 +69,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                     acceptedTerms: acceptedTerms,
                     createdAt: new Date(),
                 });
+                
             } catch (firestoreError) {
                 console.error("Error adding document to Firestore: ", firestoreError);
                 alert("Failed to save user data.");
