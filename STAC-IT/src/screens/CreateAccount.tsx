@@ -29,15 +29,25 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [error, setError] = useState("");
 
     const auth = FIREBASE_AUTH;
-    const validatePassword = (password: string) => {
-        const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
-        return regex.test(password);
-    };
+
     const validateEmail = (email: string) => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return regex.test(email);
+        if (!regex.test(email)) {
+            setError("Invalid email address");
+        } else {
+            setError("");
+        }
+    };
+    const validatePassword = (password: string) => {
+        const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
+        if (!regex.test(password)) {
+            setError("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
+        } else {
+            setError("");
+        }
     };
 
     const handleSignUp = async () => {
@@ -45,14 +55,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
             alert("You must accept terms and conditions.");
             return;
         }
-        if (!validateEmail(email)) {
-            alert("Please enter a valid email address.");
-            return;
-        }
-        if (!validatePassword(password)) {
-            alert("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
-            return;
-        }
+
         setLoading(true);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -69,13 +72,13 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                     acceptedTerms: acceptedTerms,
                     createdAt: new Date(),
                 });
-                
+
             } catch (firestoreError) {
                 console.error("Error adding document to Firestore: ", firestoreError);
                 alert("Failed to save user data.");
             }
 
-            countdownToLogin();
+            afterSignUp();
         } catch (error) {
             console.log(error);
             alert("Sign up failed: " + error);
@@ -83,7 +86,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         setLoading(false);
     };
 
-    const countdownToLogin = () => {
+    const afterSignUp = () => {
         navigation.navigate("Login");
     };
 
@@ -106,21 +109,24 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <KeyboardAvoidingView behavior="padding">
+
                 <TextInput
                     style={styles.input}
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(text) => { setEmail(text); validateEmail(text); }}
                     placeholder="Email"
                     autoCapitalize="none"
                 />
                 <TextInput
                     style={styles.input}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(text) => { setPassword(text); validatePassword(text); }}
                     placeholder="Password"
                     autoCapitalize="none"
                     secureTextEntry={true}
                 />
+
+                <Text style={{ color: "red" }}>{error}</Text>
 
                 {loading ? (
                     <ActivityIndicator size="small" color="#000000" />
