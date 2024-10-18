@@ -18,6 +18,7 @@ import {
 
 import { doc, setDoc } from "firebase/firestore";
 import { FIREBASE_DB } from "../../FirebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
 
 
 interface CreateAccountProps {
@@ -30,6 +31,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const auth = FIREBASE_AUTH;
 
@@ -106,6 +108,9 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         }
     };
 
+    const ShowIcon = <Ionicons name="eye" size={24} color="black" />;
+    const HideIcon = <Ionicons name="eye-off" size={24} color="black" />;
+
     return (
         <View style={styles.container}>
             <KeyboardAvoidingView behavior="padding">
@@ -117,14 +122,22 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                     placeholder="Email"
                     autoCapitalize="none"
                 />
-                <TextInput
-                    style={styles.input}
-                    value={password}
-                    onChangeText={(text) => { setPassword(text); validatePassword(text); }}
-                    placeholder="Password"
-                    autoCapitalize="none"
-                    secureTextEntry={true}
-                />
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        value={password}
+                        onChangeText={(text) => { setPassword(text); validatePassword(text); }}
+                        placeholder="Password"
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                        style={styles.visibilityToggle}
+                        onPress={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? HideIcon : ShowIcon}
+                    </TouchableOpacity>
+                </View>
 
                 <Text style={{ color: "red" }}>{error}</Text>
 
@@ -205,5 +218,21 @@ const styles = StyleSheet.create({
     link: {
         color: "#6200ea",
         textDecorationLine: "underline",
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 4,
+        borderWidth: 1,
+        borderRadius: 4,
+        backgroundColor: "#fff",
+    },
+    passwordInput: {
+        flex: 1,
+        height: 50,
+        padding: 10,
+    },
+    visibilityToggle: {
+        padding: 10,
     },
 });

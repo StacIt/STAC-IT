@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Button } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Alert } from 'react-native';
 import { NavigationProp } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RNPickerSelect from 'react-native-picker-select';
+import { Ionicons } from '@expo/vector-icons';
 
 interface SignUpQuestionsProps {
     navigation: NavigationProp<any>;
@@ -18,6 +19,18 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [gender, setGender] = useState('');
 
+    const isAtLeast18 = (date: Date) => {
+        const today = new Date();
+        const age = today.getFullYear() - date.getFullYear();
+        const monthDifference = today.getMonth() - date.getMonth();
+        const dayDifference = today.getDate() - date.getDate();
+
+        return (
+            age > 18 ||
+            (age === 18 && (monthDifference > 0 || (monthDifference === 0 && dayDifference >= 0)))
+        );
+    };
+
     const handleDateChange = (event: any, selectedDate?: Date) => {
         const currentDate = selectedDate || birthDate;
         setShowDatePicker(Platform.OS === 'ios');
@@ -26,7 +39,12 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
 
     const handleSubmit = async () => {
         if (!fullName || !gender) {
-            alert('Please fill out all the fields.');
+            Alert.alert('Error', 'Please fill out all the fields.');
+            return;
+        }
+
+        if (!isAtLeast18(birthDate)) {
+            Alert.alert('Age Restriction', 'You must be at least 18 years old to sign up.');
             return;
         }
 
@@ -34,26 +52,29 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
 
         if (user) {
             try {
-                // Save user data to Firestore
-                await setDoc(doc(FIREBASE_DB, "users", user.uid), {
-                    fullName: fullName,
-                    birthDate: birthDate.toISOString(), 
-                    gender: gender
-                }, { merge: true }); 
+                await setDoc(
+                    doc(FIREBASE_DB, "users", user.uid),
+                    {
+                        fullName: fullName,
+                        birthDate: birthDate.toISOString(),
+                        gender: gender,
+                    },
+                    { merge: true }
+                );
 
-                alert('Sign-up questions submitted successfully!');
-
+                Alert.alert('Success', 'Sign-up questions submitted successfully!');
+                navigation.navigate("MainTabs");  // Add this line
             } catch (error) {
-                alert("Failed to save your data. Please try again.");
+                Alert.alert('Error', 'Failed to save your data. Please try again.');
             }
         } else {
-            alert("User not logged in.");
+            Alert.alert('Error', 'User not logged in.');
         }
     };
 
     const goBack = () => {
-        navigation.navigate("Login");
-    }
+        navigation.navigate('Login');
+    };
 
     return (
         <View style={styles.container}>
@@ -89,19 +110,15 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
                     { label: 'Other', value: 'other' },
                 ]}
                 style={pickerSelectStyles}
-                placeholder={{
-                    label: "Select Gender",
-                    value: null,
-                }}
+                placeholder={{ label: 'Select Gender', value: null }}
             />
 
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
                 <Text style={styles.buttonText}>Submit</Text>
             </TouchableOpacity>
 
-            {/* FOR DEMO PURPOSES */}
             <TouchableOpacity style={styles.button} onPress={goBack}>
-                <Text style={styles.buttonText}>go back</Text>
+                <Text style={styles.buttonText}>Go Back</Text>
             </TouchableOpacity>
         </View>
     );

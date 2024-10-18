@@ -10,24 +10,25 @@ import {
 } from "react-native";
 
 import React, { useState } from "react";
-import { FIREBASE_AUTH } from "../../FirebaseConfig";
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { NavigationProp } from '@react-navigation/native';
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail
 } from "@firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { Ionicons } from '@expo/vector-icons';
 
 interface LoginProps {
     navigation: NavigationProp<any>;
 }
-
-// import these functions from CreateAccount.tsx: validateEmail, validatePassword
 
 const Login: React.FC<LoginProps> = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const auth = FIREBASE_AUTH;
 
@@ -39,13 +40,16 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
             setError("");
         }
     };
-    const validatePassword = (password: string) => {
-        const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
-        if (!regex.test(password)) {
-            setError("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
-        } else {
-            setError("");
+
+    const checkUserData = async (userId: string) => {
+        const userRef = doc(FIREBASE_DB, "users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            return userData.fullName && userData.birthDate && userData.gender;
         }
+        return false;
     };
 
     const handleLogin = async () => {
@@ -54,9 +58,13 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // check if the email is verified
             if (user.emailVerified) {
-                navigation.navigate("SignUpQuestions");
+                const hasCompletedSignUp = await checkUserData(user.uid);
+                if (hasCompletedSignUp) {
+                    navigation.navigate("MainTabs");
+                } else {
+                    navigation.navigate("SignUpQuestions");
+                }
             } else {
                 Alert.alert("Email not verified", "Please check your email for the verification link.");
             }
@@ -76,27 +84,37 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         navigation.navigate("ForgetPassword");
     };
 
+    const ShowIcon = <Ionicons name="eye" size={24} color="black" />;
+    const HideIcon = <Ionicons name="eye-off" size={24} color="black" />;
+
     return (
         <View style={styles.container}>
             <KeyboardAvoidingView behavior="padding">
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { marginVertical: 4 }]}
                     value={email}
                     onChangeText={(text) => { setEmail(text); validateEmail(text); }}
                     placeholder="Email"
                     autoCapitalize="none"
                 />
-                <TextInput
-                    style={styles.input}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Password"
-                    autoCapitalize="none"
-                    secureTextEntry={true}
-                />
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder="Password"
+                        autoCapitalize="none"
+                        secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                        style={styles.visibilityToggle}
+                        onPress={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? HideIcon : ShowIcon}
+                    </TouchableOpacity>
+                </View>
 
                 <Text style={{ color: "red" }}>{error}</Text>
-
 
                 {loading ? (
                     <ActivityIndicator size="small" color="#000000" />
@@ -147,5 +165,21 @@ const styles = StyleSheet.create({
     buttonText: {
         color: "white",
         fontWeight: "bold",
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 4,
+        borderWidth: 1,
+        borderRadius: 4,
+        backgroundColor: "#fff",
+    },
+    passwordInput: {
+        flex: 1,
+        height: 50,
+        padding: 10,
+    },
+    visibilityToggle: {
+        padding: 10,
     },
 });
