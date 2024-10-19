@@ -11,6 +11,10 @@ import {
     Alert,
 } from 'react-native';
 
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
+
+
 
 const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS',
@@ -62,7 +66,7 @@ const CreateStack: React.FC = () => {
         console.log('Preferences:', preferences);
         console.log('Budget:', budget);
 
-        
+
         setStartTime('');
         setEndTime('');
         setCity('');
@@ -70,6 +74,20 @@ const CreateStack: React.FC = () => {
         setPreferences('');
         setBudget('');
         setModalVisible(false);
+
+        // Save data to Firestore
+        const user = FIREBASE_AUTH.currentUser;
+        if (user) {
+            setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
+                startTime: startTime,
+                endTime: endTime,
+                city: city,
+                state: state.toUpperCase(),
+                preferences: preferences,
+                budget: budget
+            });
+            Alert.alert('Success', 'STAC created successfully!');
+        }
     };
 
     return (
@@ -119,7 +137,7 @@ const CreateStack: React.FC = () => {
                             placeholder="State (e.g., CA)"
                             value={state}
                             onChangeText={setState}
-                            maxLength={2} 
+                            maxLength={2}
                         />
 
                         <TextInput

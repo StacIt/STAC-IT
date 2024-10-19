@@ -9,7 +9,7 @@ import {
     Alert,
 } from "react-native";
 import React, { useState } from "react";
-import { FIREBASE_AUTH } from "../../FirebaseConfig";
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { NavigationProp } from '@react-navigation/native';
 import {
     createUserWithEmailAndPassword,
@@ -17,7 +17,7 @@ import {
 } from "@firebase/auth";
 
 import { doc, setDoc } from "firebase/firestore";
-import { FIREBASE_DB } from "../../FirebaseConfig";
+
 import { Ionicons } from "@expo/vector-icons";
 
 
