@@ -70,8 +70,7 @@ def google_places(user_input):
                     "name": place.get('name'),
                     "vicinity": place.get('vicinity'),
                     "rating": place.get('rating', 'N/A'),  
-                    "user_ratings_total": place.get('user_ratings_total', 'N/A'),
-                    "opening_hours": place.get('opening_hours', {}).get('open_now', 'N/A')
+                    "user_ratings_total": place.get('user_ratings_total', 'N/A')
                 })
             return places_list
         else:
