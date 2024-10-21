@@ -1,88 +1,46 @@
 from django.shortcuts import render
-import transformers
+import requests
 import torch
-import googlemaps
-import re
+import transformers
 
 device = 0 if torch.cuda.is_available() else -1
-
 model_id = 'chatbot/llamamodel/Meta-Llama-3.1-8B-Instruct'
 pipeline = transformers.pipeline(
     "text-generation",
     model=model_id,
     model_kwargs={
         "torch_dtype": torch.bfloat16,
-        "pad_token_id": None,  
+        "pad_token_id": None,
     },
     device=device,
 )
 
-gmaps = googlemaps.Client(key='APIKEY')
+api_key = "API_KEY"  
 
-def extract_location(user_input):
-    location_regex = r'\b(?:in|at)\s+([A-Za-z\s,]+)'
-    match = re.search(location_regex, user_input)
-    if match:
-        return match.group(1).strip() 
-    return None
+def google_places_text_search(api_key, query, location=None, radius=None):
+    base_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    params = {
+        "query": query,
+        "key": api_key
+    }
+    if location and radius:
+        params["location"] = location
+        params["radius"] = radius
 
-VALID_PLACE_TYPES = [
-    'cafe', 'restaurant', 'bar', 'museum', 'park', 'gym', 'library', 'movie_theater', 'shopping_mall', 'art_gallery'
-]
-
-def extract_type(user_input):
-    type_regex = r'\b(?:go to|visit|like|prefer|interested in)\s+([A-Za-z\s]+)'
-    
-    match = re.search(type_regex, user_input)
-    if match:
-        place_type = match.group(1).strip().lower()
-        for valid_type in VALID_PLACE_TYPES:
-            if valid_type in place_type:
-                return valid_type
-    return None
-
-def google_places(user_input):
-    user_location = extract_location(user_input)
-    user_type = extract_type(user_input)
-    
-    if not user_location:
-        user_location = "Stamford, Connecticut"  
-
-    try:
-        geocode_result = gmaps.geocode(user_location)
-        if geocode_result:
-            location = geocode_result[0]['geometry']['location']
-            latitude = location['lat']
-            longitude = location['lng']
-        else:
-            return {"error": f"Could not find location: {user_location}. Please provide a valid location."}
-    except Exception as e:
-        return {"error": f"Error finding location: {str(e)}"}
-    
-    radius = 1000 
-    
-    try:
-        places_result = gmaps.places_nearby(location=f"{latitude},{longitude}", radius=radius, type=user_type)
-        if places_result['status'] == 'OK':
-            places_list = []
-            for place in places_result['results']:
-                places_list.append({
-                    "name": place.get('name'),
-                    "vicinity": place.get('vicinity'),
-                    "rating": place.get('rating', 'N/A'),  
-                    "user_ratings_total": place.get('user_ratings_total', 'N/A')
-                })
-            return places_list
-        else:
-            return {"error": "No places found nearby."}
-    
-    except Exception as e:
-        return {"error": f"Error fetching places: {str(e)}"}
-
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        results = response.json().get('results', [])
+        return results
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+        return None
 
 def generate_planner_response(user_input):
-    places_data = google_places(user_input)
-    
+    location = None 
+    radius = None    
+
+    places_data = google_places_text_search(api_key, user_input, location, radius)
+
     if isinstance(places_data, dict) and "error" in places_data:
         return places_data["error"]
 
@@ -92,8 +50,9 @@ def generate_planner_response(user_input):
     places_for_prompt = ""
     for place in places_data:
         places_for_prompt += (
-            f"Place: {place['name']}, Location: {place['vicinity']}, "
-            f"Rating: {place['rating']} (based on {place['user_ratings_total']} reviews).\n"
+            f"Place: {place['name']}, Location: {place.get('vicinity', 'N/A')}, "
+            f"Rating: {place.get('rating', 'N/A')} (based on {place.get('user_ratings_total', 'N/A')} reviews), "
+            f"Price Level: {place.get('price_level', 'N/A')}.\n"
         )
 
     prompt = (
@@ -114,6 +73,7 @@ def generate_planner_response(user_input):
         Output strictly in JSON format, with no explanation text.
         """
     )
+    
     outputs = pipeline(
         prompt,
         max_new_tokens=512,  
@@ -124,8 +84,9 @@ def generate_planner_response(user_input):
     
     activities = outputs[0]["generated_text"].strip()
 
+    # Format the JSON response for readability
     activities_with_newlines = activities.replace('", "', '",\n "').replace('{', '{\n ').replace('},', '\n},')
-
+    
     formatted_response = "Here are some fun activities you might enjoy:\n\n"
     formatted_response += activities_with_newlines
 
