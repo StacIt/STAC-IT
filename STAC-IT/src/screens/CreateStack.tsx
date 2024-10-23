@@ -10,11 +10,7 @@ import {
     ScrollView,
     Alert,
 } from 'react-native';
-
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
-
-
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS',
@@ -31,6 +27,9 @@ const CreateStack: React.FC = () => {
     const [state, setState] = useState('');
     const [preferences, setPreferences] = useState('');
     const [budget, setBudget] = useState('');
+    const [numberOfPeople, setNumberOfPeople] = useState('');
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const isValidTime = (time: string) => {
         const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -38,7 +37,10 @@ const CreateStack: React.FC = () => {
     };
 
     const validateForm = () => {
-        if (!startTime || !endTime || !city || !state || !preferences || !budget) {
+        if (
+            !startTime || !endTime || !city || !state || !preferences ||
+            !budget || !numberOfPeople
+        ) {
             Alert.alert('Error', 'All fields are required.');
             return false;
         }
@@ -50,8 +52,8 @@ const CreateStack: React.FC = () => {
             Alert.alert('Error', 'Please enter a valid US state abbreviation.');
             return false;
         }
-        if (isNaN(Number(budget))) {
-            Alert.alert('Error', 'Budget must be a number.');
+        if (isNaN(Number(budget)) || isNaN(Number(numberOfPeople))) {
+            Alert.alert('Error', 'Budget and number of people must be numbers.');
             return false;
         }
         return true;
@@ -62,10 +64,11 @@ const CreateStack: React.FC = () => {
 
         console.log('Start Time:', startTime);
         console.log('End Time:', endTime);
+        console.log('Date:', date.toDateString());
         console.log('Location:', `${city}, ${state.toUpperCase()}`);
         console.log('Preferences:', preferences);
         console.log('Budget:', budget);
-
+        console.log('Number of People:', numberOfPeople);
 
         setStartTime('');
         setEndTime('');
@@ -73,21 +76,14 @@ const CreateStack: React.FC = () => {
         setState('');
         setPreferences('');
         setBudget('');
+        setNumberOfPeople('');
         setModalVisible(false);
+    };
 
-        // Save data to Firestore
-        const user = FIREBASE_AUTH.currentUser;
-        if (user) {
-            setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
-                startTime: startTime,
-                endTime: endTime,
-                city: city,
-                state: state.toUpperCase(),
-                preferences: preferences,
-                budget: budget
-            });
-            Alert.alert('Success', 'STAC created successfully!');
-        }
+    const onChangeDate = (event: any, selectedDate?: Date) => {
+        const currentDate = selectedDate || date;
+        setShowDatePicker(false);
+        setDate(currentDate);
     };
 
     return (
@@ -108,6 +104,21 @@ const CreateStack: React.FC = () => {
                 <View style={styles.modalContainer}>
                     <ScrollView contentContainerStyle={styles.modalContent}>
                         <Text style={styles.modalTitle}>Create a New STAC</Text>
+
+                        <TouchableOpacity
+                            onPress={() => setShowDatePicker(true)}
+                            style={styles.input}
+                        >
+                            <Text>{date.toDateString()}</Text>
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                display="default"
+                                onChange={onChangeDate}
+                            />
+                        )}
 
                         <TextInput
                             style={styles.input}
@@ -152,6 +163,14 @@ const CreateStack: React.FC = () => {
                             placeholder="Budget"
                             value={budget}
                             onChangeText={setBudget}
+                            keyboardType="numeric"
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Number of People"
+                            value={numberOfPeople}
+                            onChangeText={setNumberOfPeople}
                             keyboardType="numeric"
                         />
 
@@ -215,3 +234,4 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 });
+

@@ -12,6 +12,7 @@ import ForgetPassword from './src/screens/ForgetPassword';
 import HomePage from './src/screens/HomePage';
 import CreateStack from './src/screens/CreateStack';
 import Profile from './src/screens/Profile';
+import CB from './src/screens/CB';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -29,6 +30,8 @@ const MainTabs = () => {
             iconName = focused ? 'add-circle' : 'add-circle-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'CB') {
+            iconName = focused ? 'cloud' : 'cloud-outline';
           }
 
           return iconName ? <Ionicons name={iconName} size={size} color={color} /> : null;
@@ -40,6 +43,7 @@ const MainTabs = () => {
       <Tab.Screen name="Home" component={HomePage} options={{ headerShown: false }} />
       <Tab.Screen name="Create" component={CreateStack} options={{ headerShown: false }} />
       <Tab.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
+      <Tab.Screen name="CB" component={CB} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 };
