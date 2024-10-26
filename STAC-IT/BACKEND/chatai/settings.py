@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-8znle(&ltry&)l=ep9q&1s%2%v)9sr!@(tym$sw$brf^3+e)6g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2']
 
 # Application definition
 
@@ -38,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'chatbot',
+    'rest_framework',
+    'corsheaders',
+
 ]
 
 MIDDLEWARE = [
@@ -48,6 +50,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'chatai.urls'
