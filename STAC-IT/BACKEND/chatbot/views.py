@@ -22,7 +22,7 @@ pipeline = transformers.pipeline(
     device=device,
 )
 
-api_key = "AIzaSyAhm4JCM5KT76NIyIt6bB2w0as_7BMv6eQ"  
+api_key = "API_KEY"  
 
 def google_places_text_search(api_key, query, location=None, radius=None):
     base_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
