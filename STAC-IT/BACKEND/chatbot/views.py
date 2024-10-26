@@ -2,6 +2,13 @@ from django.shortcuts import render
 import requests
 import torch
 import transformers
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import JsonResponse
+from django.http import HttpResponse
+
+
 
 device = 0 if torch.cuda.is_available() else -1
 model_id = 'chatbot/llamamodel/Meta-Llama-3.1-8B-Instruct'
@@ -15,7 +22,7 @@ pipeline = transformers.pipeline(
     device=device,
 )
 
-api_key = "API_KEY"  
+api_key = "AIzaSyAhm4JCM5KT76NIyIt6bB2w0as_7BMv6eQ"  
 
 def google_places_text_search(api_key, query, location=None, radius=None):
     base_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
@@ -26,8 +33,11 @@ def google_places_text_search(api_key, query, location=None, radius=None):
     if location and radius:
         params["location"] = location
         params["radius"] = radius
+    headers = {
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress"
+    }
 
-    response = requests.get(base_url, params=params)
+    response = requests.get(base_url, params=params, headers=headers)
     if response.status_code == 200:
         results = response.json().get('results', [])
         return results
@@ -50,7 +60,7 @@ def generate_planner_response(user_input):
     places_for_prompt = ""
     for place in places_data:
         places_for_prompt += (
-            f"Place: {place['name']}, Location: {place.get('vicinity', 'N/A')}, "
+            f"Place: {place['name']}, Location: {place.get('formatted_address', 'N/A')}, "
             f"Rating: {place.get('rating', 'N/A')} (based on {place.get('user_ratings_total', 'N/A')} reviews), "
             f"Price Level: {place.get('price_level', 'N/A')}.\n"
         )
@@ -83,8 +93,6 @@ def generate_planner_response(user_input):
     )
     
     activities = outputs[0]["generated_text"].strip()
-
-    # Format the JSON response for readability
     activities_with_newlines = activities.replace('", "', '",\n "').replace('{', '{\n ').replace('},', '\n},')
     
     formatted_response = "Here are some fun activities you might enjoy:\n\n"
@@ -92,10 +100,13 @@ def generate_planner_response(user_input):
 
     return formatted_response
 
-def chatbot_view(request):
-    response = ""
+from rest_framework.decorators import api_view
+from django.http import JsonResponse
+
+@api_view(['POST'])
+def chatbot_api(request):
     if request.method == 'POST':
-        user_input = request.POST.get('message')
+        user_input = request.POST.get('message') 
         response = generate_planner_response(user_input)
-    
-    return render(request, 'chatbot/chatbot.html', {'response': response})
+        
+        return HttpResponse(response) 
