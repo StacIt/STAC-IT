@@ -14,14 +14,14 @@ const CB: React.FC = () => {
                 new URLSearchParams({ message: userInput }),
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
             );
-            //setData(response.data);
-            //Alert.alert('Model Response', response.data);
+            // setData(response.data);
+            // Alert.alert('Model Response', response.data);
         } catch (error) {
             console.error(error);
             Alert.alert('Error', 'Failed to call backend model.');
         }
-        //setLoading(false);
-        console.log(response);
+        setLoading(false);
+        // console.log(response);
     };
 
 

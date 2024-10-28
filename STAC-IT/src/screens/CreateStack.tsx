@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
+
 const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS',
     'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY',
@@ -21,6 +24,7 @@ const validStates = [
 
 const CreateStack: React.FC = () => {
     const [modalVisible, setModalVisible] = useState(false);
+    const [stacName, setStacName] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
     const [city, setCity] = useState('');
@@ -61,7 +65,7 @@ const CreateStack: React.FC = () => {
 
     const handleCreateStack = () => {
         if (!validateForm()) return;
-
+        console.log('Stack Name:', stacName);
         console.log('Start Time:', startTime);
         console.log('End Time:', endTime);
         console.log('Date:', date.toDateString());
@@ -70,6 +74,7 @@ const CreateStack: React.FC = () => {
         console.log('Budget:', budget);
         console.log('Number of People:', numberOfPeople);
 
+        setStacName('');
         setStartTime('');
         setEndTime('');
         setCity('');
@@ -78,6 +83,23 @@ const CreateStack: React.FC = () => {
         setBudget('');
         setNumberOfPeople('');
         setModalVisible(false);
+
+        // save data to firestore
+        const user = FIREBASE_AUTH.currentUser;
+        if (user) {
+            setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
+                stacName: stacName,
+                startTime: startTime,
+                endTime: endTime,
+                date: date.toDateString(),
+                location: `${city}, ${state.toUpperCase()}`,
+                preferences: preferences,
+                budget: budget,
+                numberOfPeople: numberOfPeople,
+            });
+
+            Alert.alert('Success', 'Stack created successfully!');
+        }
     };
 
     const onChangeDate = (event: any, selectedDate?: Date) => {
@@ -104,6 +126,13 @@ const CreateStack: React.FC = () => {
                 <View style={styles.modalContainer}>
                     <ScrollView contentContainerStyle={styles.modalContent}>
                         <Text style={styles.modalTitle}>Create a New STAC</Text>
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="STAC Name"
+                            value={stacName}
+                            onChangeText={setStacName}
+                        />
 
                         <TouchableOpacity
                             onPress={() => setShowDatePicker(true)}
