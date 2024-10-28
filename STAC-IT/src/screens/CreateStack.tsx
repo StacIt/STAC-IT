@@ -84,7 +84,6 @@ const CreateStack: React.FC = () => {
         setNumberOfPeople('');
         setModalVisible(false);
 
-        // save data to firestore
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
             setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
@@ -118,98 +117,100 @@ const CreateStack: React.FC = () => {
             </TouchableOpacity>
 
             <Modal
-                animationType="slide"
+                animationType="fade"
                 transparent={true}
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <ScrollView contentContainerStyle={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Create a New STAC</Text>
+                <View style={styles.centeredView}>
+                    <View style={styles.modalContent}>
+                        <ScrollView contentContainerStyle={styles.scrollContent}>
+                            <Text style={styles.modalTitle}>Create a New STAC</Text>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="STAC Name"
-                            value={stacName}
-                            onChangeText={setStacName}
-                        />
-
-                        <TouchableOpacity
-                            onPress={() => setShowDatePicker(true)}
-                            style={styles.input}
-                        >
-                            <Text>{date.toDateString()}</Text>
-                        </TouchableOpacity>
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={date}
-                                mode="date"
-                                display="default"
-                                onChange={onChangeDate}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="STAC Name"
+                                value={stacName}
+                                onChangeText={setStacName}
                             />
-                        )}
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Start Time (HH:MM)"
-                            value={startTime}
-                            onChangeText={setStartTime}
-                            keyboardType="numeric"
-                        />
+                            <TouchableOpacity
+                                onPress={() => setShowDatePicker(true)}
+                                style={[styles.input, styles.dateInput]}
+                            >
+                                <Text style={styles.dateText}>{date.toDateString()}</Text>
+                            </TouchableOpacity>
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={date}
+                                    mode="date"
+                                    display="default"
+                                    onChange={onChangeDate}
+                                />
+                            )}
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="End Time (HH:MM)"
-                            value={endTime}
-                            onChangeText={setEndTime}
-                            keyboardType="numeric"
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Start Time (HH:MM)"
+                                value={startTime}
+                                onChangeText={setStartTime}
+                                keyboardType="numeric"
+                            />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="City"
-                            value={city}
-                            onChangeText={setCity}
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="End Time (HH:MM)"
+                                value={endTime}
+                                onChangeText={setEndTime}
+                                keyboardType="numeric"
+                            />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="State (e.g., CA)"
-                            value={state}
-                            onChangeText={setState}
-                            maxLength={2}
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="City"
+                                value={city}
+                                onChangeText={setCity}
+                            />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Preferences"
-                            value={preferences}
-                            onChangeText={setPreferences}
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="State (e.g., CA)"
+                                value={state}
+                                onChangeText={setState}
+                                maxLength={2}
+                            />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Budget"
-                            value={budget}
-                            onChangeText={setBudget}
-                            keyboardType="numeric"
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Preferences"
+                                value={preferences}
+                                onChangeText={setPreferences}
+                            />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Number of People"
-                            value={numberOfPeople}
-                            onChangeText={setNumberOfPeople}
-                            keyboardType="numeric"
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Budget"
+                                value={budget}
+                                onChangeText={setBudget}
+                                keyboardType="numeric"
+                            />
 
-                        <Button title="Submit" onPress={handleCreateStack} />
-                        <Button
-                            title="Cancel"
-                            color="red"
-                            onPress={() => setModalVisible(false)}
-                        />
-                    </ScrollView>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Number of People"
+                                value={numberOfPeople}
+                                onChangeText={setNumberOfPeople}
+                                keyboardType="numeric"
+                            />
+
+                            <Button title="Submit" onPress={handleCreateStack} />
+                            <Button
+                                title="Cancel"
+                                color="red"
+                                onPress={() => setModalVisible(false)}
+                            />
+                        </ScrollView>
+                    </View>
                 </View>
             </Modal>
         </View>
@@ -223,7 +224,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
     },
     createButton: {
         backgroundColor: '#6200ea',
@@ -235,17 +235,20 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
     },
-    modalContainer: {
+    centeredView: {
         flex: 1,
         justifyContent: 'center',
+        alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
+        width: '85%',
         backgroundColor: 'white',
-        marginTop: 200,
-        margin: 50,
-        padding: 20,
         borderRadius: 10,
+        padding: 20,
+        elevation: 5,
+    },
+    scrollContent: {
         alignItems: 'center',
     },
     modalTitle: {
@@ -262,5 +265,10 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
         marginBottom: 10,
     },
+    dateInput: {
+        justifyContent: 'center',
+    },
+    dateText: {
+        textAlign: 'center',
+    },
 });
-
