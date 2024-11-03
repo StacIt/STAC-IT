@@ -9,7 +9,9 @@ import {
     Button,
     ScrollView,
     Alert,
+
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
@@ -30,8 +32,12 @@ const CreateStack: React.FC = () => {
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [preferences, setPreferences] = useState('');
-    const [budget, setBudget] = useState('');
     const [numberOfPeople, setNumberOfPeople] = useState('');
+    const [budget, setBudget] = useState("cheap($0-30)");
+    const [isPickerVisible, setPickerVisible] = useState(false);
+    const openPicker = () => setPickerVisible(true);
+    const closePicker = () => setPickerVisible(false);
+
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -84,6 +90,7 @@ const CreateStack: React.FC = () => {
         setNumberOfPeople('');
         setModalVisible(false);
 
+        // save data to firestore
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
             setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
@@ -117,100 +124,128 @@ const CreateStack: React.FC = () => {
             </TouchableOpacity>
 
             <Modal
-                animationType="fade"
+                animationType="slide"
                 transparent={true}
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.centeredView}>
-                    <View style={styles.modalContent}>
-                        <ScrollView contentContainerStyle={styles.scrollContent}>
-                            <Text style={styles.modalTitle}>Create a New STAC</Text>
+                <View style={styles.modalContainer}>
+                    <ScrollView contentContainerStyle={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Create a New STAC</Text>
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="STAC Name"
-                                value={stacName}
-                                onChangeText={setStacName}
+                        <TextInput
+                            style={styles.input}
+                            placeholder="STAC Name"
+                            value={stacName}
+                            onChangeText={setStacName}
+                        />
+
+                        <TouchableOpacity
+                            onPress={() => setShowDatePicker(true)}
+                            style={styles.input}
+                        >
+                            <Text>{date.toDateString()}</Text>
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                display="default"
+                                onChange={onChangeDate}
                             />
+                        )}
 
-                            <TouchableOpacity
-                                onPress={() => setShowDatePicker(true)}
-                                style={[styles.input, styles.dateInput]}
-                            >
-                                <Text style={styles.dateText}>{date.toDateString()}</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Start Time (HH:MM)"
+                            value={startTime}
+                            onChangeText={setStartTime}
+                            keyboardType="numeric"
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="End Time (HH:MM)"
+                            value={endTime}
+                            onChangeText={setEndTime}
+                            keyboardType="numeric"
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="City"
+                            value={city}
+                            onChangeText={setCity}
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="State (e.g., CA)"
+                            value={state}
+                            onChangeText={setState}
+                            maxLength={2}
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Preferences"
+                            value={preferences}
+                            onChangeText={setPreferences}
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Number of People"
+                            value={numberOfPeople}
+                            onChangeText={setNumberOfPeople}
+                            keyboardType="numeric"
+                        />
+
+                        <View style={{ padding: 20 }}>
+                            <Text style={{ fontSize: 16, marginBottom: 10 }}>Select Budgeting Option:</Text>
+
+                            {/* Touchable to open the picker */}
+                            <TouchableOpacity onPress={openPicker} style={{ padding: 10, backgroundColor: '#eee', borderRadius: 5 }}>
+                                <Text style={{ fontSize: 16 }}>{budget.charAt(0).toUpperCase() + budget.slice(1)}</Text>
                             </TouchableOpacity>
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    value={date}
-                                    mode="date"
-                                    display="default"
-                                    onChange={onChangeDate}
-                                />
-                            )}
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Start Time (HH:MM)"
-                                value={startTime}
-                                onChangeText={setStartTime}
-                                keyboardType="numeric"
-                            />
+                            {/* Modal for the picker */}
+                            <Modal
+                                transparent={true}
+                                visible={isPickerVisible}
+                                animationType="slide"
+                                onRequestClose={closePicker}
+                            >
+                                <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                                    <View style={{ backgroundColor: 'white', margin: 20, borderRadius: 10, padding: 20 }}>
+                                        <Text style={{ fontSize: 18, textAlign: 'center', marginBottom: 10 }}>Choose Budget</Text>
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="End Time (HH:MM)"
-                                value={endTime}
-                                onChangeText={setEndTime}
-                                keyboardType="numeric"
-                            />
+                                        <Picker
+                                            selectedValue={budget}
+                                            onValueChange={(itemValue) => setBudget(itemValue)}
+                                            style={{ height: 150 }}
+                                        >
+                                            <Picker.Item label="Cheap($0-30)" value="cheap" />
+                                            <Picker.Item label="Moderate($30-60)" value="moderate" />
+                                            <Picker.Item label="Expensive($60+)" value="expensive" />
+                                        </Picker>
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="City"
-                                value={city}
-                                onChangeText={setCity}
-                            />
+                                        <Button title="Done" onPress={closePicker} />
+                                    </View>
+                                </View>
+                            </Modal>
+                        </View>
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="State (e.g., CA)"
-                                value={state}
-                                onChangeText={setState}
-                                maxLength={2}
-                            />
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Preferences"
-                                value={preferences}
-                                onChangeText={setPreferences}
-                            />
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Budget"
-                                value={budget}
-                                onChangeText={setBudget}
-                                keyboardType="numeric"
-                            />
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Number of People"
-                                value={numberOfPeople}
-                                onChangeText={setNumberOfPeople}
-                                keyboardType="numeric"
-                            />
-
-                            <Button title="Submit" onPress={handleCreateStack} />
-                            <Button
-                                title="Cancel"
-                                color="red"
-                                onPress={() => setModalVisible(false)}
-                            />
-                        </ScrollView>
-                    </View>
+                        <Button title="Submit" onPress={handleCreateStack} />
+                        <Button
+                            title="Cancel"
+                            color="red"
+                            onPress={() => setModalVisible(false)}
+                        />
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
@@ -224,6 +259,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 20,
     },
     createButton: {
         backgroundColor: '#6200ea',
@@ -235,20 +271,17 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
     },
-    centeredView: {
+    modalContainer: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
-        width: '85%',
         backgroundColor: 'white',
-        borderRadius: 10,
+        marginTop: 125,
+        margin: 50,
         padding: 20,
-        elevation: 5,
-    },
-    scrollContent: {
+        borderRadius: 10,
         alignItems: 'center',
     },
     modalTitle: {
@@ -264,11 +297,5 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingLeft: 10,
         marginBottom: 10,
-    },
-    dateInput: {
-        justifyContent: 'center',
-    },
-    dateText: {
-        textAlign: 'center',
     },
 });

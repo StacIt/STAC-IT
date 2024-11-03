@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Alert } from 'react-native';
 import { NavigationProp } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import RNPickerSelect from 'react-native-picker-select';
 import { Ionicons } from '@expo/vector-icons';
+
 
 interface SignUpQuestionsProps {
     navigation: NavigationProp<any>;
@@ -13,7 +14,16 @@ import { FIREBASE_AUTH } from "../../FirebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { FIREBASE_DB } from "../../FirebaseConfig";
 
+
+
 const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
+    const showAlert = () => {
+        Alert.alert(
+            'Why are we asking you this?',
+            "We collect your information to personalize your experience, improve our services, and ensure the app's security. Your privacy is our priority, and your data is used responsibly and securely. You can review or adjust your data anytime in the app’s privacy settings.",
+            [{ text: 'OK' }]
+        );
+    };
     const [fullName, setFullName] = useState('');
     const [birthDate, setBirthDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -80,6 +90,9 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
         <View style={styles.container}>
             <Text style={styles.title}>Sign Up Questions</Text>
 
+
+
+
             <TextInput
                 style={styles.input}
                 placeholder="Full Name"
@@ -120,6 +133,9 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
             <TouchableOpacity style={styles.button} onPress={goBack}>
                 <Text style={styles.buttonText}>Go Back</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={showAlert} style={styles.infobutton}>
+                <Text style={styles.infobuttonText}>Why are we asking you this?</Text>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -147,8 +163,21 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         justifyContent: 'center',
     },
+    infobutton: {
+        marginVertical: 10,
+        backgroundColor: 'transparent',
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        borderColor: 'gray',
+    },
+    infobuttonText: {
+        color: 'gray',
+        fontSize: 16,
+    },
     button: {
-        marginVertical: 20,
+        marginVertical: 10,
         backgroundColor: '#6200ea',
         paddingVertical: 10,
         alignItems: 'center',
