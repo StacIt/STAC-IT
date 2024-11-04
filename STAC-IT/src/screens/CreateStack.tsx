@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -15,7 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS',
@@ -41,6 +41,35 @@ const CreateStack: React.FC = () => {
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
 
+    const [stackData, setStackData] = useState<{ location: string, budget: string, preferences: string } | null>(null);
+
+    useEffect(() => {
+        fetchStackData();
+    }, []);
+
+    const fetchStackData = async () => {
+        const user = FIREBASE_AUTH.currentUser;
+        if (user) {
+            try {
+                const docRef = doc(FIREBASE_DB, "stacks", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setStackData({
+                        location: data.location || '',
+                        budget: data.budget || '',
+                        preferences: data.preferences || ''
+                    });
+                    console.log("Fetched stack data:", data);
+                } else {
+                    console.log("No such document!");
+                }
+            } catch (error) {
+                console.error("Error fetching document:", error);
+            }
+        }
+    }
     const isValidTime = (time: string) => {
         const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
         return regex.test(time);

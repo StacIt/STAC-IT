@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, FlatList } from 'react-native';
 import { NavigationProp } from '@react-navigation/native';
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
+import { doc, getDoc } from 'firebase/firestore';
 
 interface ProfileProps {
     navigation: NavigationProp<any>;
 }
+
 const ProfilePage: React.FC<ProfileProps> = ({ navigation }) => {
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [profile, setProfile] = useState({
-        name: 'John Doe',
-        email: 'johndoe@example.com',
+        name: 'Loading...',
+        email: 'Loading...',
         avatar: 'https://via.placeholder.com/100'
     });
 
@@ -19,6 +22,33 @@ const ProfilePage: React.FC<ProfileProps> = ({ navigation }) => {
         { id: '3', title: 'Joined 1 Month Ago', icon: '🎉' },
     ]);
 
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            const userId = FIREBASE_AUTH.currentUser?.uid;
+            if (!userId) return;
+
+            try {
+                const userDocRef = doc(FIREBASE_DB, "users", userId);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    setProfile({
+                        name: userData.fullName || 'N/A',
+                        email: userData.email || 'N/A',
+                        avatar: 'https://via.placeholder.com/100' // or use another field if available in Firestore
+                    });
+                } else {
+                    console.log("No such document!");
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+            }
+        };
+
+        fetchUserProfile();
+    }, []);
+
     const handleLogout = () => {
         alert("Logged out");
         navigation.navigate('Login');
@@ -27,7 +57,6 @@ const ProfilePage: React.FC<ProfileProps> = ({ navigation }) => {
     const editProfile = () => {
         alert("Edit Profile");
     };
-
 
     const changePassword = () => {
         alert("Change Password");
@@ -77,7 +106,6 @@ const ProfilePage: React.FC<ProfileProps> = ({ navigation }) => {
                     )}
                 />
             </View>
-
 
             {/* logout button */}
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
