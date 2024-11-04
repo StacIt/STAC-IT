@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import axios from 'axios';
 
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { doc, setDoc, getDoc } from "firebase/firestore";
@@ -42,6 +43,7 @@ const CreateStack: React.FC = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [stackData, setStackData] = useState<{ location: string, budget: string, preferences: string } | null>(null);
+
 
     useEffect(() => {
         fetchStackData();
@@ -91,23 +93,47 @@ const CreateStack: React.FC = () => {
             Alert.alert('Error', 'Please enter a valid US state abbreviation.');
             return false;
         }
-        if (isNaN(Number(budget)) || isNaN(Number(numberOfPeople))) {
-            Alert.alert('Error', 'Budget and number of people must be numbers.');
-            return false;
-        }
         return true;
     };
 
-    const handleCreateStack = () => {
+    const callBackendModel = async (message: string) => {
+        try {
+            const response = await axios.post(
+                'http://10.0.2.2:8000/chatbot/call-model/',
+                new URLSearchParams({ message }),
+                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            );
+            console.log(response.data);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to call backend model.');
+        }
+    };
+
+    const handleCreateStack = async () => {
         if (!validateForm()) return;
-        console.log('Stack Name:', stacName);
-        console.log('Start Time:', startTime);
-        console.log('End Time:', endTime);
-        console.log('Date:', date.toDateString());
-        console.log('Location:', `${city}, ${state.toUpperCase()}`);
-        console.log('Preferences:', preferences);
-        console.log('Budget:', budget);
-        console.log('Number of People:', numberOfPeople);
+
+        const user = FIREBASE_AUTH.currentUser;
+        if (user) {
+            try {
+                await setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
+                    stacName,
+                    startTime,
+                    endTime,
+                    date: date.toDateString(),
+                    location: `${city}, ${state.toUpperCase()}`,
+                    preferences,
+                    budget,
+                    numberOfPeople,
+                });
+
+                Alert.alert('Success', 'Stack created successfully!');
+                const userInput = `Location: ${city}, ${state.toUpperCase()}, Preferences: ${preferences}, Budget: ${budget}`;
+                await callBackendModel(userInput);
+            } catch (error) {
+                console.error("Error saving document:", error);
+            }
+        }
 
         setStacName('');
         setStartTime('');
@@ -118,23 +144,6 @@ const CreateStack: React.FC = () => {
         setBudget('');
         setNumberOfPeople('');
         setModalVisible(false);
-
-        // save data to firestore
-        const user = FIREBASE_AUTH.currentUser;
-        if (user) {
-            setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
-                stacName: stacName,
-                startTime: startTime,
-                endTime: endTime,
-                date: date.toDateString(),
-                location: `${city}, ${state.toUpperCase()}`,
-                preferences: preferences,
-                budget: budget,
-                numberOfPeople: numberOfPeople,
-            });
-
-            Alert.alert('Success', 'Stack created successfully!');
-        }
     };
 
     const onChangeDate = (event: any, selectedDate?: Date) => {
