@@ -261,7 +261,7 @@ const CreateStack: React.FC = () => {
                                         <Picker
                                             selectedValue={budget}
                                             onValueChange={(itemValue) => setBudget(itemValue)}
-                                            style={{ height: 150 }}
+                                            style={{ height: 250 }}
                                         >
                                             <Picker.Item label="Cheap($0-30)" value="cheap" />
                                             <Picker.Item label="Moderate($30-60)" value="moderate" />
