@@ -1,75 +1,104 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
-import { NavigationProp } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    Modal,
+    FlatList,
+    ActivityIndicator,
+    Alert,
+    Button,
+} from 'react-native';
+import { NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
 
 interface HomePageProps {
     navigation: NavigationProp<any>;
 }
 
-interface Hangout {
+interface Stac {
     id: string;
     name: string;
-    rating: number;
-    description: string;
+    date: string;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
+    const route = useRoute<RouteProp<{ params: { stacName?: string, date?: string } }>>();
+    const [scheduledStacs, setScheduledStacs] = useState<Stac[]>([]);
+    const [pastStacs, setPastStacs] = useState<Stac[]>([]);
     const [loading, setLoading] = useState(false);
-    const [hangouts, setHangouts] = useState<Hangout[]>([
-        { id: '1', name: 'Hangout 1', rating: 4, description: 'Description of Hangout 1' },
-        { id: '2', name: 'Hangout 2', rating: 3, description: 'Description of Hangout 2' },
-    ]);
+    const [selectedStac, setSelectedStac] = useState<Stac | null>(null);
+    const [modalVisible, setModalVisible] = useState(false);
 
-    const startNewActivity = () => {
-        setLoading(true);
-
-        setTimeout(() => {
-            const newActivity: Hangout = {
-                id: (hangouts.length + 1).toString(),
-                name: `Hangout ${hangouts.length + 1}`,
-                rating: Math.floor(Math.random() * 5) + 1,
-                description: `Description of Hangout ${hangouts.length + 1}`,
+    useEffect(() => {
+        if (route.params?.stacName && route.params?.date) {
+            const newStac: Stac = {
+                id: Date.now().toString(),
+                name: route.params.stacName,
+                date: route.params.date,
             };
-            setHangouts([...hangouts, newActivity]);
-            setLoading(false);
-        }, 2000);
+            
+            const stacDate = new Date(route.params.date);
+            const currentDate = new Date();
+
+            if (stacDate > currentDate) {
+                setScheduledStacs(prevStacs => [...prevStacs, newStac]);
+            } else {
+                setPastStacs(prevStacs => [...prevStacs, newStac]);
+            }
+        }
+    }, [route.params?.stacName, route.params?.date]);
+
+    const openModal = (stac: Stac) => {
+        setSelectedStac(stac);
+        setModalVisible(true);
     };
+
+    const renderStacList = (stacs: Stac[], title: string) => (
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            {stacs.map((stac) => (
+                <TouchableOpacity
+                    key={stac.id}
+                    activeOpacity={0.7}
+                    style={styles.stacButton}
+                    onPress={() => openModal(stac)}
+                >
+                    <Text style={styles.buttonText}>{stac.name}</Text>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>STAC-IT</Text>
 
-            {/* activities */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Activities</Text>
-                <TouchableOpacity activeOpacity={0.7} style={styles.activityButton} onPress={startNewActivity}>
-                    <Text style={styles.buttonText}>Start New Activity</Text>
-                </TouchableOpacity>
-            </View>
+            {renderStacList(scheduledStacs, "Scheduled STAC")}
+            {renderStacList(pastStacs, "Past History")}
 
-            {/* past history */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Past History</Text>
-                {loading ? (
-                    <ActivityIndicator size="large" color="#6200ea" />
-                ) : (
-                    <FlatList
-                        data={hangouts}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                            <View style={styles.historyItem}>
-                                <View>
-                                    <Text style={styles.historyText}>{item.name}</Text>
-                                    <Text style={styles.subText}>{item.description}</Text>
-                                </View>
-                                <Text style={[styles.rating, item.rating >= 4 ? styles.highRating : styles.lowRating]}>
-                                    {'★'.repeat(item.rating)}
-                                </Text>
-                            </View>
-                        )}
-                    />
-                )}
-            </View>
+            <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.activityButton}
+                onPress={() => navigation.navigate('MainTabs', { screen: "Create" })}
+            >
+                <Text style={styles.buttonText}>Start New STAC</Text>
+            </TouchableOpacity>
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>{selectedStac?.name}</Text>
+                        <Text style={styles.modalText}>Date: {selectedStac?.date}</Text>
+                        <Button title="Close" onPress={() => setModalVisible(false)} />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -80,19 +109,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        paddingBottom: 80,
         backgroundColor: '#f0f2f5',
-        justifyContent: 'center',
     },
     title: {
         fontSize: 36,
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
-        marginBottom: 40,
+        marginBottom: 30,
     },
     section: {
-        marginVertical: 20,
+        marginBottom: 20,
     },
     sectionTitle: {
         fontSize: 24,
@@ -105,6 +132,13 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         borderRadius: 8,
         alignItems: 'center',
+        marginTop: 20,
+    },
+    stacButton: {
+        backgroundColor: '#4a4a4a',
+        paddingVertical: 15,
+        borderRadius: 8,
+        alignItems: 'center',
         marginTop: 10,
     },
     buttonText: {
@@ -112,38 +146,27 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
-    historyItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 8,
-        marginTop: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    historyText: {
-        fontSize: 16,
-        color: '#333',
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        width: '80%',
+    },
+    modalTitle: {
+        fontSize: 24,
         fontWeight: 'bold',
+        marginBottom: 10,
     },
-    subText: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
-    },
-    rating: {
+    modalText: {
         fontSize: 16,
-        color: '#ffcc00',
-        alignSelf: 'center',
-    },
-    highRating: {
-        color: '#ffcc00',
-    },
-    lowRating: {
-        color: '#ffcc00',
+        marginBottom: 20,
     },
 });
+

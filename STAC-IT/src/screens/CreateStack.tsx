@@ -17,6 +17,9 @@ import axios from 'axios';
 
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import * as SMS from 'expo-sms';
+import { NavigationProp } from '@react-navigation/native';
+
 
 const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS',
@@ -25,7 +28,11 @@ const validStates = [
     'WI', 'WY'
 ];
 
-const CreateStack: React.FC = () => {
+interface CreateStackProps {
+    navigation: NavigationProp<any>;
+}
+
+const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [stacName, setStacName] = useState('');
     const [startTime, setStartTime] = useState('');
@@ -34,8 +41,14 @@ const CreateStack: React.FC = () => {
     const [state, setState] = useState('');
     const [preferences, setPreferences] = useState('');
     const [numberOfPeople, setNumberOfPeople] = useState('');
-    const [budget, setBudget] = useState("cheap($0-30)");
+    const [budget, setBudget] = useState("");
     const [isPickerVisible, setPickerVisible] = useState(false);
+
+    // model response and reponse modal visibility
+    const [modelResponse, setModelResponse] = useState('');
+    const [responseModalVisible, setResponseModalVisible] = useState(false);
+    const [phoneNumbers, setPhoneNumbers] = useState('');
+
     const openPicker = () => setPickerVisible(true);
     const closePicker = () => setPickerVisible(false);
 
@@ -103,7 +116,8 @@ const CreateStack: React.FC = () => {
                 new URLSearchParams({ message }),
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
             );
-            console.log(response.data);
+            setModelResponse(response.data);
+            setResponseModalVisible(true);
         } catch (error) {
             console.error(error);
             Alert.alert('Error', 'Failed to call backend model.');
@@ -126,15 +140,19 @@ const CreateStack: React.FC = () => {
                     budget,
                     numberOfPeople,
                 });
+                
 
                 Alert.alert('Success', 'Stack created successfully!');
                 const userInput = `Location: ${city}, ${state.toUpperCase()}, Preferences: ${preferences}, Budget: ${budget}`;
                 await callBackendModel(userInput);
+                navigation.navigate('MainTabs', { screen: 'Home', params: { stacName, date: date.toDateString() } });
+        
             } catch (error) {
                 console.error("Error saving document:", error);
             }
         }
 
+        // Reset form fields
         setStacName('');
         setStartTime('');
         setEndTime('');
@@ -144,6 +162,22 @@ const CreateStack: React.FC = () => {
         setBudget('');
         setNumberOfPeople('');
         setModalVisible(false);
+    };
+
+    const handleShareWithFriends = async () => {
+        try {
+            const phoneNumbersArray = phoneNumbers.split(',').map(num => num.trim());
+            await SMS.sendSMSAsync(phoneNumbersArray, modelResponse);
+            Alert.alert("Success", "Message sent to friends!");
+        } catch (error) {
+            Alert.alert("Error", "Failed to send message.");
+            console.error("Error sharing STAC:", error);
+        }
+    };
+
+    const handleAddToList = () => {
+        navigation.navigate('Home', { stacName: stacName, date: date.toDateString() });
+        setResponseModalVisible(false);
     };
 
     const onChangeDate = (event: any, selectedDate?: Date) => {
@@ -161,6 +195,7 @@ const CreateStack: React.FC = () => {
                 <Text style={styles.buttonText}>Create STAC</Text>
             </TouchableOpacity>
 
+            {/* Modal for creating a new STAC */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -239,43 +274,14 @@ const CreateStack: React.FC = () => {
                             keyboardType="numeric"
                         />
 
-                        <View style={{ padding: 20 }}>
-                            <Text style={{ fontSize: 16, marginBottom: 10 }}>Select Budgeting Option:</Text>
-
-                            {/* Touchable to open the picker */}
-                            <TouchableOpacity onPress={openPicker} style={{ padding: 10, backgroundColor: '#eee', borderRadius: 5 }}>
-                                <Text style={{ fontSize: 16 }}>{budget.charAt(0).toUpperCase() + budget.slice(1)}</Text>
-                            </TouchableOpacity>
-
-                            {/* Modal for the picker */}
-                            <Modal
-                                transparent={true}
-                                visible={isPickerVisible}
-                                animationType="slide"
-                                onRequestClose={closePicker}
-                            >
-                                <View style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-                                    <View style={{ backgroundColor: 'white', margin: 20, borderRadius: 10, padding: 20 }}>
-                                        <Text style={{ fontSize: 18, textAlign: 'center', marginBottom: 10 }}>Choose Budget</Text>
-
-                                        <Picker
-                                            selectedValue={budget}
-                                            onValueChange={(itemValue) => setBudget(itemValue)}
-                                            style={{ height: 250 }}
-                                        >
-                                            <Picker.Item label="Cheap($0-30)" value="cheap" />
-                                            <Picker.Item label="Moderate($30-60)" value="moderate" />
-                                            <Picker.Item label="Expensive($60+)" value="expensive" />
-                                        </Picker>
-
-                                        <Button title="Done" onPress={closePicker} />
-                                    </View>
-                                </View>
-                            </Modal>
-                        </View>
-
-
-
+<TextInput
+                            style={styles.input}
+                            placeholder="Budget ($maximum per person)"
+                            value={budget}
+                            onChangeText={setBudget}
+                            keyboardType="numeric"
+                        />
+                        
 
                         <Button title="Submit" onPress={handleCreateStack} />
                         <Button
@@ -284,6 +290,43 @@ const CreateStack: React.FC = () => {
                             onPress={() => setModalVisible(false)}
                         />
                     </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Modal for seeing the formatted model response */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={responseModalVisible}
+                onRequestClose={() => setResponseModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Model Response</Text>
+
+                        <ScrollView contentContainerStyle={styles.responseScrollView}>
+                            <Text>{modelResponse}</Text>
+                        </ScrollView>
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter phone numbers, separated by commas"
+                            value={phoneNumbers}
+                            onChangeText={setPhoneNumbers}
+                        />
+
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.button} onPress={handleShareWithFriends}>
+                                <Text style={styles.buttonText}>Share with Friends</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.button} onPress={handleAddToList}>
+                                <Text style={styles.buttonText}>Add to List</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <Button title="Close" onPress={() => setResponseModalVisible(false)} />
+                    </View>
                 </View>
             </Modal>
         </View>
@@ -335,5 +378,23 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingLeft: 10,
         marginBottom: 10,
+    },
+    responseScrollView: {
+        paddingVertical: 10,
+        maxHeight: 600,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 10,
+    },
+    button: {
+        backgroundColor: '#6200ea',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        flex: 1,
+        marginHorizontal: 5,
     },
 });

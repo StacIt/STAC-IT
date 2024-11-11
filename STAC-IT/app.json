@@ -17,6 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "android.package": "com.company.STAC-IT",
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
