@@ -1,14 +1,8 @@
-from django.shortcuts import render
 import requests
 import torch
 import transformers
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from django.http import JsonResponse
 from django.http import HttpResponse
-
-
 
 device = 0 if torch.cuda.is_available() else -1
 model_id = 'chatbot/llamamodel/Meta-Llama-3.1-8B-Instruct'
@@ -22,7 +16,21 @@ pipeline = transformers.pipeline(
     device=device,
 )
 
-api_key = "API_KEY"  
+api_key = "API_KEY" # Replace with your Google Places API key
+
+def get_place_details(place_id):
+    base_url = "https://maps.googleapis.com/maps/api/place/details/json"
+    params = {
+        "place_id": place_id,
+        "key": api_key,
+        "fields": "name,formatted_address,rating,opening_hours,price_level"
+    }
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        return response.json().get("result", {})
+    else:
+        print(f"Error fetching place details: {response.status_code} - {response.text}")
+        return {}
 
 def google_places_text_search(api_key, query, location=None, radius=None):
     base_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
@@ -31,19 +39,20 @@ def google_places_text_search(api_key, query, location=None, radius=None):
         "key": api_key
     }
     if location and radius:
-        params["location"] = location
-        params["radius"] = radius
-    headers = {
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress"
-    }
-
-    response = requests.get(base_url, params=params, headers=headers)
+        params.update({"location": location, "radius": radius})
+    response = requests.get(base_url, params=params)
     if response.status_code == 200:
-        results = response.json().get('results', [])
-        return results
+        results = response.json().get("results", [])
+        detailed_results = []
+        for place in results:
+            place_id = place.get("place_id")
+            if place_id:
+                detailed_place = get_place_details(place_id)
+                detailed_results.append(detailed_place)
+        return detailed_results
     else:
-        print(f"Error: {response.status_code} - {response.text}")
-        return None
+        print(f"Error fetching text search: {response.status_code} - {response.text}")
+        return []
 
 def generate_planner_response(user_input):
     location = None 
@@ -59,28 +68,27 @@ def generate_planner_response(user_input):
 
     places_for_prompt = ""
     for place in places_data:
+        opening_hours = place.get('opening_hours', {}).get('weekday_text', 'Hours not available')
+        opening_hours_str = ', '.join(opening_hours) if isinstance(opening_hours, list) else opening_hours
         places_for_prompt += (
-            f"Place: {place['name']}, Location: {place.get('formatted_address', 'N/A')}, "
-            f"Rating: {place.get('rating', 'N/A')} (based on {place.get('user_ratings_total', 'N/A')} reviews), "
-            f"Price Level: {place.get('price_level', 'N/A')}.\n"
+            f"Place: {place['name']} located at {place.get('formatted_address', 'Unknown location')}. "
+            f"Open hours: {opening_hours_str}, "
+            f"Rating: {place.get('rating', 'No rating')}, "
+            f"Price Level: {place.get('price_level', 'No information available')}.\n"
         )
 
     prompt = (
-        f"""You are a helpful planning assistant. The user wants to create a schedule for the day. 
-        They provided the following place_list: '{places_for_prompt}' also take into consideration ONLY the time input by the user here '{user_input}'.
-        Make sure the places are open during the time provided by the user and matches the hours of operation from the place_list. 
-        Please provide a varied list of EXACTLY 3 complete activities using the highest and most rated places provided in JSON format only, with no other text. 
-        The JSON should be an array of objects. Each object should have the following fields: 
-        {{
-            "start_time": "<The time when the activity begins>",
-            "end_time": "<The time when the activity ends>",
-            "duration": "<The length of the activity in minutes or hours>",
-            "activity": "<The name of the activity>",
-            "details": "<Further details about the activity>",
-            "location": "<Location of activity>",
-            "open": "<hours of operation>"
-        }}
-        Output strictly in JSON format, with no explanation text.
+        f"""Help the user create a simple day plan based on their list of places: '{places_for_prompt}' and from user input: '{user_input}' get preferences, and preferred time range. Ensure each chosen activity fits within the user’s available hours and the locations’ open hours, allowing 30 minutes between activities for transportation.
+
+with exactly three stops based on the highest-rated places from the list. Match the activities to the user’s interests and ensure each place is open during the user’s available times.
+
+For each stop make sure it is a unique and different activity, provide:
+
+Stop Number with name of place(timing): Label each activity as Stop 1, Stop 2, and Stop 3 with name of place.  As well as the start and end time for each stop, ensuring a 30-minute buffer for transportation.
+Activity Description: Describe what the user will enjoy at each location, including recommended flavors, dishes, or highlights.
+Location: Mention address of the place.
+Open Hours: List the open hours for each place.
+Format the output in a warm, conversational tone that feels like local advice for a fun day out, with no technical formatting or code. DO NOT INCLUDE PYTHON CODE OR ANY CODE BLOCKS IN THE RESPONSE.
         """
     )
     
@@ -90,6 +98,7 @@ def generate_planner_response(user_input):
         do_sample=True,
         temperature=0.6,
         top_p=0.9,
+        return_full_text=False,
     )
     
     activities = outputs[0]["generated_text"].strip()
@@ -99,9 +108,6 @@ def generate_planner_response(user_input):
     formatted_response += activities_with_newlines
 
     return formatted_response
-
-from rest_framework.decorators import api_view
-from django.http import JsonResponse
 
 @api_view(['POST'])
 def chatbot_api(request):
