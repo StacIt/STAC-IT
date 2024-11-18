@@ -128,8 +128,8 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                             <Text style={styles.buttonText}>New to STAC-IT? Create account</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
-                            <Text style={styles.buttonText}>Forgot password?</Text>
+                        <TouchableOpacity style={styles.infobutton} onPress={handlePasswordReset}>
+                            <Text style={styles.infobuttonText}>Forgot password?</Text>
                         </TouchableOpacity>
                     </>
                 )}
@@ -162,8 +162,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 5,
     },
+    infobutton: {
+        marginVertical: 4,
+        backgroundColor: 'transparent',
+        paddingVertical: 5,
+        alignItems: 'center',
+        borderRadius: 5,
+        paddingHorizontal: 10,
+        borderColor: 'gray',
+    },
     buttonText: {
         color: "white",
+        fontWeight: "bold",
+    },
+    infobuttonText: {
+        color: "gray",
         fontWeight: "bold",
     },
     passwordContainer: {

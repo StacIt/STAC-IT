@@ -35,8 +35,10 @@ interface CreateStackProps {
 const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [stacName, setStacName] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [startTime, setStartTime] = useState<Date | null>(null);
+    const [endTime, setEndTime] = useState<Date | null>(null);
+    const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+    const [showEndTimePicker, setShowEndTimePicker] = useState(false);
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [preferences, setPreferences] = useState('');
@@ -85,9 +87,21 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
             }
         }
     }
-    const isValidTime = (time: string) => {
-        const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-        return regex.test(time);
+    const formatTime = (time: Date | null): string => {
+        if (!time) return "Select Time";
+        const hours = time.getHours();
+        const minutes = time.getMinutes();
+        const ampm = hours >= 12 ? "pm" : "am";
+        const formattedHours = hours % 12 || 12; // Convert to 12-hour format
+        return `${formattedHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
+    };
+    
+    const validateEndTime = (selectedTime: Date) => {
+        if (startTime && selectedTime < startTime) {
+            Alert.alert("Error", "End Time cannot be earlier than Start Time.");
+            return false;
+        }
+        return true;
     };
 
     const validateForm = () => {
@@ -98,10 +112,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
             Alert.alert('Error', 'All fields are required.');
             return false;
         }
-        if (!isValidTime(startTime) || !isValidTime(endTime)) {
-            Alert.alert('Error', 'Please enter valid times in HH:MM format.');
-            return false;
-        }
+        
         if (!validStates.includes(state.toUpperCase())) {
             Alert.alert('Error', 'Please enter a valid US state abbreviation.');
             return false;
@@ -126,43 +137,51 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
 
     const handleCreateStack = async () => {
         if (!validateForm()) return;
-
+        let budgetCategory = ""; 
+        const budgetValue = parseInt(budget, 10); 
+    
+        if (budgetValue < 30) {
+            budgetCategory = "cheap";
+        } else if (budgetValue >= 30 && budgetValue <= 60) {
+            budgetCategory = "moderate";
+        } else if (budgetValue > 60) {
+            budgetCategory = "expensive";
+        } else {
+            Alert.alert("Error", "Invalid budget value.");
+            return;
+        }
+    
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
             try {
-                await setDoc(doc(FIREBASE_DB, "stacks", user.uid), {
+                // Generate a unique document ID
+                const stackId = Date.now().toString();
+                
+                // Create the stack document with the user's ID
+                await setDoc(doc(FIREBASE_DB, "stacks", stackId), {
+                    userId: user.uid, // Add this field
                     stacName,
-                    startTime,
-                    endTime,
+                    startTime: startTime?.toISOString(),
+                    endTime: endTime?.toISOString(),
                     date: date.toDateString(),
                     location: `${city}, ${state.toUpperCase()}`,
                     preferences,
-                    budget,
+                    budget: budgetCategory,
                     numberOfPeople,
+                    createdAt: new Date().toISOString(),
                 });
-                
-
+    
                 Alert.alert('Success', 'Stack created successfully!');
                 const userInput = `Location: ${city}, ${state.toUpperCase()}, Preferences: ${preferences}, Budget: ${budget}`;
                 await callBackendModel(userInput);
-                navigation.navigate('MainTabs', { screen: 'Home', params: { stacName, date: date.toDateString() } });
         
             } catch (error) {
                 console.error("Error saving document:", error);
+                Alert.alert('Error', 'Failed to create STAC');
             }
         }
-
-        // Reset form fields
-        setStacName('');
-        setStartTime('');
-        setEndTime('');
-        setCity('');
-        setState('');
-        setPreferences('');
-        setBudget('');
-        setNumberOfPeople('');
-        setModalVisible(false);
     };
+    
 
     const handleShareWithFriends = async () => {
         try {
@@ -176,7 +195,31 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
     };
 
     const handleAddToList = () => {
-        navigation.navigate('Home', { stacName: stacName, date: date.toDateString() });
+        const user = FIREBASE_AUTH.currentUser;
+        if (user) {
+            // Update the document with the model response
+            const stackId = Date.now().toString();
+            setDoc(doc(FIREBASE_DB, "stacks", stackId), {
+                userId: user.uid,
+                stacName,
+                startTime: startTime?.toISOString(),
+                endTime: endTime?.toISOString(),
+                date: date.toDateString(),
+                location: `${city}, ${state.toUpperCase()}`,
+                preferences,
+                budget,
+                numberOfPeople,
+                modelResponse,
+                createdAt: new Date().toISOString(),
+            }, { merge: true });
+        }
+        
+        navigation.navigate('MainTabs', { 
+            screen: 'Home', 
+            params: { 
+                refresh: true 
+            }
+        });
         setResponseModalVisible(false);
     };
 
@@ -228,21 +271,47 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                             />
                         )}
 
-                        <TextInput
+                        {/* Start Time Picker */}
+                        <TouchableOpacity
+                            onPress={() => setShowStartTimePicker(true)}
                             style={styles.input}
-                            placeholder="Start Time (HH:MM)"
-                            value={startTime}
-                            onChangeText={setStartTime}
-                            keyboardType="numeric"
-                        />
+                        >
+                            <Text>{formatTime(startTime)}</Text>
+                        </TouchableOpacity>
+                        {showStartTimePicker && (
+                            <DateTimePicker
+                                value={startTime || new Date()}
+                                mode="time"
+                                is24Hour={false}
+                                display="default"
+                                onChange={(event, selectedTime) => {
+                                    setShowStartTimePicker(false);
+                                    if (selectedTime) setStartTime(selectedTime);
+                                }}
+                            />
+                        )}
 
-                        <TextInput
+                        {/* End Time Picker */}
+                        <TouchableOpacity
+                            onPress={() => setShowEndTimePicker(true)}
                             style={styles.input}
-                            placeholder="End Time (HH:MM)"
-                            value={endTime}
-                            onChangeText={setEndTime}
-                            keyboardType="numeric"
-                        />
+                        >
+                            <Text>{formatTime(endTime)}</Text>
+                        </TouchableOpacity>
+                        {showEndTimePicker && (
+                            <DateTimePicker
+                                value={endTime || new Date()}
+                                mode="time"
+                                is24Hour={false}
+                                display="default"
+                                onChange={(event, selectedTime) => {
+                                    setShowEndTimePicker(false);
+                                    if (selectedTime && validateEndTime(selectedTime)) {
+                                        setEndTime(selectedTime);
+                                    }
+                                }}
+                            />
+                        )}
 
                         <TextInput
                             style={styles.input}
@@ -274,7 +343,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                             keyboardType="numeric"
                         />
 
-<TextInput
+                        <TextInput
                             style={styles.input}
                             placeholder="Budget ($maximum per person)"
                             value={budget}

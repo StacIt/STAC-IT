@@ -9,7 +9,8 @@ import Login from './src/screens/Login';
 import CreateAccount from './src/screens/CreateAccount';
 import SignUpQuestions from './src/screens/SignUpQuestions';
 import ForgetPassword from './src/screens/ForgetPassword';
-import HomePage from './src/screens/HomePage';
+import { HomePage } from './src/screens/HomePage';
+import { StacDetailsScreen } from './src/screens/HomePage';
 import CreateStack from './src/screens/CreateStack';
 import Profile from './src/screens/Profile';
 import CB from './src/screens/CB';
@@ -81,6 +82,12 @@ export default function App() {
           name="MainTabs"
           component={MainTabs}
           options={{ headerShown: false }}
+        />
+        {/* Add StacDetailsScreen here */}
+        <Stack.Screen
+          name="StacDetails"
+          component={StacDetailsScreen}
+          options={{ title: 'STAC Details' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
