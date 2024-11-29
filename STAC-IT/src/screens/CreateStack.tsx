@@ -95,7 +95,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
         const formattedHours = hours % 12 || 12; // Convert to 12-hour format
         return `${formattedHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
     };
-    
+
     const validateEndTime = (selectedTime: Date) => {
         if (startTime && selectedTime < startTime) {
             Alert.alert("Error", "End Time cannot be earlier than Start Time.");
@@ -112,7 +112,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
             Alert.alert('Error', 'All fields are required.');
             return false;
         }
-        
+
         if (!validStates.includes(state.toUpperCase())) {
             Alert.alert('Error', 'Please enter a valid US state abbreviation.');
             return false;
@@ -121,7 +121,9 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
     };
 
     const callBackendModel = async (message: string) => {
+        console.log("Calling backend model...");
         try {
+            console.log(message);
             const response = await axios.post(
                 'http://10.0.2.2:8000/chatbot/call-model/',
                 new URLSearchParams({ message }),
@@ -137,9 +139,9 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
 
     const handleCreateStack = async () => {
         if (!validateForm()) return;
-        let budgetCategory = ""; 
-        const budgetValue = parseInt(budget, 10); 
-    
+        let budgetCategory = "";
+        const budgetValue = parseInt(budget, 10);
+
         if (budgetValue < 30) {
             budgetCategory = "cheap";
         } else if (budgetValue >= 30 && budgetValue <= 60) {
@@ -150,13 +152,13 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
             Alert.alert("Error", "Invalid budget value.");
             return;
         }
-    
+
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
             try {
                 // Generate a unique document ID
                 const stackId = Date.now().toString();
-                
+
                 // Create the stack document with the user's ID
                 await setDoc(doc(FIREBASE_DB, "stacks", stackId), {
                     userId: user.uid, // Add this field
@@ -170,18 +172,18 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                     numberOfPeople,
                     createdAt: new Date().toISOString(),
                 });
-    
+
                 Alert.alert('Success', 'Stack created successfully!');
                 const userInput = `Location: ${city}, ${state.toUpperCase()}, Preferences: ${preferences}, Budget: ${budget}`;
                 await callBackendModel(userInput);
-        
+
             } catch (error) {
                 console.error("Error saving document:", error);
                 Alert.alert('Error', 'Failed to create STAC');
             }
         }
     };
-    
+
 
     const handleShareWithFriends = async () => {
         try {
@@ -213,11 +215,11 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                 createdAt: new Date().toISOString(),
             }, { merge: true });
         }
-        
-        navigation.navigate('MainTabs', { 
-            screen: 'Home', 
-            params: { 
-                refresh: true 
+
+        navigation.navigate('MainTabs', {
+            screen: 'Home',
+            params: {
+                refresh: true
             }
         });
         setResponseModalVisible(false);
@@ -350,7 +352,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                             onChangeText={setBudget}
                             keyboardType="numeric"
                         />
-                        
+
 
                         <Button title="Submit" onPress={handleCreateStack} />
                         <Button
