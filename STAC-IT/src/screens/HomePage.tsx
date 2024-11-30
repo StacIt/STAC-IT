@@ -179,36 +179,40 @@ const StacDetailsScreen: React.FC = () => {
     const { stac } = route.params;
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.modalTitle}>{stac.stacName}</Text>
-            <View style={styles.detailsContainer}>
-                <Text style={styles.modalLabel}>Date:</Text>
-                <Text style={styles.modalText}>{stac.date}</Text>
-                
-                <Text style={styles.modalLabel}>Time:</Text>
-                <Text style={styles.modalText}>
-                    {`${new Date(stac.startTime).toLocaleTimeString()} - ${new Date(stac.endTime).toLocaleTimeString()}`}
-                </Text>
-                
-                <Text style={styles.modalLabel}>Location:</Text>
-                <Text style={styles.modalText}>{stac.location}</Text>
-                
-                <Text style={styles.modalLabel}>Preferences:</Text>
-                <Text style={styles.modalText}>{stac.preferences}</Text>
-                
-                <Text style={styles.modalLabel}>Budget:</Text>
-                <Text style={styles.modalText}>{stac.budget}</Text>
-                
-                <Text style={styles.modalLabel}>Number of People:</Text>
-                <Text style={styles.modalText}>{stac.numberOfPeople}</Text>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollViewContent}>
+                <Text style={styles.modalTitle}>{stac.stacName}</Text>
+                <View style={styles.detailsContainer}>
+                    <Text style={styles.modalLabel}>Date:</Text>
+                    <Text style={styles.modalText}>{stac.date}</Text>
 
-                <Text style={styles.modalLabel}>Recommendations:</Text>
-                <Text style={styles.modalText}>{stac.modelResponse || 'No recommendations available'}</Text>
+                    <Text style={styles.modalLabel}>Time:</Text>
+                    <Text style={styles.modalText}>
+                        {`${new Date(stac.startTime).toLocaleTimeString()} - ${new Date(stac.endTime).toLocaleTimeString()}`}
+                    </Text>
+
+                    <Text style={styles.modalLabel}>Location:</Text>
+                    <Text style={styles.modalText}>{stac.location}</Text>
+
+                    <Text style={styles.modalLabel}>Preferences:</Text>
+                    <Text style={styles.modalText}>{stac.preferences}</Text>
+
+                    <Text style={styles.modalLabel}>Budget:</Text>
+                    <Text style={styles.modalText}>{stac.budget}</Text>
+
+                    <Text style={styles.modalLabel}>Number of People:</Text>
+                    <Text style={styles.modalText}>{stac.numberOfPeople}</Text>
+
+                    <Text style={styles.modalLabel}>Recommendations:</Text>
+                    <Text style={styles.modalText}>{stac.modelResponse || 'No recommendations available'}</Text>
+                </View>
+            </ScrollView>
+            <View>
+                <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+                    <Text style={styles.closeButtonText}>Back to Home</Text>
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.closeButtonText}>Back to Home</Text>
-            </TouchableOpacity>
-        </ScrollView>
+        </View>
     );
 };
 
@@ -233,6 +237,10 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#4a4a4a',
         marginBottom: 10,
+    },
+    scrollViewContent: {
+        padding: 20,
+        paddingBottom: 100, // Add padding to ensure content doesn't overlap with footer
     },
     activityButton: {
         backgroundColor: '#6200ea',
