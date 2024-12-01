@@ -125,7 +125,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
         try {
             console.log(message);
             const response = await axios.post(
-                'http://10.0.2.2:8000/chatbot/call-model/',
+                'http://localhost:8000/chatbot/call-model/',
                 new URLSearchParams({ message }),
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
             );
