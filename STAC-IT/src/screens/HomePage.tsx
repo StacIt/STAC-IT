@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,11 +7,11 @@ import {
     ScrollView,
     Alert,
 } from 'react-native';
-import { NavigationProp, RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { NavigationProp, RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as SMS from 'expo-sms';
 
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../FirebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
 interface HomePageProps {
     navigation: NavigationProp<any>;
@@ -32,21 +32,10 @@ interface Stac {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
-    const route = useRoute<RouteProp<{ params: { refresh?: boolean } }>>();
     const [scheduledStacs, setScheduledStacs] = useState<Stac[]>([]);
     const [pastStacs, setPastStacs] = useState<Stac[]>([]);
 
-    useEffect(() => {
-        fetchStacs();
-    }, []);
-
-    useEffect(() => {
-        if (route.params?.refresh) {
-            fetchStacs();
-        }
-    }, [route.params?.refresh]);
-
-    const fetchStacs = async () => {
+    const fetchStacs = useCallback(async () => {
         const user = FIREBASE_AUTH.currentUser;
         if (!user) return;
     
@@ -66,7 +55,6 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 const stacDate = new Date(data.date);
                 stacDate.setHours(0, 0, 0, 0);
     
-                // Only include STACs with a `modelResponse`
                 if (data.modelResponse) {
                     const stac = {
                         ...data,
@@ -81,7 +69,6 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 }
             });
     
-            // Sort by date
             fetchedScheduledStacs.sort((a, b) => 
                 new Date(a.date).getTime() - new Date(b.date).getTime()
             );
@@ -91,16 +78,17 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     
             setScheduledStacs(fetchedScheduledStacs);
             setPastStacs(fetchedPastStacs);
-            
-            console.log('Fetched Stacs with Model Response:', {
-                scheduled: fetchedScheduledStacs.length,
-                past: fetchedPastStacs.length
-            });
         } catch (error) {
             console.error("Error fetching stacs:", error);
             Alert.alert("Error", "Failed to load STACs");
         }
-    };
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchStacs();
+        }, [fetchStacs])
+    );
 
     const handleShareWithFriends = async (stac: Stac) => {
         try {
@@ -132,7 +120,7 @@ ${stac.modelResponse || 'No recommendations available'}
         }
     };
 
-    const renderStacList = (stacs: Stac[], title: string, p0: boolean) => (
+    const renderStacList = (stacs: Stac[], title: string) => (
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>{title}</Text>
             {stacs.length === 0 ? (
@@ -142,7 +130,7 @@ ${stac.modelResponse || 'No recommendations available'}
                     <View key={stac.id} style={styles.stacContainer}>
                         <TouchableOpacity
                             style={styles.stacButton}
-                            onPress={() => navigation.navigate('StacDetails', { stac })}
+                            onPress={() => navigation.navigate('StacDetails', { stac, onDelete: fetchStacs })}
                         >
                             <Text style={styles.buttonText}>{stac.stacName}</Text>
                             <Text style={styles.stacDetails}>
@@ -154,7 +142,6 @@ ${stac.modelResponse || 'No recommendations available'}
             )}
         </View>
     );
-    
 
     return (
         <ScrollView style={styles.container}>
@@ -167,16 +154,62 @@ ${stac.modelResponse || 'No recommendations available'}
                 <Text style={styles.buttonText}>Start New STAC</Text>
             </TouchableOpacity>
 
-            {renderStacList(scheduledStacs, "Scheduled STAC", false)}
-            {renderStacList(pastStacs, "Past History", true)}
+            {renderStacList(scheduledStacs, "Scheduled STAC")}
+            {renderStacList(pastStacs, "Past History")}
         </ScrollView>
     );
 };
 
 const StacDetailsScreen: React.FC = () => {
-    const route = useRoute<RouteProp<{ params: { stac: Stac } }>>();
+    const route = useRoute<RouteProp<{ params: { stac: Stac; onDelete: () => void } }>>();
     const navigation = useNavigation();
-    const { stac } = route.params;
+    const { stac, onDelete } = route.params;
+
+    const handleDelete = async () => {
+        Alert.alert(
+            "Delete STAC",
+            "Are you sure you want to delete this STAC?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            // Delete the model response entry
+                            await deleteDoc(doc(FIREBASE_DB, "stacks", stac.id));
+
+                            // Query to find the original stack creation entry
+                            const stacsRef = collection(FIREBASE_DB, 'stacks');
+                            const q = query(stacsRef, 
+                                where('userId', '==', stac.userId),
+                                where('stacName', '==', stac.stacName),
+                                where('date', '==', stac.date)
+                            );
+                            const querySnapshot = await getDocs(q);
+
+                            // Delete the original stack creation entry if found
+                            querySnapshot.forEach(async (document) => {
+                                if (document.id !== stac.id) {
+                                    await deleteDoc(doc(FIREBASE_DB, "stacks", document.id));
+                                }
+                            });
+
+                            Alert.alert("Success", "STAC deleted successfully");
+                            onDelete(); // Call the onDelete function to refresh the HomePage
+                            navigation.goBack();
+                        } catch (error) {
+                            console.error("Error deleting STAC:", error);
+                            Alert.alert("Error", "Failed to delete STAC");
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -207,7 +240,10 @@ const StacDetailsScreen: React.FC = () => {
                     <Text style={styles.modalText}>{stac.modelResponse || 'No recommendations available'}</Text>
                 </View>
             </ScrollView>
-            <View>
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                    <Text style={styles.buttonText}>Delete STAC</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
                     <Text style={styles.closeButtonText}>Back to Home</Text>
                 </TouchableOpacity>
@@ -240,7 +276,7 @@ const styles = StyleSheet.create({
     },
     scrollViewContent: {
         padding: 20,
-        paddingBottom: 100, // Add padding to ensure content doesn't overlap with footer
+        paddingBottom: 100,
     },
     activityButton: {
         backgroundColor: '#6200ea',
@@ -307,8 +343,18 @@ const styles = StyleSheet.create({
         color: '#666',
         marginBottom: 10,
     },
+    buttonContainer: {
+        marginTop: 10,
+    },
     closeButton: {
         backgroundColor: '#6200ea',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    deleteButton: {
+        backgroundColor: '#dc3545',
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',
