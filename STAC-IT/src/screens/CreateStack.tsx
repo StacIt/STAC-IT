@@ -6,20 +6,19 @@ import {
     TouchableOpacity,
     StyleSheet,
     Modal,
-    Button,
     ScrollView,
     Alert,
-
+    Button,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import * as SMS from 'expo-sms';
 import { NavigationProp } from '@react-navigation/native';
-
 
 const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS',
@@ -41,24 +40,19 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
     const [showEndTimePicker, setShowEndTimePicker] = useState(false);
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
-    const [preferences, setPreferences] = useState('');
+    const [activities, setActivities] = useState(['']);
     const [numberOfPeople, setNumberOfPeople] = useState('');
-    const [budget, setBudget] = useState("");
+    const [budget, setBudget] = useState('');
     const [isPickerVisible, setPickerVisible] = useState(false);
 
-    // model response and reponse modal visibility
     const [modelResponse, setModelResponse] = useState('');
     const [responseModalVisible, setResponseModalVisible] = useState(false);
     const [phoneNumbers, setPhoneNumbers] = useState('');
-
-    const openPicker = () => setPickerVisible(true);
-    const closePicker = () => setPickerVisible(false);
 
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [stackData, setStackData] = useState<{ location: string, budget: string, preferences: string } | null>(null);
-
 
     useEffect(() => {
         fetchStackData();
@@ -87,12 +81,13 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
             }
         }
     }
+
     const formatTime = (time: Date | null): string => {
         if (!time) return "Select Time";
         const hours = time.getHours();
         const minutes = time.getMinutes();
         const ampm = hours >= 12 ? "pm" : "am";
-        const formattedHours = hours % 12 || 12; // Convert to 12-hour format
+        const formattedHours = hours % 12 || 12;
         return `${formattedHours}:${minutes.toString().padStart(2, "0")}${ampm}`;
     };
 
@@ -106,7 +101,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
 
     const validateForm = () => {
         if (
-            !startTime || !endTime || !city || !state || !preferences ||
+            !startTime || !endTime || !city || !state || activities.length === 0 ||
             !budget || !numberOfPeople
         ) {
             Alert.alert('Error', 'All fields are required.');
@@ -153,15 +148,15 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
             return;
         }
 
+        const preferences = activities.filter(a => a.trim() !== '').join(', ');
+
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
             try {
-                // Generate a unique document ID
                 const stackId = Date.now().toString();
 
-                // Create the stack document with the user's ID
                 await setDoc(doc(FIREBASE_DB, "stacks", stackId), {
-                    userId: user.uid, // Add this field
+                    userId: user.uid,
                     stacName,
                     startTime: startTime?.toISOString(),
                     endTime: endTime?.toISOString(),
@@ -184,7 +179,6 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
         }
     };
 
-
     const handleShareWithFriends = async () => {
         try {
             const phoneNumbersArray = phoneNumbers.split(',').map(num => num.trim());
@@ -199,7 +193,6 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
     const handleAddToList = () => {
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
-            // Update the document with the model response
             const stackId = Date.now().toString();
             setDoc(doc(FIREBASE_DB, "stacks", stackId), {
                 userId: user.uid,
@@ -208,7 +201,7 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                 endTime: endTime?.toISOString(),
                 date: date.toDateString(),
                 location: `${city}, ${state.toUpperCase()}`,
-                preferences,
+                preferences: activities.join(', '),
                 budget,
                 numberOfPeople,
                 modelResponse,
@@ -231,6 +224,33 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
         setDate(currentDate);
     };
 
+    const addActivity = () => {
+        setActivities([...activities, '']);
+    };
+
+    const removeActivity = (index: number) => {
+        if (index === 0) return;
+        const newActivities = activities.filter((_, i) => i !== index);
+        setActivities(newActivities);
+    };
+
+    const updateActivity = (text: string, index: number) => {
+        const newActivities = [...activities];
+        newActivities[index] = text;
+        setActivities(newActivities);
+    };
+
+    const activityExamples = [
+        'Grab a coffee',
+        'Watch a movie',
+        'Go biking',
+        'Visit a park',
+        'Attend local music event',
+        'Try a new restaurant',
+        'Visit a museum',
+        'Go bowling'
+    ];
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -240,7 +260,6 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                 <Text style={styles.buttonText}>Create STAC</Text>
             </TouchableOpacity>
 
-            {/* Modal for creating a new STAC */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -248,123 +267,141 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalContainer}>
-                    <ScrollView contentContainerStyle={styles.modalContent}>
+                    <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Create a New STAC</Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="STAC Name"
-                            value={stacName}
-                            onChangeText={setStacName}
-                        />
-
-                        <TouchableOpacity
-                            onPress={() => setShowDatePicker(true)}
-                            style={styles.input}
-                        >
-                            <Text>{date.toDateString()}</Text>
-                        </TouchableOpacity>
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={date}
-                                mode="date"
-                                display="default"
-                                onChange={onChangeDate}
+                        <ScrollView style={styles.formScrollView}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="STAC Name"
+                                value={stacName}
+                                onChangeText={setStacName}
                             />
-                        )}
 
-                        {/* Start Time Picker */}
-                        <TouchableOpacity
-                            onPress={() => setShowStartTimePicker(true)}
-                            style={styles.input}
-                        >
-                            <Text>{formatTime(startTime)}</Text>
-                        </TouchableOpacity>
-                        {showStartTimePicker && (
-                            <DateTimePicker
-                                value={startTime || new Date()}
-                                mode="time"
-                                is24Hour={false}
-                                display="default"
-                                onChange={(event, selectedTime) => {
-                                    setShowStartTimePicker(false);
-                                    if (selectedTime) setStartTime(selectedTime);
-                                }}
+                            <TouchableOpacity
+                                onPress={() => setShowDatePicker(true)}
+                                style={styles.input}
+                            >
+                                <Text>{date.toDateString()}</Text>
+                            </TouchableOpacity>
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={date}
+                                    mode="date"
+                                    display="default"
+                                    onChange={onChangeDate}
+                                />
+                            )}
+
+                            <TouchableOpacity
+                                onPress={() => setShowStartTimePicker(true)}
+                                style={styles.input}
+                            >
+                                <Text>{formatTime(startTime)}</Text>
+                            </TouchableOpacity>
+                            {showStartTimePicker && (
+                                <DateTimePicker
+                                    value={startTime || new Date()}
+                                    mode="time"
+                                    is24Hour={false}
+                                    display="default"
+                                    onChange={(event, selectedTime) => {
+                                        setShowStartTimePicker(false);
+                                        if (selectedTime) setStartTime(selectedTime);
+                                    }}
+                                />
+                            )}
+
+                            <TouchableOpacity
+                                onPress={() => setShowEndTimePicker(true)}
+                                style={styles.input}
+                            >
+                                <Text>{formatTime(endTime)}</Text>
+                            </TouchableOpacity>
+                            {showEndTimePicker && (
+                                <DateTimePicker
+                                    value={endTime || new Date()}
+                                    mode="time"
+                                    is24Hour={false}
+                                    display="default"
+                                    onChange={(event, selectedTime) => {
+                                        setShowEndTimePicker(false);
+                                        if (selectedTime && validateEndTime(selectedTime)) {
+                                            setEndTime(selectedTime);
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="City"
+                                value={city}
+                                onChangeText={setCity}
                             />
-                        )}
 
-                        {/* End Time Picker */}
-                        <TouchableOpacity
-                            onPress={() => setShowEndTimePicker(true)}
-                            style={styles.input}
-                        >
-                            <Text>{formatTime(endTime)}</Text>
-                        </TouchableOpacity>
-                        {showEndTimePicker && (
-                            <DateTimePicker
-                                value={endTime || new Date()}
-                                mode="time"
-                                is24Hour={false}
-                                display="default"
-                                onChange={(event, selectedTime) => {
-                                    setShowEndTimePicker(false);
-                                    if (selectedTime && validateEndTime(selectedTime)) {
-                                        setEndTime(selectedTime);
-                                    }
-                                }}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="State (e.g., CA)"
+                                value={state}
+                                onChangeText={setState}
+                                maxLength={2}
                             />
-                        )}
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="City"
-                            value={city}
-                            onChangeText={setCity}
-                        />
+                            {activities.map((activity, index) => (
+                                <View key={index} style={styles.activityContainer}>
+                                    <TextInput
+                                        style={styles.activityInput}
+                                        placeholder={`Activity ${index + 1} (e.g., ${activityExamples[index % activityExamples.length]})`}
+                                        value={activity}
+                                        onChangeText={(text) => updateActivity(text, index)}
+                                    />
+                                    {index > 0 && (
+                                        <TouchableOpacity onPress={() => removeActivity(index)} style={styles.iconButton}>
+                                            <Ionicons name="remove-circle-outline" size={24} color="red" />
+                                        </TouchableOpacity>
+                                    )}
+                                    {index === activities.length - 1 && (
+                                        <TouchableOpacity onPress={addActivity} style={styles.iconButton}>
+                                            <Ionicons name="add-circle-outline" size={24} color="green" />
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            ))}
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="State (e.g., CA)"
-                            value={state}
-                            onChangeText={setState}
-                            maxLength={2}
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Number of People"
+                                value={numberOfPeople}
+                                onChangeText={setNumberOfPeople}
+                                keyboardType="numeric"
+                            />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Preferences"
-                            value={preferences}
-                            onChangeText={setPreferences}
-                        />
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Number of People"
-                            value={numberOfPeople}
-                            onChangeText={setNumberOfPeople}
-                            keyboardType="numeric"
-                        />
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Budget ($maximum per person)"
-                            value={budget}
-                            onChangeText={setBudget}
-                            keyboardType="numeric"
-                        />
-
-
-                        <Button title="Submit" onPress={handleCreateStack} />
-                        <Button
-                            title="Cancel"
-                            color="red"
-                            onPress={() => setModalVisible(false)}
-                        />
-                    </ScrollView>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Budget ($maximum per person)"
+                                value={budget}
+                                onChangeText={setBudget}
+                                keyboardType="numeric"
+                            />
+                        </ScrollView>
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={[styles.footerButton, styles.submitButton]}
+                                onPress={handleCreateStack}
+                            >
+                                <Text style={styles.footerButtonText}>Submit</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.footerButton, styles.cancelButton]}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.footerButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </Modal>
 
-            {/* Modal for seeing the formatted model response */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -372,32 +409,34 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
                 onRequestClose={() => setResponseModalVisible(false)}
             >
                 <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Model Response</Text>
+                    <ScrollView>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Model Response</Text>
 
-                        <ScrollView contentContainerStyle={styles.responseScrollView}>
-                            <Text>{modelResponse}</Text>
-                        </ScrollView>
+                            <ScrollView contentContainerStyle={styles.responseScrollView}>
+                                <Text>{modelResponse}</Text>
+                            </ScrollView>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter phone numbers, separated by commas"
-                            value={phoneNumbers}
-                            onChangeText={setPhoneNumbers}
-                        />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter phone numbers, separated by commas"
+                                value={phoneNumbers}
+                                onChangeText={setPhoneNumbers}
+                            />
 
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.button} onPress={handleShareWithFriends}>
-                                <Text style={styles.buttonText}>Share with Friends</Text>
-                            </TouchableOpacity>
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.button} onPress={handleShareWithFriends}>
+                                    <Text style={styles.buttonText}>Share with Friends</Text>
+                                </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.button} onPress={handleAddToList}>
-                                <Text style={styles.buttonText}>Add to List</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={handleAddToList}>
+                                    <Text style={styles.buttonText}>Add to List</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <Button title="Close" onPress={() => setResponseModalVisible(false)} />
                         </View>
-
-                        <Button title="Close" onPress={() => setResponseModalVisible(false)} />
-                    </View>
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
@@ -430,16 +469,46 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         backgroundColor: 'white',
-        marginTop: 125,
-        margin: 50,
-        padding: 20,
+        margin: 20,
         borderRadius: 10,
-        alignItems: 'center',
+        paddingTop: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 10,
+        maxHeight: '80%',
+        flexDirection: 'column',
     },
     modalTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
+        textAlign: 'center',
+    },
+    formScrollView: {
+        flexGrow: 1,
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    footerButton: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    submitButton: {
+        backgroundColor: '#6200ea',
+        marginRight: 5,
+    },
+    cancelButton: {
+        backgroundColor: 'red',
+        marginLeft: 5,
+    },
+    footerButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     input: {
         width: '100%',
@@ -452,7 +521,6 @@ const styles = StyleSheet.create({
     },
     responseScrollView: {
         paddingVertical: 10,
-        maxHeight: 600,
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -468,4 +536,21 @@ const styles = StyleSheet.create({
         flex: 1,
         marginHorizontal: 5,
     },
+    activityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    activityInput: {
+        flex: 1,
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 5,
+        paddingLeft: 10,
+    },
+    iconButton: {
+        marginLeft: 10,
+    },
 });
+

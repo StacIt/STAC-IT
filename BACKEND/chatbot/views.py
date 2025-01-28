@@ -23,7 +23,7 @@ pipeline = transformers.pipeline(
 )"""
 
 client = InferenceClient(api_key="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") #hugging face
-api_key = "AIzaSyDHZNxYLeb2Juq-1SAzMNsktEBEHk8HZQ8" #need to get an API key
+api_key = "AIzaSyAhm4JCM5KT76NIyIt6bB2w0as_7BMv6eQ" #need to get an API key
 #places api
 
 
@@ -73,28 +73,30 @@ def generate_planner_response(user_input):
     if isinstance(places_data, dict) and "error" in places_data:
         return places_data["error"]
 
-    if not places_data:
-        return "No places found. Please provide a valid location or preferences."
+    # if not places_data:
+    #     return "No places found. Please provide a valid location or preferences."
 
-    places_for_prompt = ""
-    for place in places_data:
-        places_for_prompt += (
-            f"Place: {place['name']}, Location: {place.get('formatted_address', 'N/A')}, "
-            f"Rating: {place.get('rating', 'N/A')} (based on {place.get('user_ratings_total', 'N/A')} reviews), "
-            f"Price Level: {place.get('price_level', 'N/A')}.\n"
-        )
+    # places_for_prompt = ""
+    # for place in places_data:
+    #     places_for_prompt += (
+    #         f"Place: {place['name']}, Location: {place.get('formatted_address', 'N/A')}, "
+    #         f"Rating: {place.get('rating', 'N/A')} (based on {place.get('user_ratings_total', 'N/A')} reviews), "
+    #         f"Price Level: {place.get('price_level', 'N/A')}.\n"
+    #     )
 
     prompt = (
-        f"""Help the user create a simple day plan based on their list of places: '{places_for_prompt}' and from user input: '{user_input}' get preferences, and preferred time range. Ensure each chosen activity fits within the user's available hours and the location's open hours, allowing 30 minutes between activities for transportation. with exactly three stops based on the highest-rated places from the list. Match the activities to the user's interests (e.g., cake, steak, bubble tea) and ensure each place is open during the user's available times.
+        f"""
+        Help the user create a simple day plan based on their list of places:  and from user input: '{user_input}' get preferences, and preferred time range. Extract their preferences from the user input. For EACH preference, suggest **exactly three high-rated places** that match their interest, ensuring the places are open during the user's available hours. Ensure each preference  fits within the user's available hours and the location's open hours, allowing 30 minutes between each preferences for transportation. 
 
-        For each stop, provide:
+        For each preference in user input, provide:
 
-        Stop Number: Label each activity as Stop 1, Stop 2, and Stop 3.
-        Place Name: Mention the name of the place.
-        Activity Description: Describe what the user will enjoy at each location, including recommended flavors, dishes, or highlights.
-        Location: Add the address of the location.
+        <Preference 1>: Label of the preference
+        <Option 1>: Mention the name of the place.
+        <Option 1 Activity Description>: Describe what the user will enjoy at each location, including recommended flavors, dishes, or highlights. Create an expereince rather than saying something like "eat at a place".
+        <Option 1Location>: Add the address of the location.
         Timing: Mention the start and end time for each stop, ensuring a 30-minute buffer for transportation.
         Open Hours: List the open hours for each place.
+        and so on for other two options at each preference.
         Format the output in a warm, conversational tone that feels like local advice for a fun day out, with no technical formatting or code. 
         """
     )
@@ -118,7 +120,7 @@ def generate_planner_response(user_input):
     stream = client.chat.completions.create(
         model="meta-llama/Meta-Llama-3-70B-Instruct", 
 	    messages=messages, 
-	    max_tokens=512,
+	    max_tokens=1024,
 	    stream=True
     )
 
