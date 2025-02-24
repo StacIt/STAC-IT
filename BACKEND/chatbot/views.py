@@ -1,32 +1,24 @@
 from huggingface_hub import InferenceClient
 from django.shortcuts import render
 import requests
-# import torch
-# import transformers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
-from django.http import JsonResponse
 from django.http import HttpResponse
+import time
+import uuid
+import logging
+def generate_response(preference, options):
+    response = f"Your preference: **{preference}**\nOptions:\n"
+    for option in options:
+        response += f"*{option}*\n"
+    return response
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-"""device = 0 if torch.cuda.is_available() else -1
-model_id = 'chatbot/llamamodel' #3.1B
-pipeline = transformers.pipeline(
-    "text-generation",
-    model=model_id,
-    model_kwargs={
-        "torch_dtype": torch.bfloat16,
-        "pad_token_id": None,
-    },
-    device=device,
-)"""
-
-client = InferenceClient(api_key="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") #hugging face
-api_key = "AIzaSyAhm4JCM5KT76NIyIt6bB2w0as_7BMv6eQ" #need to get an API key
-#places api
-
-
+client = InferenceClient(api_key="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")  # Hugging Face API key
+api_key = "AIzaSyAhm4JCM5KT76NIyIt6bB2w0as_7BMv6eQ"  # Google Places API key
 
 def get_place_details(place_id):
     base_url = "https://maps.googleapis.com/maps/api/place/details/json"
@@ -39,7 +31,7 @@ def get_place_details(place_id):
     if response.status_code == 200:
         return response.json().get("result", {})
     else:
-        print(f"Error fetching place details: {response.status_code} - {response.text}")
+        logger.error(f"Error fetching place details: {response.status_code} - {response.text}")
         return {}
 
 def google_places_text_search(api_key, query, location=None, radius=None):
@@ -61,105 +53,111 @@ def google_places_text_search(api_key, query, location=None, radius=None):
                 detailed_results.append(detailed_place)
         return detailed_results
     else:
-        print(f"Error fetching text search: {response.status_code} - {response.text}")
+        logger.error(f"Error fetching text search: {response.status_code} - {response.text}")
         return []
 
-def generate_planner_response(user_input):
-    location = None 
-    radius = None    
+def travel_agent(user_input, request_id, timestamp, temp):
+    return generate_planner_response(user_input, request_id, timestamp, temp)
 
-    places_data = google_places_text_search(api_key, user_input, location, radius)
+def music_agent(user_input, request_id, timestamp, temp):
+    return "Music agent response"
+
+def food_agent(user_input, request_id, timestamp, temp):
+    return "Food agent response"
+
+def detect_agent(user_input):
+    """Determine which agent should handle the request based on keywords."""
+    keywords = {
+        "travel": ["trip", "vacation", "places", "tourist", "visit"],
+        "music": ["song", "playlist", "album", "band", "concert"],
+        "food": ["restaurant", "cafe", "eat", "dining", "food"]
+    }
+
+    for category, words in keywords.items():
+        if any(word in user_input.lower() for word in words):
+            return category
+    return "default"
+
+def generate_planner_response(user_input, request_id, timestamp, temp):
+    places_data = google_places_text_search(api_key, user_input)
 
     if isinstance(places_data, dict) and "error" in places_data:
         return places_data["error"]
 
-    # if not places_data:
-    #     return "No places found. Please provide a valid location or preferences."
+    prompt = f"""
+    [Request ID: {request_id}]
+    [Timestamp: {timestamp}]
+    Help the user create a simple day plan based on their list of places: {places_data} and from user input: '{user_input}'.
+    Extract their preferences from the user input. For EACH preference, suggest **exactly three high-rated places**
+    that match their interest, ensuring the places are open during the user's available hours.
+    Provide address for each location from the places data shared earlier.
+    Allow 30 minutes between each preference for transportation.
+    For formatting, the first time show up of exactly three high-rated places for every perferences have format like **name**(two*). Any other format can not cover by ** like **context**! But for each preference that user input, please use /name/(only one /!)!
 
-    # places_for_prompt = ""
-    # for place in places_data:
-    #     places_for_prompt += (
-    #         f"Place: {place['name']}, Location: {place.get('formatted_address', 'N/A')}, "
-    #         f"Rating: {place.get('rating', 'N/A')} (based on {place.get('user_ratings_total', 'N/A')} reviews), "
-    #         f"Price Level: {place.get('price_level', 'N/A')}.\n"
-    #     )
+    Format the output in a warm, conversational tone that feels like local advice for a fun day out.
+    """
 
-    prompt = (
-        f"""
-        Help the user create a simple day plan based on their list of places:  and from user input: '{user_input}' get preferences, and preferred time range. Extract their preferences from the user input. For EACH preference, suggest **exactly three high-rated places** that match their interest, ensuring the places are open during the user's available hours. Ensure each preference  fits within the user's available hours and the location's open hours, allowing 30 minutes between each preferences for transportation. 
-
-        For each preference in user input, provide:
-
-        <Preference 1>: Label of the preference
-        <Option 1>: Mention the name of the place.
-        <Option 1 Activity Description>: Describe what the user will enjoy at each location, including recommended flavors, dishes, or highlights. Create an expereince rather than saying something like "eat at a place".
-        <Option 1Location>: Add the address of the location.
-        Timing: Mention the start and end time for each stop, ensuring a 30-minute buffer for transportation.
-        Open Hours: List the open hours for each place.
-        and so on for other two options at each preference.
-        Format the output in a warm, conversational tone that feels like local advice for a fun day out, with no technical formatting or code. 
-        """
-    )
-
-    messages = [
-    {
-        "role": "user",
-        "content": prompt
-    }
-]
-
-    
-    """outputs = pipeline(
-        prompt,
-        max_new_tokens=512,  
-        do_sample=True,
-        temperature=0.6,
-        top_p=0.9,
-    )"""
+    messages = [{"role": "user", "content": prompt}]
 
     stream = client.chat.completions.create(
         model="meta-llama/Meta-Llama-3-70B-Instruct", 
-	    messages=messages, 
-	    max_tokens=1024,
-	    stream=True
+        messages=messages, 
+        max_tokens=2048,
+        temperature=temp,  # Dynamic temperature parameter
+        stream=True,
     )
-
-    """for chunk in stream:
-        print(chunk.choices[0].delta.content, end="")"""
 
     outputs = ""
     for chunk in stream:
         outputs += chunk.choices[0].delta.content
     
-    #activities = outputs[0]["generated_text"].strip()
-    #activities = outputs[0]["generated_text"].strip()
-    #activities_with_newlines = activities.replace('", "', '",\n "').replace('{', '{\n ').replace('},', '\n},')
-    
-    formatted_response = "Here are some fun activities you might enjoy:\n\n"
-    #formatted_response += activities_with_newlines
-    formatted_response += outputs
+    formatted_response = f"Here are some fun activities you might enjoy (Request ID: {request_id}):\n\n" + outputs
+
+    logger.info(f"Request ID: {request_id}")
+    logger.info(f"User Input: {user_input}")
+    logger.info(f"Generated Response: {formatted_response[:200]}...")
 
     return formatted_response
-
-from rest_framework.decorators import api_view
-from django.http import JsonResponse
 
 @api_view(['POST'])
 def chatbot_api(request):
     if request.method == 'POST':
-        user_input = request.POST.get('message') 
-        response = generate_planner_response(user_input)
-        
+        user_input = request.POST.get('message')
+        timestamp = request.POST.get('timestamp', int(time.time()))  # Current timestamp if not provided
+        request_id = str(uuid.uuid4())  # Unique request ID
+        temp = request.POST.get('temperature', 0.7)  # Default temperature if not provided
+
+        agent = detect_agent(user_input)
+
+        if agent == "travel":
+            response = travel_agent(user_input, request_id, timestamp, temp)
+        elif agent == "music":
+            response = music_agent(user_input, request_id, timestamp, temp)
+        elif agent == "food":
+            response = food_agent(user_input, request_id, timestamp, temp)
+        else:
+            response = generate_planner_response(user_input, request_id, timestamp, temp)
+
         return HttpResponse(response) 
 
 def call_model(request):
     if request.method == 'POST':
-        message = request.POST.get('message')  # Get the user input
+        message = request.POST.get('message')
+        timestamp = request.POST.get('timestamp', int(time.time()))  # Current timestamp if not provided
+        request_id = str(uuid.uuid4())  # Unique request ID
+        temp = request.POST.get('temperature', 0.7)  # Default temperature if not provided
 
-        if message:
-            output = generate_planner_response(message)
-            return render(request, 'chatbot/output_page.html', {'output': output})
+        agent = detect_agent(message)
+
+        if agent == "travel":
+            output = travel_agent(message, request_id, timestamp, temp)
+        elif agent == "music":
+            output = music_agent(message, request_id, timestamp, temp)
+        elif agent == "food":
+            output = food_agent(message, request_id, timestamp, temp)
         else:
-            return render(request, 'chatbot/input_page.html', {'error': 'Please enter a message.'})
+            output = generate_planner_response(message, request_id, timestamp, temp)
 
+        return render(request, 'chatbot/output_page.html', {'output': output})
+    
     return render(request, 'chatbot/input_page.html')
