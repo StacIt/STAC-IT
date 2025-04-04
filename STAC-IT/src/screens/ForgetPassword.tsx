@@ -7,9 +7,9 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FIREBASE_AUTH } from '../../FirebaseConfig';
-import { sendPasswordResetEmail, fetchSignInMethodsForEmail } from '@firebase/auth';
+import { sendPasswordResetEmail } from '@firebase/auth';
 import { NavigationProp } from '@react-navigation/native';
 
 interface ForgetPasswordProps {
@@ -19,32 +19,42 @@ interface ForgetPasswordProps {
 const ForgetPassword: React.FC<ForgetPasswordProps> = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0); // Time left for resending the email
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout | undefined;
+        if (timeLeft > 0) {
+            timer = setInterval(() => setTimeLeft(prevTime => prevTime - 1), 1000);
+        } else if (timer) {
+            clearInterval(timer);
+        }
+        return () => clearInterval(timer); // Cleanup timer on unmount
+    }, [timeLeft]);
 
     const handlePasswordReset = async () => {
         setLoading(true);
+        setResetSent(false);  // Reset the resetSent state when initiating the password reset
+        setTimeLeft(60); // Set the timer for 60 seconds after sending the email
 
         try {
-            // Check if email is registered
-            const signInMethods = await fetchSignInMethodsForEmail(FIREBASE_AUTH, email);
-            if (signInMethods.length === 0) {
-                // No account found with this email
-                Alert.alert("Email not registered", "No account found with this email. Please try again.");
-                return;
-            }
+            const auth = FIREBASE_AUTH;
+            const formattedEmail = email.trim().toLowerCase();
 
-            // Send email to reset password
-            await sendPasswordResetEmail(FIREBASE_AUTH, email);
-            Alert.alert("Password Reset", "Check your email for a link to reset your password!");
-            navigation.navigate("Login"); 
+            await sendPasswordResetEmail(auth, formattedEmail);
+            setResetSent(true);
+            Alert.alert("Password Reset", "Check your email for a reset link!");
         } catch (error: any) {
             console.log(error);
 
             if (error.code === 'auth/invalid-email') {
                 Alert.alert("Invalid Email", "Please enter a valid email address.");
             } else if (error.code === 'auth/user-disabled') {
-                Alert.alert("Account Disabled", "This account has been disabled. Please contact support.");
+                Alert.alert("Account Disabled", "This account has been disabled. Contact support.");
+            } else if (error.code === 'auth/user-not-found') {
+                Alert.alert("No Account Found", "No account associated with this email.");
             } else {
-                Alert.alert("Password Reset Failed", "Please check your email and try again.");
+                Alert.alert("Error", "Something went wrong. Try again.");
             }
         } finally {
             setLoading(false);
@@ -67,6 +77,17 @@ const ForgetPassword: React.FC<ForgetPasswordProps> = ({ navigation }) => {
             ) : (
                 <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
                     <Text style={styles.buttonText}>Send Reset Link</Text>
+                </TouchableOpacity>
+            )}
+            {resetSent && timeLeft > 0 && (
+                <Text style={styles.timer}>Resend link in {timeLeft}s</Text>
+            )}
+            {resetSent && timeLeft === 0 && (
+                <TouchableOpacity
+                    style={styles.link}
+                    onPress={handlePasswordReset}
+                >
+                    <Text>Didn't receive the link? Resend here.</Text>
                 </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.link} onPress={() => navigation.navigate("Login")}>
@@ -112,5 +133,10 @@ const styles = StyleSheet.create({
     link: {
         marginTop: 20,
         alignItems: "center",
+    },
+    timer: {
+        marginTop: 10,
+        textAlign: "center",
+        color: "gray",
     },
 });

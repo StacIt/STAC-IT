@@ -47,7 +47,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
 
         if (userSnap.exists()) {
             const userData = userSnap.data();
-            return userData.fullName && userData.birthDate && userData.gender;
+            return userData.fullName && userData.birthDate;
         }
         return false;
     };
@@ -69,9 +69,9 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                 Alert.alert("Email not verified", "Please check your email for the verification link.");
             }
 
-        } catch (error) {
-            console.log(error);
-            Alert.alert("Account not found", "Check email and password again or create a new account");
+        } catch (error: any) {
+            console.log("Firebase Login Error:", error.message);
+            Alert.alert("Login Failed", error.message);
         }
         setLoading(false);
     };

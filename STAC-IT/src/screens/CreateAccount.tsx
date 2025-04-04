@@ -5,21 +5,14 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
-import { NavigationProp } from '@react-navigation/native';
-import {
-    createUserWithEmailAndPassword,
-    sendEmailVerification,
-} from "@firebase/auth";
-
+import { NavigationProp } from "@react-navigation/native";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "@firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-
 import { Ionicons } from "@expo/vector-icons";
-
 
 interface CreateAccountProps {
     navigation: NavigationProp<any>;
@@ -32,8 +25,20 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [verificationSent, setVerificationSent] = useState(false); // Track if the verification email was sent
+    const [timeLeft, setTimeLeft] = useState(0); // Timer for resending the verification email
 
     const auth = FIREBASE_AUTH;
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout | undefined;
+        if (timeLeft > 0) {
+            timer = setInterval(() => setTimeLeft(prevTime => prevTime - 1), 1000);
+        } else if (timer) {
+            clearInterval(timer);
+        }
+        return () => clearInterval(timer); // Cleanup timer on unmount
+    }, [timeLeft]);
 
     const validateEmail = (email: string) => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +48,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
             setError("");
         }
     };
+
     const validatePassword = (password: string) => {
         const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
         if (!regex.test(password)) {
@@ -65,7 +71,11 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
             // Send verification email
             await sendEmailVerification(user);
-            alert("Check your email for a verification link. If it doesn't arrive in 5 minutes, check your spam folder.");
+            setVerificationSent(true); // Mark verification as sent
+            setTimeLeft(60); // Set the timer for 60 seconds before allowing resend
+
+            // Show an alert indicating that the verification email has been sent
+            Alert.alert("Verification Sent", "A verification email has been sent to your email address. Please check your inbox!");
 
             // Save user data to Firestore
             try {
@@ -74,13 +84,10 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                     acceptedTerms: acceptedTerms,
                     createdAt: new Date(),
                 });
-
             } catch (firestoreError) {
                 console.error("Error adding document to Firestore: ", firestoreError);
                 alert("Failed to save user data.");
             }
-
-            afterSignUp();
         } catch (error) {
             console.log(error);
             alert("Sign up failed: " + error);
@@ -88,24 +95,24 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         setLoading(false);
     };
 
-    const afterSignUp = () => {
-        navigation.navigate("Login");
-    };
-
-    const handleAlreadyHaveAccount = () => {
-        navigation.navigate("Login");
-    };
-
     const handleResendVerification = async () => {
-        if (auth.currentUser) {
+        if (auth.currentUser && timeLeft === 0) {
             try {
                 await sendEmailVerification(auth.currentUser);
+                setVerificationSent(true);
+                setTimeLeft(60); // Reset timer after resend
                 alert("Verification email resent. Please check your inbox.");
             } catch (error) {
                 console.log(error);
                 alert("Failed to resend verification email: " + error);
             }
+        } else if (timeLeft > 0) {
+            alert(`Please wait ${timeLeft} seconds before trying again.`);
         }
+    };
+
+    const handleAlreadyHaveAccount = () => {
+        navigation.navigate("Login");
     };
 
     const ShowIcon = <Ionicons name="eye" size={24} color="black" />;
@@ -113,62 +120,66 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <KeyboardAvoidingView behavior="padding">
-
+            <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={(text) => { setEmail(text); validateEmail(text); }}
+                placeholder="Email"
+                autoCapitalize="none"
+            />
+            <View style={styles.passwordContainer}>
                 <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={(text) => { setEmail(text); validateEmail(text); }}
-                    placeholder="Email"
+                    style={styles.passwordInput}
+                    value={password}
+                    onChangeText={(text) => { setPassword(text); validatePassword(text); }}
+                    placeholder="Password"
+                    secureTextEntry={!showPassword}
                     autoCapitalize="none"
                 />
-                <View style={styles.passwordContainer}>
-                    <TextInput
-                        style={styles.passwordInput}
-                        value={password}
-                        onChangeText={(text) => { setPassword(text); validatePassword(text); }}
-                        placeholder="Password"
-                        secureTextEntry={!showPassword}
-                        autoCapitalize="none"
-                    />
-                    <TouchableOpacity
-                        style={styles.visibilityToggle}
-                        onPress={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? HideIcon : ShowIcon}
+                <TouchableOpacity
+                    style={styles.visibilityToggle}
+                    onPress={() => setShowPassword(!showPassword)}
+                >
+                    {showPassword ? HideIcon : ShowIcon}
+                </TouchableOpacity>
+            </View>
+
+            <Text style={{ color: "red" }}>{error}</Text>
+
+            {loading ? (
+                <ActivityIndicator size="small" color="#000000" />
+            ) : (
+                <>
+                    <View style={styles.checkboxContainer}>
+                        <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.checkbox}>
+                            {acceptedTerms ? <Text style={styles.checked}>✔️</Text> : <Text style={styles.unchecked}>⬜️</Text>}
+                        </TouchableOpacity>
+                        <Text style={styles.label}>
+                            I accept the <Text style={styles.link}>Terms and Conditions</Text>
+                        </Text>
+                    </View>
+                    <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+                        <Text style={{ color: "white" }}>Sign Up</Text>
                     </TouchableOpacity>
-                </View>
 
-                <Text style={{ color: "red" }}>{error}</Text>
+                    <TouchableOpacity style={styles.button} onPress={handleAlreadyHaveAccount}>
+                        <Text style={{ color: "white" }}>Account verified? Login here</Text>
+                    </TouchableOpacity>
 
-                {loading ? (
-                    <ActivityIndicator size="small" color="#000000" />
-                ) : (
-                    <>
-                        <View style={styles.checkboxContainer}>
-                            <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.checkbox}>
-                                {acceptedTerms ? <Text style={styles.checked}>✔️</Text> : <Text style={styles.unchecked}>⬜️</Text>}
-                            </TouchableOpacity>
-                            <Text style={styles.label}>
-                                I accept the <Text style={styles.link}>Terms and Conditions</Text>
-                            </Text>
-                        </View>
-                        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                            <Text style={{ color: "white" }}>Sign Up</Text>
+                    {/* Resend Verification Email Button */}
+                    {verificationSent && timeLeft > 0 && (
+                        <Text style={styles.timer}>Resend verification in {timeLeft}s</Text>
+                    )}
+                    {verificationSent && timeLeft === 0 && (
+                        <TouchableOpacity
+                            style={styles.link}
+                            onPress={handleResendVerification}
+                        >
+                            <Text>Didn't receive the verification email? Resend here.</Text>
                         </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.button} onPress={handleAlreadyHaveAccount}>
-                            <Text style={{ color: "white" }}>Already have an Account? Log In</Text>
-                        </TouchableOpacity>
-
-                        {/* Resend Verification Email Button */}
-                        <TouchableOpacity style={styles.button} onPress={handleResendVerification}>
-                            <Text style={{ color: "white" }}>Resend Verification Email</Text>
-                        </TouchableOpacity>
-
-                    </>
-                )}
-            </KeyboardAvoidingView>
+                    )}
+                </>
+            )}
         </View>
     );
 };
@@ -216,8 +227,13 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     link: {
-        color: "#6200ea",
-        textDecorationLine: "underline",
+        marginTop: 20,
+        alignItems: "center",
+    },
+    timer: {
+        marginTop: 10,
+        textAlign: "center",
+        color: "gray",
     },
     passwordContainer: {
         flexDirection: 'row',

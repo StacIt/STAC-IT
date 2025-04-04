@@ -2,7 +2,7 @@
   "expo": {
     "name": "STAC-IT",
     "slug": "STAC-IT",
-    "version": "1.0.0",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,17 +14,27 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "ios.bundleIdentifier": "com.company.STAC-IT"
+      "bundleIdentifier": "com.stac-it.app",
+      "buildNumber": "1.0.8",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "android.package": "com.company.STAC-IT",
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.stac-it.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d55a4c2c-70ca-4be9-a788-4a2d8692793c"
+      }
     }
   }
 }
