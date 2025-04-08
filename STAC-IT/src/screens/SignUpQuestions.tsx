@@ -76,7 +76,6 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
                     { merge: true }
                 );
 
-                Alert.alert('Success', 'Sign-up questions submitted successfully!');
                 navigation.navigate("MainTabs");
             } catch (error) {
                 Alert.alert('Error', 'Failed to save your data. Please try again.');

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, FlatList } fro
 import { NavigationProp } from '@react-navigation/native';
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { doc, getDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 
 interface ProfileProps {
     navigation: NavigationProp<any>;
@@ -49,9 +50,17 @@ const ProfilePage: React.FC<ProfileProps> = ({ navigation }) => {
         fetchUserProfile();
     }, []);
 
-    const handleLogout = () => {
-        alert("Logged out");
-        navigation.navigate('Login');
+
+    const handleLogout = async () => {
+        try {
+            await signOut(FIREBASE_AUTH);
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
+        } catch (error) {
+            console.error("Logout Error:", error);
+        }
     };
 
     const editProfile = () => {
