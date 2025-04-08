@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "stac-itteam",
     "name": "STAC-IT",
     "slug": "STAC-IT",
     "version": "1.0.9",
