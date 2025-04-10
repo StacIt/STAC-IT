@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
     View,
     Text,
@@ -146,6 +146,26 @@ const StacForm: React.FC<StacFormProps> = ({
     const [descriptions, setDescriptions] = useState<Record<string, string>>({})
     const [locations, setLocations] = useState<Record<string, string>>({})
     const [preferenceTimings, setPreferenceTimings] = useState<Record<string, Timing>>({})
+    useEffect(() => {
+        if (visible) {
+            setStacName("");
+            setDate(new Date());
+            setStartTime(null);
+            setEndTime(null);
+            setCity("");
+            setState("");
+            setActivities([""]);
+            setNumberOfPeople("");
+            setBudget("");
+            setModelResponse("");
+            setOptions({});
+            setSelectedOptions({});
+            setPreferences([]);
+            setDescriptions({});
+            setLocations({});
+            setPreferenceTimings({});
+        }
+    }, [visible]);
 
     // Create refs for each input field
     const stacNameRef = useRef<TextInput>(null)
@@ -773,15 +793,6 @@ const StacForm: React.FC<StacFormProps> = ({
                             </ScrollView>
                         </View>
                         <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.button} onPress={handleShare}>
-                                <Text style={styles.buttonText}>Share</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.button} onPress={handleFinalize}>
-                                <Text style={styles.buttonText}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.buttonContainer}>
                             <TouchableOpacity
                                 style={[styles.button, isLoading ? styles.refreshingButton : styles.refreshButton]}
                                 onPress={handleRefresh}
@@ -790,10 +801,13 @@ const StacForm: React.FC<StacFormProps> = ({
                                 <Text style={styles.buttonText}>{isLoading ? "Refreshing..." : "Refresh"}</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDelete}>
-                                <Text style={styles.buttonText}>Delete</Text>
+                            <TouchableOpacity style={styles.button} onPress={handleFinalize}>
+                                <Text style={styles.buttonText}>Save</Text>
                             </TouchableOpacity>
                         </View>
+                        <TouchableOpacity onPress={handleDelete} style={styles.deleteTextContainer}>
+                            <Text style={styles.deleteText}>Delete</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -991,7 +1005,16 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         marginLeft: 34,
     },
+    deleteTextContainer: {
+        alignItems: "center",
+        marginTop: 10,
+        padding: 5,
+    },
+    deleteText: {
+        color: "#dc3545",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
 })
 
 export default StacForm
-

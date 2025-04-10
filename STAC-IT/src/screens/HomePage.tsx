@@ -11,6 +11,7 @@ import {
     Modal,
     ScrollView,
     Alert,
+    Share,
 } from "react-native"
 import { type NavigationProp, useNavigation, useFocusEffect, useRoute, RouteProp } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
@@ -61,6 +62,29 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     const [selectedStac, setSelectedStac] = useState<Stac | null>(null)
     const [stacDetailsModalVisible, setStacDetailsModalVisible] = useState(false)
     const [createModalVisible, setCreateModalVisible] = useState(false)
+
+    const handleShare = async (stac: Stac) => {
+        try {
+            let message = `Here's my STAC: ${stac.stacName}\nDate: ${stac.date}\nLocation: ${stac.location}`
+
+            if (stac.detailedSelectedOptions) {
+                for (const [preference, options] of Object.entries(stac.detailedSelectedOptions)) {
+                    message += `\n\n🌟 ${preference}`
+                    const timing = stac.preferenceTimings?.[preference]
+                    if (timing) {
+                        message += ` (${timing.start} - ${timing.end})`
+                    }
+                    for (const option of options) {
+                        message += `\n- ${option.name}\n  ${option.description}\n  📍 ${option.location}`
+                    }
+                }
+            }
+
+            await Share.share({ message })
+        } catch (error) {
+            Alert.alert("Error", "Failed to share STAC")
+        }
+    }
 
     const fetchStacs = useCallback(async () => {
         const user = FIREBASE_AUTH.currentUser
@@ -187,6 +211,9 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <View style={styles.modalContainer}>
                     {selectedStac && (
                         <View style={styles.modalContent}>
+                            <TouchableOpacity style={{ alignSelf: "flex-end" }} onPress={() => setStacDetailsModalVisible(false)}>
+                                <Ionicons name="close-circle" size={34} color="#6200ea" />
+                            </TouchableOpacity>
                             <Text style={styles.modalTitle}>{selectedStac.stacName}</Text>
                             <Text style={styles.modalLabel}>Date: {selectedStac.date}</Text>
                             <Text style={styles.modalLabel}>Location: {selectedStac.location}</Text>
@@ -195,6 +222,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                                 {selectedStac.selectedOptions &&
                                     Object.keys(selectedStac.selectedOptions).map((preference) => (
                                         <View key={preference} style={styles.preferenceSection}>
+
                                             <View style={styles.preferenceHeaderContainer}>
                                                 <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
                                                 {selectedStac.preferenceTimings && selectedStac.preferenceTimings[preference] && (
@@ -236,11 +264,11 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
                             <View style={styles.buttonContainer}>
                                 <TouchableOpacity
-                                    style={styles.closeButton}
-                                    onPress={() => setStacDetailsModalVisible(false)}
+                                    style={styles.shareButton}
+                                    onPress={() => handleShare(selectedStac)}
                                     activeOpacity={0.7}
                                 >
-                                    <Text style={styles.closeButtonText}>Close</Text>
+                                    <Text style={styles.shareButtonText}>Share</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
@@ -437,18 +465,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
-    shareButton: {
-        backgroundColor: "#4CAF50",
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        marginLeft: 10,
-    },
-    shareButtonText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "bold",
-    },
     detailsContainer: {
         backgroundColor: "#fff",
         padding: 20,
@@ -621,6 +637,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#007bff",
         fontWeight: "500",
+    },
+    shareButton: {
+        backgroundColor: "#4CAF50",
+        padding: 10,
+        borderRadius: 5,
+        alignItems: "center",
+        marginTop: 10,
+        flex: 1,
+        marginHorizontal: 5,
+    },
+    shareButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
     },
 })
 
