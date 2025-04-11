@@ -9,7 +9,9 @@ interface LandingProps {
 const Landing: React.FC<LandingProps> = ({ navigation }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome to STAC-IT</Text>
+            <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
+                Welcome to STAC-IT
+            </Text>
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => navigation.navigate("Login")}
@@ -26,12 +28,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#f5f5f5',
+        paddingHorizontal: 20,
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        marginBottom: 20,
         color: '#333',
+        textAlign: 'center',
+        marginBottom: 20,
     },
     button: {
         backgroundColor: '#6200ea',
