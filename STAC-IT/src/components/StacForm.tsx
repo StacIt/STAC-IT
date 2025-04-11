@@ -284,7 +284,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const parseModelResponse = (response: string) => {
         try {
             let cleanResponse = response.trim()
-            if (cleanResponse.startsWith("```json") && cleanResponse.endsWith("```")) {
+            if (cleanResponse.startsWith("\`\`\`json") && cleanResponse.endsWith("\`\`\`")) {
                 cleanResponse = cleanResponse.slice(7, -3).trim()
             }
             const jsonData = typeof cleanResponse === "string" ? JSON.parse(cleanResponse) : cleanResponse
@@ -449,8 +449,8 @@ const StacForm: React.FC<StacFormProps> = ({
         }
 
         const filteredOptions: Record<string, string[]> = {}
-        Object.keys(selectedOptions).forEach((preference) => {
-            if (selectedOptions[preference].length > 0) {
+        preferences.forEach((preference) => {
+            if (selectedOptions[preference]?.length > 0) {
                 filteredOptions[preference] = selectedOptions[preference]
             }
         })
@@ -461,12 +461,14 @@ const StacForm: React.FC<StacFormProps> = ({
         }
 
         const detailedSelectedOptions: Record<string, Array<{ name: string; description: string; location: string }>> = {}
-        Object.keys(filteredOptions).forEach((preference) => {
-            detailedSelectedOptions[preference] = filteredOptions[preference].map((option) => ({
-                name: option,
-                description: descriptions[option] || "",
-                location: locations[option] || "",
-            }))
+        preferences.forEach((preference) => {
+            if (filteredOptions[preference]) {
+                detailedSelectedOptions[preference] = filteredOptions[preference].map((option) => ({
+                    name: option,
+                    description: descriptions[option] || "",
+                    location: locations[option] || "",
+                }))
+            }
         })
 
         try {
@@ -581,7 +583,6 @@ const StacForm: React.FC<StacFormProps> = ({
                     setDescriptions({})
                     setLocations({})
                     setPreferenceTimings({})
-                    Alert.alert("Success", "STAC deleted successfully!")
                 },
             },
         ])

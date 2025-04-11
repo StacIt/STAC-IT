@@ -3,7 +3,7 @@
     "owner": "stac-itteam",
     "name": "STAC-IT",
     "slug": "STAC-IT",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stac-it.app",
-      "buildNumber": "1.0.12",
+      "buildNumber": "1.0.13",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
