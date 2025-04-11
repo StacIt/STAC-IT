@@ -1,19 +1,8 @@
 "use client"
-
-import { useEffect } from "react"
 import type React from "react"
 import { useState, useCallback } from "react"
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    Modal,
-    ScrollView,
-    Alert,
-    Share,
-} from "react-native"
-import { type NavigationProp, useNavigation, useFocusEffect, useRoute, RouteProp } from "@react-navigation/native"
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert, Share } from "react-native"
+import { type NavigationProp, useNavigation, useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig"
 import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
@@ -188,10 +177,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
             <Text style={styles.title}>STAC-IT</Text>
 
-            <TouchableOpacity
-                style={styles.activityButton}
-                onPress={() => setCreateModalVisible(true)}
-            >
+            <TouchableOpacity style={styles.activityButton} onPress={() => setCreateModalVisible(true)}>
                 <Text style={styles.buttonText}>Start New STAC</Text>
             </TouchableOpacity>
 
@@ -218,13 +204,16 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                             <Text style={styles.modalLabel}>Date: {selectedStac.date}</Text>
                             <Text style={styles.modalLabel}>Location: {selectedStac.location}</Text>
                             <Text style={styles.modalLabel}>Selected Activities:</Text>
-                            <ScrollView>
-                                {selectedStac.selectedOptions &&
-                                    Object.keys(selectedStac.selectedOptions).map((preference) => (
-                                        <View key={preference} style={styles.preferenceSection}>
 
-                                            <View style={styles.preferenceHeaderContainer}>
-                                                <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
+                            <View style={styles.scrollViewWrapper}>
+                                <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.detailsScrollViewContent}>
+                                    {selectedStac.selectedOptions &&
+                                        Object.keys(selectedStac.selectedOptions).map((preference) => (
+                                            <View key={preference} style={styles.preferenceSection}>
+                                                <View style={styles.preferenceHeaderContainer}>
+                                                    <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
+                                                </View>
+
                                                 {selectedStac.preferenceTimings && selectedStac.preferenceTimings[preference] && (
                                                     <View style={styles.preferenceTimingContainer}>
                                                         <Ionicons name="time-outline" size={14} color="#666" style={styles.timingIcon} />
@@ -234,33 +223,33 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                                                         </Text>
                                                     </View>
                                                 )}
+
+                                                {selectedStac.selectedOptions?.[preference]?.map((option) => {
+                                                    const details = getOptionDetails(selectedStac, preference, option)
+                                                    return (
+                                                        <View key={option} style={styles.activityContainer}>
+                                                            <TouchableOpacity style={styles.checkboxContainer}>
+                                                                <Ionicons name="checkbox" size={24} color="#6200ea" />
+                                                                <Text style={styles.checkboxLabel}>{option}</Text>
+                                                            </TouchableOpacity>
+
+                                                            {details.description && (
+                                                                <Text style={styles.activityDescription}>{details.description}</Text>
+                                                            )}
+
+                                                            {details.location && (
+                                                                <View style={styles.locationContainer}>
+                                                                    <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
+                                                                    <Text style={styles.locationText}>{details.location}</Text>
+                                                                </View>
+                                                            )}
+                                                        </View>
+                                                    )
+                                                })}
                                             </View>
-
-                                            {selectedStac.selectedOptions?.[preference]?.map((option) => {
-                                                const details = getOptionDetails(selectedStac, preference, option)
-                                                return (
-                                                    <View key={option} style={styles.activityContainer}>
-                                                        <TouchableOpacity style={styles.checkboxContainer}>
-                                                            <Ionicons name="checkbox" size={24} color="#6200ea" />
-                                                            <Text style={styles.checkboxLabel}>{option}</Text>
-                                                        </TouchableOpacity>
-
-                                                        {details.description && (
-                                                            <Text style={styles.activityDescription}>{details.description}</Text>
-                                                        )}
-
-                                                        {details.location && (
-                                                            <View style={styles.locationContainer}>
-                                                                <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
-                                                                <Text style={styles.locationText}>{details.location}</Text>
-                                                            </View>
-                                                        )}
-                                                    </View>
-                                                )
-                                            })}
-                                        </View>
-                                    ))}
-                            </ScrollView>
+                                        ))}
+                                </ScrollView>
+                            </View>
 
                             <View style={styles.buttonContainer}>
                                 <TouchableOpacity
@@ -290,6 +279,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     )
 }
 
+// Also update the StacDetailsScreen component's ScrollView for consistency
 const StacDetailsScreen: React.FC = () => {
     const route = useRoute<RouteProp<{ params: { stac: Stac; onDelete: () => void } }>>()
     const navigation = useNavigation()
@@ -349,36 +339,39 @@ const StacDetailsScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollViewContent}>
-                <Text style={styles.modalTitle}>{stac.stacName}</Text>
-                <View style={styles.detailsContainer}>
-                    <Text style={styles.modalLabel}>Date:</Text>
-                    <Text style={styles.modalText}>{stac.date}</Text>
+            <View style={styles.scrollViewWrapper}>
+                <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.scrollViewContent}>
+                    <Text style={styles.modalTitle}>{stac.stacName}</Text>
+                    <View style={styles.detailsContainer}>
+                        <Text style={styles.modalLabel}>Date:</Text>
+                        <Text style={styles.modalText}>{stac.date}</Text>
 
-                    <Text style={styles.modalLabel}>Time:</Text>
-                    <Text style={styles.modalText}>
-                        {`${new Date(stac.startTime).toLocaleTimeString()} - ${new Date(stac.endTime).toLocaleTimeString()}`}
-                    </Text>
+                        <Text style={styles.modalLabel}>Time:</Text>
+                        <Text style={styles.modalText}>
+                            {`${new Date(stac.startTime).toLocaleTimeString()} - ${new Date(stac.endTime).toLocaleTimeString()}`}
+                        </Text>
 
-                    <Text style={styles.modalLabel}>Location:</Text>
-                    <Text style={styles.modalText}>{stac.location}</Text>
+                        <Text style={styles.modalLabel}>Location:</Text>
+                        <Text style={styles.modalText}>{stac.location}</Text>
 
-                    <Text style={styles.modalLabel}>Preferences:</Text>
-                    <Text style={styles.modalText}>{stac.preferences}</Text>
+                        <Text style={styles.modalLabel}>Preferences:</Text>
+                        <Text style={styles.modalText}>{stac.preferences}</Text>
 
-                    <Text style={styles.modalLabel}>Budget:</Text>
-                    <Text style={styles.modalText}>{stac.budget}</Text>
+                        <Text style={styles.modalLabel}>Budget:</Text>
+                        <Text style={styles.modalText}>{stac.budget}</Text>
 
-                    <Text style={styles.modalLabel}>Number of People:</Text>
-                    <Text style={styles.modalText}>{stac.numberOfPeople}</Text>
+                        <Text style={styles.modalLabel}>Number of People:</Text>
+                        <Text style={styles.modalText}>{stac.numberOfPeople}</Text>
 
-                    {stac.selectedOptions && Object.keys(stac.selectedOptions).length > 0 && (
-                        <>
-                            <Text style={styles.modalLabel}>Selected Activities:</Text>
-                            {Object.keys(stac.selectedOptions).map((preference) => (
-                                <View key={preference} style={styles.preferenceSection}>
-                                    <View style={styles.preferenceHeaderContainer}>
-                                        <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
+                        {stac.selectedOptions && Object.keys(stac.selectedOptions).length > 0 && (
+                            <>
+                                <Text style={styles.modalLabel}>Selected Activities:</Text>
+                                {Object.keys(stac.selectedOptions).map((preference) => (
+                                    <View key={preference} style={styles.preferenceSection}>
+                                        <View style={styles.preferenceHeaderContainer}>
+                                            <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
+                                        </View>
+
                                         {stac.preferenceTimings && stac.preferenceTimings[preference] && (
                                             <View style={styles.preferenceTimingContainer}>
                                                 <Ionicons name="time-outline" size={14} color="#666" style={styles.timingIcon} />
@@ -387,29 +380,29 @@ const StacDetailsScreen: React.FC = () => {
                                                 </Text>
                                             </View>
                                         )}
-                                    </View>
 
-                                    {stac.selectedOptions?.[preference]?.map((option) => {
-                                        const details = getOptionDetails(stac, preference, option)
-                                        return (
-                                            <View key={option} style={styles.activityContainer}>
-                                                <Text style={styles.activityName}>{option}</Text>
-                                                {details.description && <Text style={styles.activityDescription}>{details.description}</Text>}
-                                                {details.location && (
-                                                    <View style={styles.locationContainer}>
-                                                        <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
-                                                        <Text style={styles.locationText}>{details.location}</Text>
-                                                    </View>
-                                                )}
-                                            </View>
-                                        )
-                                    })}
-                                </View>
-                            ))}
-                        </>
-                    )}
-                </View>
-            </ScrollView>
+                                        {stac.selectedOptions?.[preference]?.map((option) => {
+                                            const details = getOptionDetails(stac, preference, option)
+                                            return (
+                                                <View key={option} style={styles.activityContainer}>
+                                                    <Text style={styles.activityName}>{option}</Text>
+                                                    {details.description && <Text style={styles.activityDescription}>{details.description}</Text>}
+                                                    {details.location && (
+                                                        <View style={styles.locationContainer}>
+                                                            <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
+                                                            <Text style={styles.locationText}>{details.location}</Text>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            )
+                                        })}
+                                    </View>
+                                ))}
+                            </>
+                        )}
+                    </View>
+                </ScrollView>
+            </View>
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
                     <Text style={styles.buttonText}>Delete STAC</Text>
@@ -546,6 +539,9 @@ const styles = StyleSheet.create({
         padding: 20,
         paddingBottom: 100,
     },
+    detailsScrollViewContent: {
+        paddingRight: 10,
+    },
     buttonContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -608,6 +604,8 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         fontSize: 16,
         fontWeight: "500",
+        flex: 1,
+        flexWrap: "wrap",
     },
     preferenceTitle: {
         fontSize: 18,
@@ -615,20 +613,20 @@ const styles = StyleSheet.create({
         marginTop: 10,
         marginBottom: 5,
         color: "#6200ea",
+        flexWrap: "wrap", // Allow text to wrap
     },
     preferenceSection: {
         marginVertical: 10,
     },
     preferenceHeaderContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 5,
+        flexDirection: "column", // Changed from row to column
+        marginBottom: 2,
     },
     preferenceTimingContainer: {
         flexDirection: "row",
         alignItems: "center",
-        marginLeft: 10,
+        marginBottom: 10,
+        marginLeft: 5, // Slight indent
     },
     timingIcon: {
         marginRight: 5,
@@ -651,6 +649,19 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 16,
         fontWeight: "bold",
+    },
+    scrollViewWrapper: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 5,
+        backgroundColor: "#f5f5f5",
+        overflow: "hidden",
+    },
+    detailsScrollView: {
+        flex: 1,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
     },
 })
 

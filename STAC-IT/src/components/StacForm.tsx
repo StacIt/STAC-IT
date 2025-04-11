@@ -1133,10 +1133,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#ddd",
         borderRadius: 5,
-        padding: 10,
+        overflow: "hidden", // This prevents content from spilling outside
     },
     responseScroll: {
         flex: 1,
+        padding: 10, // Move padding from container to scroll to fix scrollbar position
     },
     preferenceSection: {
         marginBottom: 15,
@@ -1154,12 +1155,15 @@ const styles = StyleSheet.create({
     checkboxLabel: {
         marginLeft: 8,
         fontSize: 16,
+        flexWrap: "wrap", // Add this to ensure text wraps properly
+        flex: 1, // Add this to ensure the text takes available space
     },
     activityDescription: {
         fontSize: 14,
         color: "#555",
         marginLeft: 32,
         marginBottom: 5,
+        flexWrap: "wrap", // Add this to ensure text wraps properly
     },
     locationContainer: {
         flexDirection: "row",
@@ -1173,6 +1177,8 @@ const styles = StyleSheet.create({
     locationText: {
         fontSize: 14,
         color: "#666",
+        flexWrap: "wrap", // Add this to ensure text wraps properly
+        flex: 1, // Add this to ensure the text takes available space
     },
     noOptionsText: {
         fontSize: 14,
