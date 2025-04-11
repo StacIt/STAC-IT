@@ -211,7 +211,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <View style={styles.modalContainer}>
                     {selectedStac && (
                         <View style={styles.modalContent}>
-                            <TouchableOpacity style={{ alignSelf: "flex-end" }} onPress={() => setStacDetailsModalVisible(false)}>
+                            <TouchableOpacity style={{ alignSelf: "flex-start" }} onPress={() => setStacDetailsModalVisible(false)}>
                                 <Ionicons name="close-circle" size={34} color="#6200ea" />
                             </TouchableOpacity>
                             <Text style={styles.modalTitle}>{selectedStac.stacName}</Text>

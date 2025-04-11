@@ -45,6 +45,12 @@ interface StacFormProps {
     initialBudget?: string
 }
 
+interface TimeInputState {
+    hour: string
+    minute: string
+    period: "AM" | "PM"
+}
+
 const validStates = [
     "AL",
     "AK",
@@ -134,8 +140,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [numberOfPeople, setNumberOfPeople] = useState(initialNumberOfPeople)
     const [budget, setBudget] = useState(initialBudget)
     const [showDatePicker, setShowDatePicker] = useState(false)
-    const [showStartTimePicker, setShowStartTimePicker] = useState(false)
-    const [showEndTimePicker, setShowEndTimePicker] = useState(false)
+    const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
     const [modelResponse, setModelResponse] = useState("")
     const [responseModalVisible, setResponseModalVisible] = useState(false)
@@ -146,26 +151,108 @@ const StacForm: React.FC<StacFormProps> = ({
     const [descriptions, setDescriptions] = useState<Record<string, string>>({})
     const [locations, setLocations] = useState<Record<string, string>>({})
     const [preferenceTimings, setPreferenceTimings] = useState<Record<string, Timing>>({})
+
+    // Custom time input states
+    const [startTimeInput, setStartTimeInput] = useState<TimeInputState>({
+        hour: "",
+        minute: "",
+        period: "AM",
+    })
+
+    const [endTimeInput, setEndTimeInput] = useState<TimeInputState>({
+        hour: "",
+        minute: "",
+        period: "PM",
+    })
+
+    // Refs for time input fields
+    const startHourRef = useRef<TextInput>(null)
+    const startMinuteRef = useRef<TextInput>(null)
+    const endHourRef = useRef<TextInput>(null)
+    const endMinuteRef = useRef<TextInput>(null)
+
     useEffect(() => {
         if (visible) {
-            setStacName("");
-            setDate(new Date());
-            setStartTime(null);
-            setEndTime(null);
-            setCity("");
-            setState("");
-            setActivities([""]);
-            setNumberOfPeople("");
-            setBudget("");
-            setModelResponse("");
-            setOptions({});
-            setSelectedOptions({});
-            setPreferences([]);
-            setDescriptions({});
-            setLocations({});
-            setPreferenceTimings({});
+            setStacName("")
+            setDate(new Date())
+            setTempDate(new Date())
+            setStartTime(null)
+            setEndTime(null)
+            setCity("")
+            setState("")
+            setActivities([""])
+            setNumberOfPeople("")
+            setBudget("")
+            setModelResponse("")
+            setOptions({})
+            setSelectedOptions({})
+            setPreferences([])
+            setDescriptions({})
+            setLocations({})
+            setPreferenceTimings({})
+
+            // Reset time inputs
+            setStartTimeInput({
+                hour: "",
+                minute: "",
+                period: "AM",
+            })
+
+            setEndTimeInput({
+                hour: "",
+                minute: "",
+                period: "PM",
+            })
         }
-    }, [visible]);
+    }, [visible])
+
+    // Update Date objects when time inputs change
+    useEffect(() => {
+        if (startTimeInput.hour && startTimeInput.minute) {
+            const newDate = new Date()
+            let hours = Number.parseInt(startTimeInput.hour, 10)
+
+            // Convert to 24-hour format
+            if (startTimeInput.period === "PM" && hours < 12) {
+                hours += 12
+            } else if (startTimeInput.period === "AM" && hours === 12) {
+                hours = 0
+            }
+
+            newDate.setHours(hours)
+            newDate.setMinutes(Number.parseInt(startTimeInput.minute, 10))
+            setStartTime(newDate)
+        } else {
+            // If either hour or minute is empty, set startTime to null
+            setStartTime(null)
+        }
+    }, [startTimeInput])
+
+    useEffect(() => {
+        if (endTimeInput.hour && endTimeInput.minute) {
+            const newDate = new Date()
+            let hours = Number.parseInt(endTimeInput.hour, 10)
+
+            // Convert to 24-hour format
+            if (endTimeInput.period === "PM" && hours < 12) {
+                hours += 12
+            } else if (endTimeInput.period === "AM" && hours === 12) {
+                hours = 0
+            }
+
+            newDate.setHours(hours)
+            newDate.setMinutes(Number.parseInt(endTimeInput.minute, 10))
+            setEndTime(newDate)
+
+            // Validate time order when end time changes
+            if (startTime) {
+                validateTimeOrder()
+            }
+        } else {
+            // If either hour or minute is empty, set endTime to null
+            setEndTime(null)
+        }
+    }, [endTimeInput])
 
     // Create refs for each input field
     const stacNameRef = useRef<TextInput>(null)
@@ -504,11 +591,88 @@ const StacForm: React.FC<StacFormProps> = ({
         Keyboard.dismiss()
     }
 
-    // Function to focus the next input field
-    const focusNextInput = (nextRef: React.RefObject<TextInput> | null) => {
-        if (nextRef && nextRef.current) {
-            nextRef.current.focus()
+    // Handle time input changes
+    const handleTimeInputChange = (value: string, field: "hour" | "minute", timeType: "start" | "end") => {
+        // Only allow digits
+        if (!/^\d*$/.test(value)) {
+            return
         }
+
+        if (field === "hour") {
+            // Validate hour (1-12)
+            if (value !== "" && (Number.parseInt(value, 10) < 1 || Number.parseInt(value, 10) > 12)) {
+                return
+            }
+
+            if (timeType === "start") {
+                setStartTimeInput((prev) => ({ ...prev, hour: value }))
+            } else {
+                setEndTimeInput((prev) => ({ ...prev, hour: value }))
+            }
+        } else if (field === "minute") {
+            // Validate minute (0-59)
+            if (value !== "" && (Number.parseInt(value, 10) < 0 || Number.parseInt(value, 10) > 59)) {
+                return
+            }
+
+            if (timeType === "start") {
+                setStartTimeInput((prev) => ({ ...prev, minute: value }))
+            } else {
+                setEndTimeInput((prev) => ({ ...prev, minute: value }))
+            }
+        }
+    }
+
+    // Handle period selection (AM/PM)
+    const handlePeriodChange = (period: "AM" | "PM", timeType: "start" | "end") => {
+        if (timeType === "start") {
+            setStartTimeInput((prev) => ({ ...prev, period }))
+            // Validate time order after a short delay to allow state to update
+            setTimeout(() => {
+                if (startTime && endTime) {
+                    validateTimeOrder()
+                }
+            }, 100)
+        } else {
+            setEndTimeInput((prev) => ({ ...prev, period }))
+            // Validate time order after a short delay to allow state to update
+            setTimeout(() => {
+                if (startTime && endTime) {
+                    validateTimeOrder()
+                }
+            }, 100)
+        }
+    }
+
+    // Format time input with leading zeros when field is blurred
+    const handleTimeInputBlur = (field: "hour" | "minute", timeType: "start" | "end") => {
+        if (timeType === "start") {
+            if (field === "hour" && startTimeInput.hour.length === 1) {
+                setStartTimeInput((prev) => ({ ...prev, hour: startTimeInput.hour.padStart(2, "0") }))
+            } else if (field === "minute" && startTimeInput.minute.length === 1) {
+                setStartTimeInput((prev) => ({ ...prev, minute: startTimeInput.minute.padStart(2, "0") }))
+            }
+        } else {
+            if (field === "hour" && endTimeInput.hour.length === 1) {
+                setEndTimeInput((prev) => ({ ...prev, hour: endTimeInput.hour.padStart(2, "0") }))
+            } else if (field === "minute" && endTimeInput.minute.length === 1) {
+                setEndTimeInput((prev) => ({ ...prev, minute: endTimeInput.minute.padStart(2, "0") }))
+            }
+        }
+
+        // Validate end time is after start time when both are set
+        validateTimeOrder()
+    }
+
+    // Validate that end time is after start time
+    const validateTimeOrder = () => {
+        if (startTime && endTime) {
+            if (endTime < startTime) {
+                Alert.alert("Error", "End time cannot be earlier than start time.")
+                return false
+            }
+        }
+        return true
     }
 
     return (
@@ -533,63 +697,180 @@ const StacForm: React.FC<StacFormProps> = ({
                                         placeholder="STAC Name"
                                         value={stacName}
                                         onChangeText={setStacName}
-                                        returnKeyType="next"
-                                        onSubmitEditing={() => setShowDatePicker(true)}
-                                        blurOnSubmit={false}
+                                        blurOnSubmit={true}
                                     />
 
                                     <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
                                         <Text>{date.toDateString()}</Text>
                                     </TouchableOpacity>
-                                    {showDatePicker && (
-                                        <DateTimePicker
-                                            value={date}
-                                            mode="date"
-                                            display="default"
-                                            onChange={(event, selectedDate) => {
-                                                onChangeDate(event, selectedDate)
-                                                setShowStartTimePicker(true)
-                                            }}
-                                        />
-                                    )}
 
-                                    <TouchableOpacity onPress={() => setShowStartTimePicker(true)} style={styles.input}>
-                                        <Text>{formatTime(startTime)}</Text>
-                                    </TouchableOpacity>
-                                    {showStartTimePicker && (
-                                        <DateTimePicker
-                                            value={startTime || new Date()}
-                                            mode="time"
-                                            is24Hour={false}
-                                            display="default"
-                                            onChange={(event, selectedTime) => {
-                                                setShowStartTimePicker(false)
-                                                if (selectedTime) {
-                                                    setStartTime(selectedTime)
-                                                    setShowEndTimePicker(true)
-                                                }
-                                            }}
-                                        />
-                                    )}
+                                    {/* Custom Date Picker Modal */}
+                                    <Modal
+                                        animationType="slide"
+                                        transparent={true}
+                                        visible={showDatePicker}
+                                        onRequestClose={() => setShowDatePicker(false)}
+                                    >
+                                        <View style={styles.datePickerModalContainer}>
+                                            <View style={styles.datePickerModalContent}>
+                                                <View style={styles.datePickerHeader}>
+                                                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(false)}>
+                                                        <Text style={styles.datePickerButtonText}>Cancel</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={styles.datePickerButton}
+                                                        onPress={() => {
+                                                            setDate(tempDate)
+                                                            setShowDatePicker(false)
+                                                        }}
+                                                    >
+                                                        <Text style={[styles.datePickerButtonText, styles.datePickerDoneButton]}>Done</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                                <DateTimePicker
+                                                    value={tempDate}
+                                                    mode="date"
+                                                    display="spinner"
+                                                    onChange={(event, selectedDate) => {
+                                                        if (selectedDate) setTempDate(selectedDate)
+                                                    }}
+                                                    style={styles.datePicker}
+                                                />
+                                            </View>
+                                        </View>
+                                    </Modal>
 
-                                    <TouchableOpacity onPress={() => setShowEndTimePicker(true)} style={styles.input}>
-                                        <Text>{formatTime(endTime)}</Text>
-                                    </TouchableOpacity>
-                                    {showEndTimePicker && (
-                                        <DateTimePicker
-                                            value={endTime || new Date()}
-                                            mode="time"
-                                            is24Hour={false}
-                                            display="default"
-                                            onChange={(event, selectedTime) => {
-                                                setShowEndTimePicker(false)
-                                                if (selectedTime && validateEndTime(selectedTime)) {
-                                                    setEndTime(selectedTime)
-                                                    cityRef.current?.focus()
-                                                }
-                                            }}
-                                        />
-                                    )}
+                                    {/* Custom Start Time Input */}
+                                    <Text style={styles.timeLabel}>Starting time</Text>
+                                    <View style={styles.timeInputContainer}>
+                                        <View style={styles.timeInputBox}>
+                                            <TextInput
+                                                ref={startHourRef}
+                                                style={styles.timeInput}
+                                                placeholder="08"
+                                                placeholderTextColor="#aaa"
+                                                value={startTimeInput.hour}
+                                                onChangeText={(value) => handleTimeInputChange(value, "hour", "start")}
+                                                onBlur={() => handleTimeInputBlur("hour", "start")}
+                                                keyboardType="number-pad"
+                                                maxLength={2}
+                                            />
+                                            <Text style={styles.timeInputLabel}>Hour</Text>
+                                        </View>
+
+                                        <Text style={styles.timeSeparator}>:</Text>
+
+                                        <View style={styles.timeInputBox}>
+                                            <TextInput
+                                                ref={startMinuteRef}
+                                                style={styles.timeInput}
+                                                placeholder="00"
+                                                placeholderTextColor="#aaa"
+                                                value={startTimeInput.minute}
+                                                onChangeText={(value) => handleTimeInputChange(value, "minute", "start")}
+                                                onBlur={() => handleTimeInputBlur("minute", "start")}
+                                                keyboardType="number-pad"
+                                                maxLength={2}
+                                            />
+                                            <Text style={styles.timeInputLabel}>Minute</Text>
+                                        </View>
+
+                                        <View style={styles.periodContainer}>
+                                            <TouchableOpacity
+                                                style={[styles.periodButton, startTimeInput.period === "AM" && styles.periodButtonActive]}
+                                                onPress={() => handlePeriodChange("AM", "start")}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.periodButtonText,
+                                                        startTimeInput.period === "AM" && styles.periodButtonTextActive,
+                                                    ]}
+                                                >
+                                                    AM
+                                                </Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={[styles.periodButton, startTimeInput.period === "PM" && styles.periodButtonActive]}
+                                                onPress={() => handlePeriodChange("PM", "start")}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.periodButtonText,
+                                                        startTimeInput.period === "PM" && styles.periodButtonTextActive,
+                                                    ]}
+                                                >
+                                                    PM
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+
+                                    {/* Custom End Time Input */}
+                                    <Text style={styles.timeLabel}>End time</Text>
+                                    <View style={styles.timeInputContainer}>
+                                        <View style={styles.timeInputBox}>
+                                            <TextInput
+                                                ref={endHourRef}
+                                                style={styles.timeInput}
+                                                placeholder="05"
+                                                placeholderTextColor="#aaa"
+                                                value={endTimeInput.hour}
+                                                onChangeText={(value) => handleTimeInputChange(value, "hour", "end")}
+                                                onBlur={() => handleTimeInputBlur("hour", "end")}
+                                                keyboardType="number-pad"
+                                                maxLength={2}
+                                            />
+                                            <Text style={styles.timeInputLabel}>Hour</Text>
+                                        </View>
+
+                                        <Text style={styles.timeSeparator}>:</Text>
+
+                                        <View style={styles.timeInputBox}>
+                                            <TextInput
+                                                ref={endMinuteRef}
+                                                style={styles.timeInput}
+                                                placeholder="00"
+                                                placeholderTextColor="#aaa"
+                                                value={endTimeInput.minute}
+                                                onChangeText={(value) => handleTimeInputChange(value, "minute", "end")}
+                                                onBlur={() => handleTimeInputBlur("minute", "end")}
+                                                keyboardType="number-pad"
+                                                maxLength={2}
+                                            />
+                                            <Text style={styles.timeInputLabel}>Minute</Text>
+                                        </View>
+
+                                        <View style={styles.periodContainer}>
+                                            <TouchableOpacity
+                                                style={[styles.periodButton, endTimeInput.period === "AM" && styles.periodButtonActive]}
+                                                onPress={() => handlePeriodChange("AM", "end")}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.periodButtonText,
+                                                        endTimeInput.period === "AM" && styles.periodButtonTextActive,
+                                                    ]}
+                                                >
+                                                    AM
+                                                </Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={[styles.periodButton, endTimeInput.period === "PM" && styles.periodButtonActive]}
+                                                onPress={() => handlePeriodChange("PM", "end")}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.periodButtonText,
+                                                        endTimeInput.period === "PM" && styles.periodButtonTextActive,
+                                                    ]}
+                                                >
+                                                    PM
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
 
                                     <TextInput
                                         ref={cityRef}
@@ -597,9 +878,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                         placeholder="City"
                                         value={city}
                                         onChangeText={setCity}
-                                        returnKeyType="next"
-                                        onSubmitEditing={() => focusNextInput(stateRef)}
-                                        blurOnSubmit={false}
+                                        blurOnSubmit={true}
                                     />
 
                                     <TextInput
@@ -609,13 +888,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                         value={state}
                                         onChangeText={setState}
                                         maxLength={2}
-                                        returnKeyType="next"
-                                        onSubmitEditing={() => {
-                                            if (activityRefs.current[0]) {
-                                                activityRefs.current[0]?.focus()
-                                            }
-                                        }}
-                                        blurOnSubmit={false}
+                                        blurOnSubmit={true}
                                     />
 
                                     {activities.map((activity, index) => (
@@ -630,22 +903,11 @@ const StacForm: React.FC<StacFormProps> = ({
                                                     activityRefs.current[index] = ref
                                                 }}
                                                 style={styles.activityInput}
-                                                placeholder={`Activity ${index + 1} (e.g., ${activityExamples[index % activityExamples.length]})`}
+                                                placeholder={`Activity ${index + 1} (e.g., ${activityExamples[index % activityExamples.length]
+                                                    })`}
                                                 value={activity}
                                                 onChangeText={(text) => updateActivity(text, index)}
-                                                returnKeyType={index === activities.length - 1 ? "next" : "done"}
-                                                onSubmitEditing={() => {
-                                                    if (index === activities.length - 1) {
-                                                        // If it's the last activity, focus on number of people
-                                                        focusNextInput(numberOfPeopleRef)
-                                                    } else {
-                                                        // Otherwise focus on the next activity
-                                                        focusNextInput(
-                                                            activityRefs.current[index + 1] ? { current: activityRefs.current[index + 1] } : null,
-                                                        )
-                                                    }
-                                                }}
-                                                blurOnSubmit={false}
+                                                blurOnSubmit={true}
                                             />
                                             {index > 0 && (
                                                 <TouchableOpacity onPress={() => removeActivity(index)} style={styles.iconButton}>
@@ -666,9 +928,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                         placeholder="Number of People"
                                         value={numberOfPeople}
                                         onChangeText={setNumberOfPeople}
-                                        returnKeyType="next"
-                                        onSubmitEditing={() => focusNextInput(budgetRef)}
-                                        blurOnSubmit={false}
+                                        blurOnSubmit={true}
                                     />
 
                                     <TextInput
@@ -678,18 +938,22 @@ const StacForm: React.FC<StacFormProps> = ({
                                         value={budget}
                                         onChangeText={setBudget}
                                         returnKeyType="done"
-                                        onSubmitEditing={() => {
-                                            dismissKeyboard()
-                                            if (!isLoading) {
-                                                handleCreateStack()
-                                            }
-                                        }}
+                                        blurOnSubmit={true}
                                     />
 
                                     <View style={{ height: 100 }} />
                                 </ScrollView>
 
                                 <View style={styles.modalFooter}>
+                                    <TouchableOpacity
+                                        style={styles.cancelTextContainer}
+                                        onPress={() => {
+                                            dismissKeyboard()
+                                            onClose()
+                                        }}
+                                    >
+                                        <Text style={styles.cancelText}>Cancel</Text>
+                                    </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.footerButton, styles.submitButton, isLoading && styles.disabledButton]}
                                         onPress={() => {
@@ -699,15 +963,6 @@ const StacForm: React.FC<StacFormProps> = ({
                                         disabled={isLoading}
                                     >
                                         <Text style={styles.footerButtonText}>{isLoading ? "Loading..." : "Submit"}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.footerButton, styles.cancelButton]}
-                                        onPress={() => {
-                                            dismissKeyboard()
-                                            onClose()
-                                        }}
-                                    >
-                                        <Text style={styles.footerButtonText}>Cancel</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -845,21 +1100,17 @@ const styles = StyleSheet.create({
     modalFooter: {
         flexDirection: "row",
         justifyContent: "space-between",
+        alignItems: "center",
         marginTop: 20,
     },
     footerButton: {
-        flex: 1,
         paddingVertical: 10,
         borderRadius: 5,
         alignItems: "center",
     },
     submitButton: {
         backgroundColor: "#6200ea",
-        marginRight: 5,
-    },
-    cancelButton: {
-        backgroundColor: "red",
-        marginLeft: 5,
+        paddingHorizontal: 20,
     },
     footerButtonText: {
         color: "white",
@@ -879,31 +1130,89 @@ const styles = StyleSheet.create({
         flex: 1,
         marginVertical: 2,
         backgroundColor: "#f5f5f5",
-        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 5,
+        padding: 10,
     },
     responseScroll: {
         flex: 1,
-        padding: 10,
+    },
+    preferenceSection: {
+        marginBottom: 15,
+    },
+    preferenceTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 5,
+    },
+    checkboxContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 5,
+    },
+    checkboxLabel: {
+        marginLeft: 8,
+        fontSize: 16,
+    },
+    activityDescription: {
+        fontSize: 14,
+        color: "#555",
+        marginLeft: 32,
+        marginBottom: 5,
+    },
+    locationContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginLeft: 32,
+        marginBottom: 5,
+    },
+    locationIcon: {
+        marginRight: 5,
+    },
+    locationText: {
+        fontSize: 14,
+        color: "#666",
+    },
+    noOptionsText: {
+        fontSize: 14,
+        color: "#777",
+        marginLeft: 32,
+    },
+    noDataText: {
+        fontSize: 16,
+        color: "#888",
+        textAlign: "center",
+        marginTop: 20,
     },
     buttonContainer: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        width: "100%",
-        marginTop: 10,
+        justifyContent: "space-around",
+        marginTop: 20,
     },
     button: {
         backgroundColor: "#6200ea",
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        flex: 1,
-        marginHorizontal: 5,
+        paddingVertical: 12,
+        paddingHorizontal: 25,
+        borderRadius: 8,
         alignItems: "center",
     },
     buttonText: {
         color: "white",
         fontSize: 16,
         fontWeight: "bold",
+    },
+    deleteTextContainer: {
+        marginTop: 15,
+        alignItems: "center",
+    },
+    deleteText: {
+        color: "red",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    disabledButton: {
+        backgroundColor: "#aaa",
     },
     activityContainer: {
         flexDirection: "row",
@@ -917,103 +1226,138 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 5,
         paddingLeft: 10,
+        marginRight: 10,
     },
     iconButton: {
-        marginLeft: 10,
+        padding: 5,
     },
-    disabledButton: {
-        opacity: 0.5,
+    cancelTextContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "red",
+        padding: 10,
+        borderRadius: 5,
+    },
+    cancelText: {
+        color: "white",
+        fontWeight: "bold",
+        fontSize: 16,
+    },
+    optionDivider: {
+        borderBottomColor: "#eee",
+        borderBottomWidth: 1,
+        marginVertical: 5,
+        marginLeft: 32,
     },
     refreshButton: {
-        backgroundColor: "#4CAF50",
+        backgroundColor: "#2196F3",
     },
     refreshingButton: {
-        backgroundColor: "#9E9E9E",
-    },
-    deleteButton: {
-        backgroundColor: "#dc3545",
-    },
-    preferenceSection: {
-        marginVertical: 10,
-    },
-    preferenceTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-    },
-    checkboxContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 5,
-    },
-    checkboxLabel: {
-        marginLeft: 10,
-        fontSize: 16,
-    },
-    noOptionsText: {
-        fontSize: 16,
-        color: "gray",
-        textAlign: "center",
-        marginTop: 10,
-    },
-    noDataText: {
-        fontSize: 16,
-        color: "gray",
-        textAlign: "center",
-        marginTop: 20,
-    },
-    activityDescription: {
-        fontSize: 14,
-        color: "#666",
-        marginLeft: 34,
-        marginTop: 5,
-        marginBottom: 10,
-        paddingRight: 10,
-    },
-    locationContainer: {
-        flexDirection: "row",
-        marginLeft: 34,
-        marginTop: 5,
-        marginBottom: 10,
-        alignItems: "center",
-    },
-    locationIcon: {
-        marginRight: 5,
-    },
-    locationText: {
-        fontSize: 14,
-        color: "#666",
-        flex: 1,
+        backgroundColor: "#aaa",
     },
     preferenceTimingContainer: {
         flexDirection: "row",
-        marginLeft: 5,
-        marginTop: 5,
-        marginBottom: 10,
         alignItems: "center",
+        marginLeft: 32,
+        marginBottom: 5,
     },
     timingIcon: {
         marginRight: 5,
     },
     preferenceTimingText: {
         fontSize: 14,
-        color: "#007bff",
-        fontWeight: "500",
+        color: "#666",
     },
-    optionDivider: {
-        height: 1,
-        backgroundColor: "#e0e0e0",
-        marginVertical: 10,
-        marginLeft: 34,
-    },
-    deleteTextContainer: {
-        alignItems: "center",
-        marginTop: 10,
-        padding: 5,
-    },
-    deleteText: {
-        color: "#dc3545",
+    timeLabel: {
         fontSize: 16,
+        color: "#666",
+        marginBottom: 5,
+        marginTop: 5,
+    },
+    timeInputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 15,
+    },
+    timeInputBox: {
+        width: 70,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        padding: 5,
+        alignItems: "center",
+    },
+    timeInput: {
+        fontSize: 24,
         fontWeight: "bold",
+        textAlign: "center",
+        width: "100%",
+    },
+    timeInputLabel: {
+        fontSize: 12,
+        color: "#666",
+        marginTop: 2,
+    },
+    timeSeparator: {
+        fontSize: 24,
+        fontWeight: "bold",
+        marginHorizontal: 5,
+        alignSelf: "center",
+    },
+    periodContainer: {
+        marginLeft: 5,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        overflow: "hidden",
+    },
+    periodButton: {
+        width: 45,
+        padding: 6,
+        alignItems: "center",
+    },
+    periodButtonActive: {
+        backgroundColor: "#e0e0ff",
+    },
+    periodButtonText: {
+        fontSize: 14,
+    },
+    periodButtonTextActive: {
+        fontWeight: "bold",
+        color: "#6200ea",
+    },
+    datePickerModalContainer: {
+        flex: 1,
+        justifyContent: "flex-end",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+    datePickerModalContent: {
+        backgroundColor: "white",
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+        padding: 10,
+    },
+    datePickerHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        borderBottomWidth: 1,
+        borderBottomColor: "#ccc",
+        paddingBottom: 10,
+        marginBottom: 10,
+    },
+    datePickerButton: {
+        padding: 10,
+    },
+    datePickerButtonText: {
+        fontSize: 16,
+        color: "#6200ea",
+    },
+    datePickerDoneButton: {
+        fontWeight: "bold",
+    },
+    datePicker: {
+        height: 200,
     },
 })
 
