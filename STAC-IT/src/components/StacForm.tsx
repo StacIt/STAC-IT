@@ -284,7 +284,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const parseModelResponse = (response: string) => {
         try {
             let cleanResponse = response.trim()
-            if (cleanResponse.startsWith("\`\`\`json") && cleanResponse.endsWith("\`\`\`")) {
+            if (cleanResponse.startsWith("```json") && cleanResponse.endsWith("```")) {
                 cleanResponse = cleanResponse.slice(7, -3).trim()
             }
             const jsonData = typeof cleanResponse === "string" ? JSON.parse(cleanResponse) : cleanResponse
@@ -474,6 +474,7 @@ const StacForm: React.FC<StacFormProps> = ({
         try {
             const stackId = Date.now().toString()
             const finalizedStac = {
+                preferenceOrder: preferences,
                 userId: user.uid,
                 stacName,
                 selectedOptions: filteredOptions,
@@ -947,7 +948,6 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                 <View style={styles.modalFooter}>
                                     <TouchableOpacity
-                                        style={styles.cancelTextContainer}
                                         onPress={() => {
                                             dismissKeyboard()
                                             onClose()
@@ -1238,17 +1238,10 @@ const styles = StyleSheet.create({
     iconButton: {
         padding: 5,
     },
-    cancelTextContainer: {
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "red",
-        padding: 10,
-        borderRadius: 5,
-    },
     cancelText: {
-        color: "white",
-        fontWeight: "bold",
+        color: "red",
         fontSize: 16,
+        marginRight: 10,
     },
     optionDivider: {
         borderBottomColor: "#eee",

@@ -208,7 +208,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                             <View style={styles.scrollViewWrapper}>
                                 <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.detailsScrollViewContent}>
                                     {selectedStac.selectedOptions &&
-                                        Object.keys(selectedStac.selectedOptions).map((preference) => (
+                                        (selectedStac.preferenceOrder || Object.keys(selectedStac.selectedOptions)).map((preference) => (
                                             <View key={preference} style={styles.preferenceSection}>
                                                 <View style={styles.preferenceHeaderContainer}>
                                                     <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
@@ -366,7 +366,7 @@ const StacDetailsScreen: React.FC = () => {
                         {stac.selectedOptions && Object.keys(stac.selectedOptions).length > 0 && (
                             <>
                                 <Text style={styles.modalLabel}>Selected Activities:</Text>
-                                {Object.keys(stac.selectedOptions).map((preference) => (
+                                {(stac.preferenceOrder || Object.keys(stac.selectedOptions)).map((preference) => (
                                     <View key={preference} style={styles.preferenceSection}>
                                         <View style={styles.preferenceHeaderContainer}>
                                             <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
