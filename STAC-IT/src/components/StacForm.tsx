@@ -15,6 +15,7 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Platform,
+    ActivityIndicator,
 } from "react-native"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import axios from "axios"
@@ -142,6 +143,18 @@ const StacForm: React.FC<StacFormProps> = ({
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
+
+    const LoadingOverlay = () => {
+        if (!isLoading) return null
+
+        return (
+            <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color="#6200ea" />
+                <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+        )
+    }
+
     const [modelResponse, setModelResponse] = useState("")
     const [responseModalVisible, setResponseModalVisible] = useState(false)
     const [phoneNumbers, setPhoneNumbers] = useState("")
@@ -685,6 +698,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     <TouchableWithoutFeedback onPress={dismissKeyboard}>
                         <View style={styles.modalContainer}>
                             <View style={styles.modalContent}>
+                                <LoadingOverlay />
                                 <Text style={styles.modalTitle}>Create a New STAC</Text>
 
                                 <ScrollView
@@ -981,6 +995,7 @@ const StacForm: React.FC<StacFormProps> = ({
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
+                        <LoadingOverlay />
                         <Text style={styles.modalTitle}>{stacName || "Untitled STAC"}</Text>
                         <View style={styles.responseContainer}>
                             <ScrollView style={styles.responseScroll}>
@@ -1358,6 +1373,23 @@ const styles = StyleSheet.create({
     },
     datePicker: {
         height: 200,
+    },
+    loadingOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(255, 255, 255, 0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 1000,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: "#6200ea",
+        fontWeight: "bold",
     },
 })
 

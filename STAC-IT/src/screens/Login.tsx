@@ -71,7 +71,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
 
         } catch (error: any) {
             console.log("Firebase Login Error:", error.message);
-            Alert.alert("Login Failed", error.message);
+            Alert.alert("Login Failed", "Password or email is incorrect.");
         }
         setLoading(false);
     };
