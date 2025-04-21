@@ -3,7 +3,7 @@
     "owner": "stac-itteam",
     "name": "STAC-IT",
     "slug": "STAC-IT",
-    "version": "1.0.15",
+    "version": "1.0.19",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stac-it.app",
-      "buildNumber": "1.0.15",
+      "buildNumber": "1.0.19",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -36,6 +36,15 @@
       "eas": {
         "projectId": "d55a4c2c-70ca-4be9-a788-4a2d8692793c"
       }
+    },
+    "expo-splash-screen": {
+      "backgroundColor": "#FFFFFF",
+      "image": "./assets/images/splash-icon.png",
+      "dark": {
+        "image": "./assets/images/splash-icon-dark.png",
+        "backgroundColor": "#000000"
+      },
+      "imageWidth": 200
     }
   }
 }
