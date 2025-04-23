@@ -150,7 +150,7 @@ const StacForm: React.FC<StacFormProps> = ({
         return (
             <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color="#6200ea" />
-                <Text style={styles.loadingText}>Loading...</Text>
+                <Text style={styles.loadingText}>Contain your excitement while I build you a cool Stac...</Text>
             </View>
         )
     }
@@ -350,7 +350,7 @@ const StacForm: React.FC<StacFormProps> = ({
             return false
         }
 
-        if (isNaN(Number(budget)) || Number(budget) <= 0) {
+        if (isNaN(Number(budget)) || Number(budget) < 0) {
             Alert.alert("Error", "Budget must be a positive number.")
             return false
         }
@@ -620,9 +620,19 @@ const StacForm: React.FC<StacFormProps> = ({
             }
 
             if (timeType === "start") {
-                setStartTimeInput((prev) => ({ ...prev, hour: value }))
+                setStartTimeInput((prev) => ({
+                    ...prev,
+                    hour: value,
+                    // Default minute to "00" if it's empty and hour is being set
+                    minute: prev.minute === "" ? "00" : prev.minute,
+                }))
             } else {
-                setEndTimeInput((prev) => ({ ...prev, hour: value }))
+                setEndTimeInput((prev) => ({
+                    ...prev,
+                    hour: value,
+                    // Default minute to "00" if it's empty and hour is being set
+                    minute: prev.minute === "" ? "00" : prev.minute,
+                }))
             }
         } else if (field === "minute") {
             // Validate minute (0-59)
@@ -1386,6 +1396,7 @@ const styles = StyleSheet.create({
         zIndex: 1000,
     },
     loadingText: {
+        textAlign: "center",
         marginTop: 10,
         fontSize: 16,
         color: "#6200ea",
