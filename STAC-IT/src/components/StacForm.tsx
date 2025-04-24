@@ -143,6 +143,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
+    const [showNumberPicker, setShowNumberPicker] = useState(false)
 
     const LoadingOverlay = () => {
         if (!isLoading) return null
@@ -350,8 +351,8 @@ const StacForm: React.FC<StacFormProps> = ({
             return false
         }
 
-        if (isNaN(Number(budget)) || Number(budget) < 0) {
-            Alert.alert("Error", "Budget must be a positive number.")
+        if (budget === "" || Number(budget) < 0) {
+            Alert.alert("Error", "Your budget should be 0 or higher.")
             return false
         }
         if (isNaN(Number(numberOfPeople)) || Number(numberOfPeople) <= 0) {
@@ -422,6 +423,7 @@ const StacForm: React.FC<StacFormProps> = ({
                 })
 
                 const userInput = `Date: ${date.toDateString()}, Location: ${city}, ${state.toUpperCase()}, Preferences: ${preferences}, Budget: ${budget}, Time period: ${formatTime(startTime)} - ${formatTime(endTime)}, Number of people: ${numberOfPeople}`
+                console.log("Calling backend model with input:", userInput)
                 const response = await callBackendModel(userInput)
 
                 // Parse the response and update state
@@ -700,6 +702,25 @@ const StacForm: React.FC<StacFormProps> = ({
         return true
     }
 
+    // Handle number of people input validation
+    const handleNumberOfPeopleChange = (text: string) => {
+        // Only allow numbers
+        if (/^\d*$/.test(text)) {
+            setNumberOfPeople(text)
+        }
+    }
+
+    // Open number picker modal
+    const openNumberPicker = () => {
+        setShowNumberPicker(true)
+    }
+
+    // Select number from modal
+    const selectNumber = (num: number) => {
+        setNumberOfPeople(num.toString())
+        setShowNumberPicker(false)
+    }
+
     return (
         <>
             {/* Create STAC Modal */}
@@ -948,24 +969,69 @@ const StacForm: React.FC<StacFormProps> = ({
                                         </View>
                                     ))}
 
-                                    <TextInput
-                                        ref={numberOfPeopleRef}
-                                        style={styles.input}
-                                        placeholder="Number of People"
-                                        value={numberOfPeople}
-                                        onChangeText={setNumberOfPeople}
-                                        blurOnSubmit={true}
-                                    />
+                                    {/* Number of People Input */}
+                                    <TouchableOpacity style={styles.input} onPress={openNumberPicker}>
+                                        <Text style={numberOfPeople ? styles.inputText : styles.placeholderText}>
+                                            {numberOfPeople ? `Number of People: ${numberOfPeople}` : "Number of People (required)"}
+                                        </Text>
+                                    </TouchableOpacity>
 
-                                    <TextInput
-                                        ref={budgetRef}
-                                        style={styles.input}
-                                        placeholder="Budget ($maximum per person)"
-                                        value={budget}
-                                        onChangeText={setBudget}
-                                        returnKeyType="done"
-                                        blurOnSubmit={true}
-                                    />
+                                    {/* Number Picker Modal */}
+                                    <Modal
+                                        animationType="slide"
+                                        transparent={true}
+                                        visible={showNumberPicker}
+                                        onRequestClose={() => setShowNumberPicker(false)}
+                                    >
+                                        <View style={styles.datePickerModalContainer}>
+                                            <View style={styles.datePickerModalContent}>
+                                                <View style={styles.datePickerHeader}>
+                                                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowNumberPicker(false)}>
+                                                        <Text style={styles.datePickerButtonText}>Cancel</Text>
+                                                    </TouchableOpacity>
+                                                    <Text style={styles.numberPickerTitle}>Number of People</Text>
+                                                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowNumberPicker(false)}>
+                                                        <Text style={styles.datePickerButtonText}>Done</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                                <View style={styles.numberPickerContainer}>
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                                                        <TouchableOpacity
+                                                            key={num}
+                                                            style={styles.numberPickerButton}
+                                                            onPress={() => selectNumber(num)}
+                                                        >
+                                                            <Text style={styles.numberPickerButtonText}>{num}</Text>
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                    <View style={styles.numberPickerCenterContainer}>
+                                                        <TouchableOpacity style={styles.numberPickerButton} onPress={() => selectNumber(10)}>
+                                                            <Text style={styles.numberPickerButtonText}>10</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </Modal>
+
+                                    <View style={styles.budgetInputContainer}>
+                                        <Text style={styles.dollarSign}>$</Text>
+                                        <TextInput
+                                            ref={budgetRef}
+                                            style={styles.budgetInput}
+                                            placeholder="Budget (maximum per person)"
+                                            value={budget}
+                                            onChangeText={(text) => {
+                                                // Only allow numbers
+                                                if (/^\d*$/.test(text)) {
+                                                    setBudget(text)
+                                                }
+                                            }}
+                                            keyboardType="numeric"
+                                            returnKeyType="done"
+                                            blurOnSubmit={true}
+                                        />
+                                    </View>
 
                                     <View style={{ height: 100 }} />
                                 </ScrollView>
@@ -1151,6 +1217,13 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingLeft: 10,
         marginBottom: 10,
+        justifyContent: "center",
+    },
+    inputText: {
+        color: "#000",
+    },
+    placeholderText: {
+        color: "#aaa",
     },
     responseContainer: {
         flex: 1,
@@ -1401,6 +1474,59 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#6200ea",
         fontWeight: "bold",
+    },
+    numberPickerContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        padding: 10,
+    },
+    numberPickerButton: {
+        width: "30%",
+        height: 60,
+        justifyContent: "center",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        margin: 5,
+        backgroundColor: "#f8f8f8",
+    },
+    numberPickerButtonText: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "#6200ea",
+    },
+    budgetInputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        height: 40,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 10,
+        paddingLeft: 10,
+    },
+    dollarSign: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginRight: 5,
+    },
+    budgetInput: {
+        flex: 1,
+        height: 40,
+    },
+    numberPickerTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#333",
+        textAlign: "center",
+    },
+    numberPickerCenterContainer: {
+        width: "100%",
+        alignItems: "center",
+        marginTop: 10,
     },
 })
 

@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert, Share } from "react-native"
 import { type NavigationProp, useNavigation, useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
@@ -51,6 +51,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     const [selectedStac, setSelectedStac] = useState<Stac | null>(null)
     const [stacDetailsModalVisible, setStacDetailsModalVisible] = useState(false)
     const [createModalVisible, setCreateModalVisible] = useState(false)
+    const [infoModalVisible, setInfoModalVisible] = useState(false)
+    const infoScrollViewRef = useRef<ScrollView>(null)
 
     const handleShare = async (stac: Stac) => {
         try {
@@ -174,108 +176,215 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     )
 
     return (
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-            <Text style={styles.title}>STAC-IT</Text>
+        <View style={styles.container}>
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+                <View style={styles.headerContainer}>
+                    <Text style={styles.title}>STAC-IT</Text>
+                    <TouchableOpacity style={styles.infoButton} onPress={() => setInfoModalVisible(true)}>
+                        <Ionicons name="information-circle" size={28} color="#6200ea" />
+                    </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity style={styles.activityButton} onPress={() => setCreateModalVisible(true)}>
-                <Text style={styles.buttonText}>Start New STAC</Text>
-            </TouchableOpacity>
+                <TouchableOpacity style={styles.activityButton} onPress={() => setCreateModalVisible(true)}>
+                    <Text style={styles.buttonText}>Start New STAC</Text>
+                </TouchableOpacity>
 
-            <StacForm
-                navigation={navigation}
-                visible={createModalVisible}
-                onClose={() => setCreateModalVisible(false)}
-                onFinalize={fetchStacs}
-            />
+                <StacForm
+                    navigation={navigation}
+                    visible={createModalVisible}
+                    onClose={() => setCreateModalVisible(false)}
+                    onFinalize={fetchStacs}
+                />
 
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={stacDetailsModalVisible}
-                onRequestClose={() => setStacDetailsModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    {selectedStac && (
-                        <View style={styles.modalContent}>
-                            <TouchableOpacity style={{ alignSelf: "flex-start" }} onPress={() => setStacDetailsModalVisible(false)}>
-                                <Ionicons name="close-circle" size={34} color="#6200ea" />
-                            </TouchableOpacity>
-                            <Text style={styles.modalTitle}>{selectedStac.stacName}</Text>
-                            <Text style={styles.modalLabel}>Date: {selectedStac.date}</Text>
-                            <Text style={styles.modalLabel}>Location: {selectedStac.location}</Text>
-                            <Text style={styles.modalLabel}>Selected Activities:</Text>
+                {/* Info Modal */}
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={infoModalVisible}
+                    onRequestClose={() => setInfoModalVisible(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.infoModalContent}>
+                            <Text style={styles.infoModalTitle}>What is STAC?</Text>
 
-                            <View style={styles.scrollViewWrapper}>
-                                <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.detailsScrollViewContent}>
-                                    {selectedStac.selectedOptions &&
-                                        (selectedStac.preferenceOrder || Object.keys(selectedStac.selectedOptions)).map((preference) => (
-                                            <View key={preference} style={styles.preferenceSection}>
-                                                <View style={styles.preferenceHeaderContainer}>
-                                                    <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
-                                                </View>
+                            <ScrollView
+                                ref={infoScrollViewRef}
+                                style={styles.infoScrollView}
+                                contentContainerStyle={styles.infoScrollViewContent}
+                            >
+                                <Text style={styles.infoText}>
+                                    STAC (Strategically Tailored Activity Coordination) is your all-in-one solution for planning fun
+                                    activities with friends. No more endless group texts or complicated planning—just simple, streamlined
+                                    social coordination.
+                                </Text>
 
-                                                {selectedStac.preferenceTimings && selectedStac.preferenceTimings[preference] && (
-                                                    <View style={styles.preferenceTimingContainer}>
-                                                        <Ionicons name="time-outline" size={14} color="#666" style={styles.timingIcon} />
-                                                        <Text style={styles.preferenceTimingText}>
-                                                            {selectedStac.preferenceTimings[preference].start} -{" "}
-                                                            {selectedStac.preferenceTimings[preference].end}
-                                                        </Text>
-                                                    </View>
-                                                )}
+                                <Text style={styles.infoSectionTitle}>How It Works</Text>
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>1.</Text>
+                                    <Text style={styles.infoListText}>
+                                        <Text style={styles.infoBold}>Create a STAC</Text>
+                                        {"\n"}Enter date, time, location, and what you want to do.
+                                    </Text>
+                                </View>
 
-                                                {selectedStac.selectedOptions?.[preference]?.map((option) => {
-                                                    const details = getOptionDetails(selectedStac, preference, option)
-                                                    return (
-                                                        <View key={option} style={styles.activityContainer}>
-                                                            <TouchableOpacity style={styles.checkboxContainer}>
-                                                                <Ionicons name="checkbox" size={24} color="#6200ea" />
-                                                                <Text style={styles.checkboxLabel}>{option}</Text>
-                                                            </TouchableOpacity>
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>2.</Text>
+                                    <Text style={styles.infoListText}>
+                                        <Text style={styles.infoBold}>Get Smart Suggestions</Text>
+                                        {"\n"}For each activity, STAC gives you 3 curated options based on your preferences.
+                                    </Text>
+                                </View>
 
-                                                            {details.description && (
-                                                                <Text style={styles.activityDescription}>{details.description}</Text>
-                                                            )}
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>3.</Text>
+                                    <Text style={styles.infoListText}>
+                                        <Text style={styles.infoBold}>Refine Your Plan</Text>
+                                        {"\n"}Lock in your favorites. Refresh others until it's perfect.
+                                    </Text>
+                                </View>
 
-                                                            {details.location && (
-                                                                <View style={styles.locationContainer}>
-                                                                    <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
-                                                                    <Text style={styles.locationText}>{details.location}</Text>
-                                                                </View>
-                                                            )}
-                                                        </View>
-                                                    )
-                                                })}
-                                            </View>
-                                        ))}
-                                </ScrollView>
-                            </View>
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>4.</Text>
+                                    <Text style={styles.infoListText}>
+                                        <Text style={styles.infoBold}>Save & Share</Text>
+                                        {"\n"}Save your plan and share it with friends—however you want.
+                                    </Text>
+                                </View>
 
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity
-                                    style={styles.shareButton}
-                                    onPress={() => handleShare(selectedStac)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={styles.shareButtonText}>Share</Text>
-                                </TouchableOpacity>
+                                <Text style={styles.infoSectionTitle}>Quick Start</Text>
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>1.</Text>
+                                    <Text style={styles.infoListText}>Tap "Create a New STAC"</Text>
+                                </View>
 
-                                <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={() => deleteStac(selectedStac.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={styles.deleteButtonText}>Delete</Text>
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>2.</Text>
+                                    <Text style={styles.infoListText}>
+                                        Fill in:
+                                        {"\n"}- Name
+                                        {"\n"}- Date & Time
+                                        {"\n"}- City, State
+                                        {"\n"}- Activity Preferences
+                                        {"\n"}- Group Size & Budget
+                                    </Text>
+                                </View>
+
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>3.</Text>
+                                    <Text style={styles.infoListText}>Review and refine the suggestions</Text>
+                                </View>
+
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>4.</Text>
+                                    <Text style={styles.infoListText}>Tap "Save" to finalize</Text>
+                                </View>
+
+                                <View style={styles.infoListItem}>
+                                    <Text style={styles.infoListNumber}>5.</Text>
+                                    <Text style={styles.infoListText}>Share your STAC plan with your crew!</Text>
+                                </View>
+
+                                <View style={{ height: 60 }} />
+                            </ScrollView>
+
+                            <View style={styles.infoModalFooter}>
+                                <TouchableOpacity style={styles.closeInfoButton} onPress={() => setInfoModalVisible(false)}>
+                                    <Text style={styles.closeInfoButtonText}>Close</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    )}
-                </View>
-            </Modal>
+                    </View>
+                </Modal>
 
-            {renderStacList(scheduledStacs, "Scheduled STAC")}
-            {renderStacList(pastStacs, "Past History")}
-        </ScrollView>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={stacDetailsModalVisible}
+                    onRequestClose={() => setStacDetailsModalVisible(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        {selectedStac && (
+                            <View style={styles.modalContent}>
+                                <TouchableOpacity style={{ alignSelf: "flex-start" }} onPress={() => setStacDetailsModalVisible(false)}>
+                                    <Ionicons name="close-circle" size={34} color="#6200ea" />
+                                </TouchableOpacity>
+                                <Text style={styles.modalTitle}>{selectedStac.stacName}</Text>
+                                <Text style={styles.modalLabel}>Date: {selectedStac.date}</Text>
+                                <Text style={styles.modalLabel}>Location: {selectedStac.location}</Text>
+                                <Text style={styles.modalLabel}>Selected Activities:</Text>
+
+                                <View style={styles.scrollViewWrapper}>
+                                    <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.detailsScrollViewContent}>
+                                        {selectedStac.selectedOptions &&
+                                            (selectedStac.preferenceOrder || Object.keys(selectedStac.selectedOptions)).map((preference) => (
+                                                <View key={preference} style={styles.preferenceSection}>
+                                                    <View style={styles.preferenceHeaderContainer}>
+                                                        <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
+                                                    </View>
+
+                                                    {selectedStac.preferenceTimings && selectedStac.preferenceTimings[preference] && (
+                                                        <View style={styles.preferenceTimingContainer}>
+                                                            <Ionicons name="time-outline" size={14} color="#666" style={styles.timingIcon} />
+                                                            <Text style={styles.preferenceTimingText}>
+                                                                {selectedStac.preferenceTimings[preference].start} -{" "}
+                                                                {selectedStac.preferenceTimings[preference].end}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+
+                                                    {selectedStac.selectedOptions?.[preference]?.map((option) => {
+                                                        const details = getOptionDetails(selectedStac, preference, option)
+                                                        return (
+                                                            <View key={option} style={styles.activityContainer}>
+                                                                <TouchableOpacity style={styles.checkboxContainer}>
+                                                                    <Ionicons name="checkbox" size={24} color="#6200ea" />
+                                                                    <Text style={styles.checkboxLabel}>{option}</Text>
+                                                                </TouchableOpacity>
+
+                                                                {details.description && (
+                                                                    <Text style={styles.activityDescription}>{details.description}</Text>
+                                                                )}
+
+                                                                {details.location && (
+                                                                    <View style={styles.locationContainer}>
+                                                                        <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
+                                                                        <Text style={styles.locationText}>{details.location}</Text>
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        )
+                                                    })}
+                                                </View>
+                                            ))}
+                                    </ScrollView>
+                                </View>
+
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity
+                                        style={styles.shareButton}
+                                        onPress={() => handleShare(selectedStac)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.shareButtonText}>Share</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.deleteButton}
+                                        onPress={() => deleteStac(selectedStac.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.deleteButtonText}>Delete</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                </Modal>
+
+                {renderStacList(scheduledStacs, "Scheduled STAC")}
+                {renderStacList(pastStacs, "Past History")}
+            </ScrollView>
+        </View>
     )
 }
 
@@ -416,13 +525,29 @@ const StacDetailsScreen: React.FC = () => {
 }
 
 const styles = StyleSheet.create({
-    title: {
+    container: {
+        flex: 1,
+        backgroundColor: "#f0f2f5",
+    },
+    headerContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        position: "relative",
         marginTop: 70,
+        marginBottom: 20,
+    },
+    infoButton: {
+        position: "absolute",
+        right: 0,
+        top: 5,
+        padding: 5,
+    },
+    title: {
         fontSize: 36,
         fontWeight: "bold",
         color: "#333",
         textAlign: "center",
-        marginBottom: 20,
     },
     section: {
         marginVertical: 10,
@@ -497,10 +622,6 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontStyle: "italic",
     },
-    container: {
-        padding: 20,
-        backgroundColor: "#f0f2f5",
-    },
     createButton: {
         backgroundColor: "#6200ea",
         paddingVertical: 10,
@@ -524,6 +645,80 @@ const styles = StyleSheet.create({
         padding: 20,
         maxHeight: "80%",
     },
+    infoModalContent: {
+        flex: 1,
+        backgroundColor: "white",
+        margin: 20,
+        borderRadius: 10,
+        padding: 0,
+        maxHeight: "80%",
+        overflow: "hidden",
+    },
+    infoModalTitle: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: "#333",
+        textAlign: "center",
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#eee",
+    },
+    infoScrollView: {
+        flex: 1,
+    },
+    infoScrollViewContent: {
+        padding: 20,
+        paddingBottom: 20,
+    },
+    infoText: {
+        fontSize: 16,
+        color: "#333",
+        lineHeight: 22,
+        marginBottom: 20,
+    },
+    infoSectionTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#6200ea",
+        marginTop: 10,
+        marginBottom: 15,
+    },
+    infoListItem: {
+        flexDirection: "row",
+        marginBottom: 15,
+        paddingLeft: 10,
+    },
+    infoListNumber: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#6200ea",
+        width: 20,
+    },
+    infoListText: {
+        fontSize: 16,
+        color: "#333",
+        flex: 1,
+        lineHeight: 22,
+    },
+    infoBold: {
+        fontWeight: "bold",
+    },
+    infoModalFooter: {
+        borderTopWidth: 1,
+        borderTopColor: "#eee",
+        padding: 15,
+    },
+    closeInfoButton: {
+        backgroundColor: "#6200ea",
+        paddingVertical: 12,
+        borderRadius: 5,
+        alignItems: "center",
+    },
+    closeInfoButtonText: {
+        color: "white",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
     modalTitle: {
         fontSize: 30,
         fontWeight: "bold",
@@ -533,7 +728,6 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
-        backgroundColor: "#f0f2f5",
     },
     scrollViewContent: {
         padding: 20,
