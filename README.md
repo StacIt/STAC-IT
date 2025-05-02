@@ -47,4 +47,4 @@ When expo prompts to open app in Web, Android, or iOS, press:
 i - iOS Simulator
 a - Android Studio
 ```
-If expo does not automatically open the emulators, opem them manually and then start the expo server
+If expo does not automatically open the emulators, opem it manually first and then start the expo server
