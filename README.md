@@ -17,6 +17,7 @@ Before you get started, make sure the following are installed on your machine:
   ```bash
   npm install -g expo-cli
   ```
+- Xcode (iOS Simulator) or Android Studio (Android Virtual Device) required for emulators
 
 ### 1. Clone the Repository
 
@@ -43,5 +44,7 @@ npx expo start
 ### 5. Launching
 When expo prompts to open app in Web, Android, or iOS, press:
 ```bash
-i
+i - iOS Simulator
+a - Android Studio
 ```
+If expo does not automatically open the emulators, opem them manually and then start the expo server
