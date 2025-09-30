@@ -25,6 +25,38 @@ import { doc, setDoc } from "firebase/firestore"
 import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
 
+interface StacRequest {
+    date: string
+    city: string
+    state: string
+    preferences: string
+    budget: string
+    timePeriod: {
+        start: string
+        end: string
+    }
+    numberOfPeople: string
+    keepOptions?: string
+}
+
+interface StacResponse {
+  request_id: string;
+  timestamp: string;
+  preferences: {
+    preference: string;
+    options: {
+      name: string;
+      activity_description: string;
+      location: string;
+      timing: {
+        start: string;
+        end: string;
+      };
+      open_hours: string;
+    }[];
+  }[];
+}
+
 interface Timing {
     start: string
     end: string
@@ -363,13 +395,13 @@ const StacForm: React.FC<StacFormProps> = ({
         return true
     }
 
-    const callBackendModel = async (message: string) => {
+    const callBackendModel = async (message: StacRequest) => {
         try {
             const response = await axios.post(
-                "https://stacit.duckdns.org/chatbot/call-model/",
-                new URLSearchParams({ message }),
+                "https://stac-1061792458880.us-east1.run.app/chatbot_api",
+                message,
                 {
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    headers: { "Content-Type": "application/json" },
                 },
             )
             return response.data
@@ -422,8 +454,19 @@ const StacForm: React.FC<StacFormProps> = ({
                     createdAt: new Date().toISOString(),
                 })
 
-                const userInput = `Date: ${date.toDateString()}, Location: ${city}, ${state.toUpperCase()}, Preferences: ${preferences}, Budget: ${budget}, Time period: ${formatTime(startTime)} - ${formatTime(endTime)}, Number of people: ${numberOfPeople}`
-                console.log("Calling backend model with input:", userInput)
+                const userInput: StacRequest = {
+                    date: date.toDateString(),
+                    city,
+                    state: state.toUpperCase(),
+                    preferences,
+                    budget,
+                    timePeriod: {
+                        start: formatTime(startTime),
+                        end: formatTime(endTime),
+                    },
+                    numberOfPeople,
+                    keepOptions: '',
+                }
                 const response = await callBackendModel(userInput)
 
                 // Parse the response and update state
@@ -551,8 +594,20 @@ const StacForm: React.FC<StacFormProps> = ({
 
             const prefsToUse = activities.filter((a) => a.trim() !== "").join(", ")
             const selectedInfo = selectedPrefs.length > 0 ? ` (Keep these options: ${selectedPrefs})` : ""
-
-            const userInput = `Date: ${date.toDateString()}, Location: ${city}, ${state.toUpperCase()}, Preferences: ${prefsToUse}${selectedInfo}, Budget: ${budget}, Time period: ${formatTime(startTime)} - ${formatTime(endTime)}, Number of people: ${numberOfPeople}`
+            
+            const userInput: BackendModelPayload = {
+                date: date.toDateString(),
+                city,
+                state: state.toUpperCase(),
+                preferences: prefsToUse,
+                budget,
+                timePeriod: {
+                    start: formatTime(startTime),
+                    end: formatTime(endTime),
+                },
+                numberOfPeople,
+                keepOptions: selectedInfo || '',
+            }
             const response = await callBackendModel(userInput)
 
             // Parse the response and update state
