@@ -470,14 +470,15 @@ const StacForm: React.FC<StacFormProps> = ({
                 const response = await callBackendModel(userInput)
 
                 // Parse the response and update state
-                const parsedData = parseModelResponse(response)
+                const json_response = JSON.stringify(response);
+                const parsedData = parseModelResponse(json_response)
                 setPreferences(parsedData.preferences)
                 setOptions(parsedData.options)
                 setDescriptions(parsedData.descriptions)
                 setLocations(parsedData.locations)
                 setPreferenceTimings(parsedData.preferenceTimings)
 
-                setModelResponse(response)
+                setModelResponse(json_response)
                 setResponseModalVisible(true)
                 onClose()
             } catch (error) {
@@ -595,7 +596,7 @@ const StacForm: React.FC<StacFormProps> = ({
             const prefsToUse = activities.filter((a) => a.trim() !== "").join(", ")
             const selectedInfo = selectedPrefs.length > 0 ? ` (Keep these options: ${selectedPrefs})` : ""
             
-            const userInput: BackendModelPayload = {
+            const userInput: StacRequest = {
                 date: date.toDateString(),
                 city,
                 state: state.toUpperCase(),
@@ -611,14 +612,15 @@ const StacForm: React.FC<StacFormProps> = ({
             const response = await callBackendModel(userInput)
 
             // Parse the response and update state
-            const parsedData = parseModelResponse(response)
+            const json_response = JSON.stringify(response);
+            const parsedData = parseModelResponse(json_response)
             setPreferences(parsedData.preferences)
             setOptions(parsedData.options)
             setDescriptions(parsedData.descriptions)
             setLocations(parsedData.locations)
             setPreferenceTimings(parsedData.preferenceTimings)
 
-            setModelResponse(response)
+            setModelResponse(json_response)
         } catch (error) {
             console.error("Error refreshing model response:", error)
             Alert.alert("Error", "Failed to refresh model response.")
