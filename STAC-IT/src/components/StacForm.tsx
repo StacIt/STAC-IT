@@ -327,33 +327,30 @@ const StacForm: React.FC<StacFormProps> = ({
         return true
     }
 
-    const parseModelResponse = (response: string) => {
+    const parseModelResponse = (response: StacResponse) => {
         try {
-            let cleanResponse = response.trim()
-            if (cleanResponse.startsWith("```json") && cleanResponse.endsWith("```")) {
-                cleanResponse = cleanResponse.slice(7, -3).trim()
-            }
-            const jsonData = typeof cleanResponse === "string" ? JSON.parse(cleanResponse) : cleanResponse
-
             const preferences: string[] = []
             const options: Record<string, string[]> = {}
             const descriptions: Record<string, string> = {}
             const locations: Record<string, string> = {}
             const preferenceTimings: Record<string, Timing> = {}
 
-            jsonData.preferences.forEach((preferenceObj: any) => {
-                const preference = preferenceObj.preference
-                preferences.push(preference)
-                options[preference] = preferenceObj.options.map((option: any) => option.name)
+            type actType = typeof response.activities[0];
 
-                if (preferenceObj.options.length > 0 && preferenceObj.options[0].timing) {
+            response.activities.forEach((activityObj: actType) => {
+                const preference = activityObj.activity
+                preferences.push(preference)
+                type optType = typeof activityObj.options[0];
+                options[preference] = activityObj.options.map((option: optType) => option.name)
+
+                if (activityObj.options.length > 0 && activityObj.options[0].timing) {
                     preferenceTimings[preference] = {
-                        start: preferenceObj.options[0].timing.start || "",
-                        end: preferenceObj.options[0].timing.end || "",
+                        start: activityObj.options[0].timing.start || "",
+                        end: activityObj.options[0].timing.end || "",
                     }
                 }
 
-                preferenceObj.options.forEach((option: any) => {
+                activityObj.options.forEach((option: optType) => {
                     descriptions[option.name] = option.activity_description
                     locations[option.name] = option.location || ""
                 })
@@ -397,17 +394,16 @@ const StacForm: React.FC<StacFormProps> = ({
 
     const callBackendModel = async (message: StacRequest) => {
         try {
-            const response = await axios.post(
+            const response = await axios.post<StacResponse>(
                 "https://stac-1061792458880.us-east1.run.app/chatbot_api",
                 message,
-                {
-                    headers: { "Content-Type": "application/json" },
-                },
+                { headers: { "Content-Type": "application/json" } }
             )
             return response.data
         } catch (error) {
             console.error(error)
             Alert.alert("Error", "Failed to call backend model.")
+            throw error
         }
     }
 
@@ -434,7 +430,8 @@ const StacForm: React.FC<StacFormProps> = ({
             return
         }
 
-        const preferences = activities.filter((a) => a.trim() !== "")
+        const filtered_activities = activities.filter((a) => a.trim() !== "");
+        const preferences = filtered_activities.join(", ")
 
         const user = FIREBASE_AUTH.currentUser
         if (user) {
@@ -458,7 +455,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     date: date.toDateString(),
                     city,
                     state: state.toUpperCase(),
-                    activities: preferences,
+                    activities: filtered_activities,
                     budget,
                     timePeriod: {
                         start: formatTime(startTime),
@@ -467,18 +464,17 @@ const StacForm: React.FC<StacFormProps> = ({
                     numberOfPeople,
                     keepOptions: '',
                 }
-                const response = await callBackendModel(userInput)
+                const response: StacResponse = await callBackendModel(userInput)
 
                 // Parse the response and update state
-                const json_response = JSON.stringify(response);
-                const parsedData = parseModelResponse(json_response)
+                const parsedData = parseModelResponse(response)
                 setPreferences(parsedData.preferences)
                 setOptions(parsedData.options)
                 setDescriptions(parsedData.descriptions)
                 setLocations(parsedData.locations)
                 setPreferenceTimings(parsedData.preferenceTimings)
 
-                setModelResponse(json_response)
+                setModelResponse(JSON.stringify(response))
                 setResponseModalVisible(true)
                 onClose()
             } catch (error) {
@@ -612,15 +608,14 @@ const StacForm: React.FC<StacFormProps> = ({
             const response = await callBackendModel(userInput)
 
             // Parse the response and update state
-            const json_response = JSON.stringify(response);
-            const parsedData = parseModelResponse(json_response)
+            const parsedData = parseModelResponse(response)
             setPreferences(parsedData.preferences)
             setOptions(parsedData.options)
             setDescriptions(parsedData.descriptions)
             setLocations(parsedData.locations)
             setPreferenceTimings(parsedData.preferenceTimings)
 
-            setModelResponse(json_response)
+            setModelResponse(JSON.stringify(response))
         } catch (error) {
             console.error("Error refreshing model response:", error)
             Alert.alert("Error", "Failed to refresh model response.")
