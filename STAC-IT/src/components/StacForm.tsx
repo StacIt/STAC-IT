@@ -26,24 +26,24 @@ import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
 
 interface StacRequest {
-    date: string
-    city: string
-    state: string
-    preferences: string
-    budget: string
+    date: string;
+    city: string;
+    state: string;
+    activities: string[];
+    budget: string;
     timePeriod: {
-        start: string
-        end: string
-    }
-    numberOfPeople: string
-    keepOptions?: string
+        start: string;
+        end: string;
+    };
+    numberOfPeople: string;
+    keepOptions?: string;
 }
 
 interface StacResponse {
   request_id: string;
   timestamp: string;
-  preferences: {
-    preference: string;
+  activities: {
+    activity: string;
     options: {
       name: string;
       activity_description: string;
@@ -434,7 +434,7 @@ const StacForm: React.FC<StacFormProps> = ({
             return
         }
 
-        const preferences = activities.filter((a) => a.trim() !== "").join(", ")
+        const preferences = activities.filter((a) => a.trim() !== "")
 
         const user = FIREBASE_AUTH.currentUser
         if (user) {
@@ -458,7 +458,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     date: date.toDateString(),
                     city,
                     state: state.toUpperCase(),
-                    preferences,
+                    activities: preferences,
                     budget,
                     timePeriod: {
                         start: formatTime(startTime),
@@ -593,14 +593,14 @@ const StacForm: React.FC<StacFormProps> = ({
                 .map((pref) => `${pref}: ${selectedOptions[pref].join(", ")}`)
                 .join("; ")
 
-            const prefsToUse = activities.filter((a) => a.trim() !== "").join(", ")
+            const prefsToUse = activities.filter((a) => a.trim() !== "")
             const selectedInfo = selectedPrefs.length > 0 ? ` (Keep these options: ${selectedPrefs})` : ""
             
             const userInput: StacRequest = {
                 date: date.toDateString(),
                 city,
                 state: state.toUpperCase(),
-                preferences: prefsToUse,
+                activities: prefsToUse,
                 budget,
                 timePeriod: {
                     start: formatTime(startTime),
