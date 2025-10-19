@@ -25,41 +25,86 @@ import { doc, setDoc } from "firebase/firestore"
 import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
 
+interface Period {
+    begin: Date;
+    end: Date;
+}
+
+function makePeriod(date: Date, begin: Date | null, end: Date | null): Period {
+    return {
+        begin: new Date(date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        begin?.getHours(),
+                        begin?.getMinutes()),
+        end: new Date(date.getFullYear(),
+                      date.getMonth(),
+                      date.getDate(),
+                      end?.getHours(),
+                      end?.getMinutes())
+    };
+}
+
+interface StrPeriod {
+    begin: string;
+    end: string;
+}
+
+function fmtDateStr(ds: string): string {
+    const d: Date = new Date(ds)
+    return d.toLocaleTimeString()
+}
+
+function fmtStrPeriod(p: StrPeriod): StrPeriod {
+    // console.log("HERE")
+    // console.log(t)
+    // var h = t.getHours()
+    // const m = t.getMinutes()
+    // const ampm = h >= 12 ? "pm" : "am"
+    // h %= 12
+    // return `${h}:${m.toString().padStart(2, "0")}${ampm}`
+    return {
+        begin: fmtDateStr(p.begin),
+        end: fmtDateStr(p.end)
+    };
+}
+
 interface StacRequest {
-    date: string
-    city: string
-    state: string
-    preferences: string
-    budget: string
-    timePeriod: {
-        start: string
-        end: string
-    }
-    numberOfPeople: string
-    keepOptions?: string
+    city: string;
+    state: string;
+    activities: string[];
+    budget: string;
+    period: Period;
+    numberOfPeople: string;
+    keepOptions?: string;
+}
+
+interface Place {
+    name: string;
+    display_name: string;
+    short_address: string;
+}
+
+interface Activity {
+    name: string;
+    description: string;
+    location: Place;
+}
+
+interface ActivityOptions {
+    label: string;
+    options: Activity[];
+    timing: StrPeriod;
+}
+
+interface Itinerary {
+    activities: ActivityOptions[];
 }
 
 interface StacResponse {
   request_id: string;
   timestamp: string;
-  preferences: {
-    preference: string;
-    options: {
-      name: string;
-      activity_description: string;
-      location: string;
-      timing: {
-        start: string;
-        end: string;
-      };
-      open_hours: string;
-    }[];
-  }[];
-}
-
-interface Timing {
-    start: string
-    end: string
+  itinerary: Itinerary;
 }
 
 interface StacFormProps {
@@ -196,7 +241,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({})
     const [descriptions, setDescriptions] = useState<Record<string, string>>({})
     const [locations, setLocations] = useState<Record<string, string>>({})
-    const [preferenceTimings, setPreferenceTimings] = useState<Record<string, Timing>>({})
+    const [preferenceTimings, setPreferenceTimings] = useState<Record<string, StrPeriod>>({})
 
     // Custom time input states
     const [startTimeInput, setStartTimeInput] = useState<TimeInputState>({
@@ -327,35 +372,26 @@ const StacForm: React.FC<StacFormProps> = ({
         return true
     }
 
-    const parseModelResponse = (response: string) => {
+    const parseModelResponse = (response: StacResponse) => {
         try {
-            let cleanResponse = response.trim()
-            if (cleanResponse.startsWith("```json") && cleanResponse.endsWith("```")) {
-                cleanResponse = cleanResponse.slice(7, -3).trim()
-            }
-            const jsonData = typeof cleanResponse === "string" ? JSON.parse(cleanResponse) : cleanResponse
-
             const preferences: string[] = []
             const options: Record<string, string[]> = {}
             const descriptions: Record<string, string> = {}
             const locations: Record<string, string> = {}
-            const preferenceTimings: Record<string, Timing> = {}
+            const preferenceTimings: Record<string, StrPeriod> = {}
 
-            jsonData.preferences.forEach((preferenceObj: any) => {
-                const preference = preferenceObj.preference
+            const activities: ActivityOptions[] = response.itinerary.activities
+
+            activities.forEach((actOpts: ActivityOptions) => {
+                const preference = actOpts.label
                 preferences.push(preference)
-                options[preference] = preferenceObj.options.map((option: any) => option.name)
+                options[preference] = actOpts.options.map((option: Activity) => option.name)
 
-                if (preferenceObj.options.length > 0 && preferenceObj.options[0].timing) {
-                    preferenceTimings[preference] = {
-                        start: preferenceObj.options[0].timing.start || "",
-                        end: preferenceObj.options[0].timing.end || "",
-                    }
-                }
+                preferenceTimings[preference] = fmtStrPeriod(actOpts.timing);
 
-                preferenceObj.options.forEach((option: any) => {
-                    descriptions[option.name] = option.activity_description
-                    locations[option.name] = option.location || ""
+                actOpts.options.forEach((option: Activity) => {
+                    descriptions[option.name] = option.description
+                    locations[option.name] = option.location.short_address
                 })
             })
 
@@ -397,17 +433,16 @@ const StacForm: React.FC<StacFormProps> = ({
 
     const callBackendModel = async (message: StacRequest) => {
         try {
-            const response = await axios.post(
+            const response = await axios.post<StacResponse>(
                 "https://stac-1061792458880.us-east1.run.app/chatbot_api",
                 message,
-                {
-                    headers: { "Content-Type": "application/json" },
-                },
+                { headers: { "Content-Type": "application/json" } }
             )
             return response.data
         } catch (error) {
             console.error(error)
             Alert.alert("Error", "Failed to call backend model.")
+            throw error
         }
     }
 
@@ -434,7 +469,8 @@ const StacForm: React.FC<StacFormProps> = ({
             return
         }
 
-        const preferences = activities.filter((a) => a.trim() !== "").join(", ")
+        const filtered_activities = activities.filter((a) => a.trim() !== "");
+        const preferences = filtered_activities.join(", ")
 
         const user = FIREBASE_AUTH.currentUser
         if (user) {
@@ -455,30 +491,25 @@ const StacForm: React.FC<StacFormProps> = ({
                 })
 
                 const userInput: StacRequest = {
-                    date: date.toDateString(),
                     city,
                     state: state.toUpperCase(),
-                    preferences,
+                    activities: filtered_activities,
                     budget,
-                    timePeriod: {
-                        start: formatTime(startTime),
-                        end: formatTime(endTime),
-                    },
+                    period: makePeriod(date, startTime, endTime),
                     numberOfPeople,
                     keepOptions: '',
                 }
-                const response = await callBackendModel(userInput)
+                const response: StacResponse = await callBackendModel(userInput)
 
                 // Parse the response and update state
-                const json_response = JSON.stringify(response);
-                const parsedData = parseModelResponse(json_response)
+                const parsedData = parseModelResponse(response)
                 setPreferences(parsedData.preferences)
                 setOptions(parsedData.options)
                 setDescriptions(parsedData.descriptions)
                 setLocations(parsedData.locations)
                 setPreferenceTimings(parsedData.preferenceTimings)
 
-                setModelResponse(json_response)
+                setModelResponse(JSON.stringify(response))
                 setResponseModalVisible(true)
                 onClose()
             } catch (error) {
@@ -593,34 +624,29 @@ const StacForm: React.FC<StacFormProps> = ({
                 .map((pref) => `${pref}: ${selectedOptions[pref].join(", ")}`)
                 .join("; ")
 
-            const prefsToUse = activities.filter((a) => a.trim() !== "").join(", ")
+            const prefsToUse = activities.filter((a) => a.trim() !== "")
             const selectedInfo = selectedPrefs.length > 0 ? ` (Keep these options: ${selectedPrefs})` : ""
-            
+
             const userInput: StacRequest = {
-                date: date.toDateString(),
                 city,
                 state: state.toUpperCase(),
-                preferences: prefsToUse,
+                activities: prefsToUse,
                 budget,
-                timePeriod: {
-                    start: formatTime(startTime),
-                    end: formatTime(endTime),
-                },
+                period: makePeriod(date, startTime, endTime),
                 numberOfPeople,
                 keepOptions: selectedInfo || '',
             }
             const response = await callBackendModel(userInput)
 
             // Parse the response and update state
-            const json_response = JSON.stringify(response);
-            const parsedData = parseModelResponse(json_response)
+            const parsedData = parseModelResponse(response)
             setPreferences(parsedData.preferences)
             setOptions(parsedData.options)
             setDescriptions(parsedData.descriptions)
             setLocations(parsedData.locations)
             setPreferenceTimings(parsedData.preferenceTimings)
 
-            setModelResponse(json_response)
+            setModelResponse(JSON.stringify(response))
         } catch (error) {
             console.error("Error refreshing model response:", error)
             Alert.alert("Error", "Failed to refresh model response.")
@@ -1141,7 +1167,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                 <View style={styles.preferenceTimingContainer}>
                                                     <Ionicons name="time-outline" size={16} color="#666" style={styles.timingIcon} />
                                                     <Text style={styles.preferenceTimingText}>
-                                                        {preferenceTimings[preference].start} - {preferenceTimings[preference].end}
+                                                        {preferenceTimings[preference].begin} - {preferenceTimings[preference].end}
                                                     </Text>
                                                 </View>
                                             )}
