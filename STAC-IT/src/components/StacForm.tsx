@@ -50,11 +50,23 @@ interface StrPeriod {
     end: string;
 }
 
-function makeStrPeriod(p: Period): StrPeriod {
+function fmtDateStr(ds: string): string {
+    const d: Date = new Date(ds)
+    return d.toLocaleTimeString()
+}
+
+function fmtStrPeriod(p: StrPeriod): StrPeriod {
+    // console.log("HERE")
+    // console.log(t)
+    // var h = t.getHours()
+    // const m = t.getMinutes()
+    // const ampm = h >= 12 ? "pm" : "am"
+    // h %= 12
+    // return `${h}:${m.toString().padStart(2, "0")}${ampm}`
     return {
-        begin: p.begin.toLocaleTimeString(),
-        end: p.end.toLocaleTimeString()
-    }
+        begin: fmtDateStr(p.begin),
+        end: fmtDateStr(p.end)
+    };
 }
 
 interface StacRequest {
@@ -82,7 +94,7 @@ interface Activity {
 interface ActivityOptions {
     label: string;
     options: Activity[];
-    timing: Period;
+    timing: StrPeriod;
 }
 
 interface Itinerary {
@@ -375,7 +387,7 @@ const StacForm: React.FC<StacFormProps> = ({
                 preferences.push(preference)
                 options[preference] = actOpts.options.map((option: Activity) => option.name)
 
-                preferenceTimings[preference] = makeStrPeriod(actOpts.timing)
+                preferenceTimings[preference] = fmtStrPeriod(actOpts.timing);
 
                 actOpts.options.forEach((option: Activity) => {
                     descriptions[option.name] = option.description
