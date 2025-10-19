@@ -25,41 +25,74 @@ import { doc, setDoc } from "firebase/firestore"
 import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
 
+interface Period {
+    begin: Date;
+    end: Date;
+}
+
+function makePeriod(date: Date, begin: Date | null, end: Date | null): Period {
+    return {
+        begin: new Date(date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        begin?.getHours(),
+                        begin?.getMinutes()),
+        end: new Date(date.getFullYear(),
+                      date.getMonth(),
+                      date.getDate(),
+                      end?.getHours(),
+                      end?.getMinutes())
+    };
+}
+
+interface StrPeriod {
+    begin: string;
+    end: string;
+}
+
+function makeStrPeriod(p: Period): StrPeriod {
+    return {
+        begin: p.begin.toLocaleTimeString(),
+        end: p.end.toLocaleTimeString()
+    }
+}
+
 interface StacRequest {
-    date: string;
     city: string;
     state: string;
     activities: string[];
     budget: string;
-    timePeriod: {
-        start: string;
-        end: string;
-    };
+    period: Period;
     numberOfPeople: string;
     keepOptions?: string;
+}
+
+interface Place {
+    name: string;
+    display_name: string;
+    short_address: string;
+}
+
+interface Activity {
+    name: string;
+    description: string;
+    location: Place;
+}
+
+interface ActivityOptions {
+    label: string;
+    options: Activity[];
+    timing: Period;
+}
+
+interface Itinerary {
+    activities: ActivityOptions[];
 }
 
 interface StacResponse {
   request_id: string;
   timestamp: string;
-  activities: {
-    activity: string;
-    options: {
-      name: string;
-      activity_description: string;
-      location: string;
-      timing: {
-        start: string;
-        end: string;
-      };
-      open_hours: string;
-    }[];
-  }[];
-}
-
-interface Timing {
-    start: string
-    end: string
+  itinerary: Itinerary;
 }
 
 interface StacFormProps {
@@ -196,7 +229,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({})
     const [descriptions, setDescriptions] = useState<Record<string, string>>({})
     const [locations, setLocations] = useState<Record<string, string>>({})
-    const [preferenceTimings, setPreferenceTimings] = useState<Record<string, Timing>>({})
+    const [preferenceTimings, setPreferenceTimings] = useState<Record<string, StrPeriod>>({})
 
     // Custom time input states
     const [startTimeInput, setStartTimeInput] = useState<TimeInputState>({
@@ -333,26 +366,20 @@ const StacForm: React.FC<StacFormProps> = ({
             const options: Record<string, string[]> = {}
             const descriptions: Record<string, string> = {}
             const locations: Record<string, string> = {}
-            const preferenceTimings: Record<string, Timing> = {}
+            const preferenceTimings: Record<string, StrPeriod> = {}
 
-            type actType = typeof response.activities[0];
+            const activities: ActivityOptions[] = response.itinerary.activities
 
-            response.activities.forEach((activityObj: actType) => {
-                const preference = activityObj.activity
+            activities.forEach((actOpts: ActivityOptions) => {
+                const preference = actOpts.label
                 preferences.push(preference)
-                type optType = typeof activityObj.options[0];
-                options[preference] = activityObj.options.map((option: optType) => option.name)
+                options[preference] = actOpts.options.map((option: Activity) => option.name)
 
-                if (activityObj.options.length > 0 && activityObj.options[0].timing) {
-                    preferenceTimings[preference] = {
-                        start: activityObj.options[0].timing.start || "",
-                        end: activityObj.options[0].timing.end || "",
-                    }
-                }
+                preferenceTimings[preference] = makeStrPeriod(actOpts.timing)
 
-                activityObj.options.forEach((option: optType) => {
-                    descriptions[option.name] = option.activity_description
-                    locations[option.name] = option.location || ""
+                actOpts.options.forEach((option: Activity) => {
+                    descriptions[option.name] = option.description
+                    locations[option.name] = option.location.short_address
                 })
             })
 
@@ -452,15 +479,11 @@ const StacForm: React.FC<StacFormProps> = ({
                 })
 
                 const userInput: StacRequest = {
-                    date: date.toDateString(),
                     city,
                     state: state.toUpperCase(),
                     activities: filtered_activities,
                     budget,
-                    timePeriod: {
-                        start: formatTime(startTime),
-                        end: formatTime(endTime),
-                    },
+                    period: makePeriod(date, startTime, endTime),
                     numberOfPeople,
                     keepOptions: '',
                 }
@@ -591,17 +614,13 @@ const StacForm: React.FC<StacFormProps> = ({
 
             const prefsToUse = activities.filter((a) => a.trim() !== "")
             const selectedInfo = selectedPrefs.length > 0 ? ` (Keep these options: ${selectedPrefs})` : ""
-            
+
             const userInput: StacRequest = {
-                date: date.toDateString(),
                 city,
                 state: state.toUpperCase(),
                 activities: prefsToUse,
                 budget,
-                timePeriod: {
-                    start: formatTime(startTime),
-                    end: formatTime(endTime),
-                },
+                period: makePeriod(date, startTime, endTime),
                 numberOfPeople,
                 keepOptions: selectedInfo || '',
             }
@@ -1136,7 +1155,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                 <View style={styles.preferenceTimingContainer}>
                                                     <Ionicons name="time-outline" size={16} color="#666" style={styles.timingIcon} />
                                                     <Text style={styles.preferenceTimingText}>
-                                                        {preferenceTimings[preference].start} - {preferenceTimings[preference].end}
+                                                        {preferenceTimings[preference].begin} - {preferenceTimings[preference].end}
                                                     </Text>
                                                 </View>
                                             )}
