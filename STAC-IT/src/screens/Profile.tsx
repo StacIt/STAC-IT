@@ -4,6 +4,7 @@ import { NavigationProp } from '@react-navigation/native';
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import { Alert } from 'react-native';
 
 interface ProfileProps {
     navigation: NavigationProp<any>;
@@ -64,15 +65,15 @@ const ProfilePage: React.FC<ProfileProps> = ({ navigation }) => {
     };
 
     const editProfile = () => {
-        alert("Edit Profile");
+        Alert.alert("Edit Profile");
     };
 
     const changePassword = () => {
-        alert("Change Password");
+        Alert.alert("Change Password");
     };
 
     const notificationSettings = () => {
-        alert("Notification Settings");
+        Alert.alert("Notification Settings");
     };
 
     return (

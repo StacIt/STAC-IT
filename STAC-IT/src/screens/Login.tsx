@@ -109,6 +109,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                     <TouchableOpacity
                         style={styles.visibilityToggle}
                         onPress={() => setShowPassword(!showPassword)}
+                        accessibilityRole="button" // Accessibility role for eye toglge to use in testing
                     >
                         {showPassword ? HideIcon : ShowIcon}
                     </TouchableOpacity>

@@ -30,7 +30,6 @@ interface StacRequest {
     city: string
     state: string
     preferences: string
-    budget: string
     timePeriod: {
         start: string
         end: string
@@ -75,7 +74,6 @@ interface StacFormProps {
     initialState?: string
     initialActivities?: string[]
     initialNumberOfPeople?: string
-    initialBudget?: string
 }
 
 interface TimeInputState {
@@ -161,7 +159,6 @@ const StacForm: React.FC<StacFormProps> = ({
     initialState = "",
     initialActivities = [""],
     initialNumberOfPeople = "",
-    initialBudget = "",
 }) => {
     const [stacName, setStacName] = useState(initialStacName)
     const [date, setDate] = useState(initialDate)
@@ -171,7 +168,6 @@ const StacForm: React.FC<StacFormProps> = ({
     const [state, setState] = useState(initialState)
     const [activities, setActivities] = useState(initialActivities)
     const [numberOfPeople, setNumberOfPeople] = useState(initialNumberOfPeople)
-    const [budget, setBudget] = useState(initialBudget)
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
@@ -228,7 +224,6 @@ const StacForm: React.FC<StacFormProps> = ({
             setState("")
             setActivities([""])
             setNumberOfPeople("")
-            setBudget("")
             setModelResponse("")
             setOptions({})
             setSelectedOptions({})
@@ -306,7 +301,6 @@ const StacForm: React.FC<StacFormProps> = ({
     const stateRef = useRef<TextInput>(null)
     const activityRefs = useRef<Array<TextInput | null>>([])
     const numberOfPeopleRef = useRef<TextInput>(null)
-    const budgetRef = useRef<TextInput>(null)
 
     const scrollViewRef = useRef<ScrollView>(null)
 
@@ -373,7 +367,7 @@ const StacForm: React.FC<StacFormProps> = ({
     }
 
     const validateForm = () => {
-        if (!startTime || !endTime || !city || !state || activities.length === 0 || !budget || !numberOfPeople) {
+        if (!startTime || !endTime || !city || !state || activities.length === 0  || !numberOfPeople) {
             Alert.alert("Error", "All fields are required.")
             return false
         }
@@ -383,10 +377,6 @@ const StacForm: React.FC<StacFormProps> = ({
             return false
         }
 
-        if (budget === "" || Number(budget) < 0) {
-            Alert.alert("Error", "Your budget should be 0 or higher.")
-            return false
-        }
         if (isNaN(Number(numberOfPeople)) || Number(numberOfPeople) <= 0) {
             Alert.alert("Error", "Number of people must be a positive number.")
             return false
@@ -420,19 +410,8 @@ const StacForm: React.FC<StacFormProps> = ({
             return
         }
 
-        let budgetCategory = ""
-        const budgetValue = Number.parseInt(budget, 10)
 
-        if (budgetValue < 30) {
-            budgetCategory = "cheap"
-        } else if (budgetValue >= 30 && budgetValue <= 60) {
-            budgetCategory = "moderate"
-        } else if (budgetValue > 60) {
-            budgetCategory = "expensive"
-        } else {
-            Alert.alert("Error", "Invalid budget value.")
-            return
-        }
+
 
         const preferences = activities.filter((a) => a.trim() !== "").join(", ")
 
@@ -449,7 +428,6 @@ const StacForm: React.FC<StacFormProps> = ({
                     date: date.toDateString(),
                     location: `${city}, ${state.toUpperCase()}`,
                     preferences,
-                    budget: budgetCategory,
                     numberOfPeople,
                     createdAt: new Date().toISOString(),
                 })
@@ -459,7 +437,6 @@ const StacForm: React.FC<StacFormProps> = ({
                     city,
                     state: state.toUpperCase(),
                     preferences,
-                    budget,
                     timePeriod: {
                         start: formatTime(startTime),
                         end: formatTime(endTime),
@@ -543,7 +520,6 @@ const StacForm: React.FC<StacFormProps> = ({
                 startTime: startTime?.toISOString(),
                 endTime: endTime?.toISOString(),
                 location: `${city}, ${state.toUpperCase()}`,
-                budget,
                 numberOfPeople,
                 createdAt: new Date().toISOString(),
             }
@@ -581,7 +557,7 @@ const StacForm: React.FC<StacFormProps> = ({
     }
 
     const handleRefresh = async () => {
-        if (!city || !state || activities.length === 0 || !budget) {
+        if (!city || !state || activities.length === 0 ) {
             Alert.alert("Error", "Please fill in all required fields before refreshing.")
             return
         }
@@ -601,7 +577,6 @@ const StacForm: React.FC<StacFormProps> = ({
                 city,
                 state: state.toUpperCase(),
                 preferences: prefsToUse,
-                budget,
                 timePeriod: {
                     start: formatTime(startTime),
                     end: formatTime(endTime),
@@ -645,7 +620,6 @@ const StacForm: React.FC<StacFormProps> = ({
                     setEndTime(null)
                     setCity("")
                     setState("")
-                    setBudget("")
                     setActivities([""])
                     setNumberOfPeople("")
                     setDate(new Date())
@@ -849,6 +823,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                     <View style={styles.timeInputContainer}>
                                         <View style={styles.timeInputBox}>
                                             <TextInput
+                                                testID="startHourInput"
                                                 ref={startHourRef}
                                                 style={styles.timeInput}
                                                 placeholder="08"
@@ -866,6 +841,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                         <View style={styles.timeInputBox}>
                                             <TextInput
+                                                testID="startMinuteInput"
                                                 ref={startMinuteRef}
                                                 style={styles.timeInput}
                                                 placeholder="00"
@@ -881,6 +857,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                         <View style={styles.periodContainer}>
                                             <TouchableOpacity
+                                                testID="AM-Button"
                                                 style={[styles.periodButton, startTimeInput.period === "AM" && styles.periodButtonActive]}
                                                 onPress={() => handlePeriodChange("AM", "start")}
                                             >
@@ -895,6 +872,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                             </TouchableOpacity>
 
                                             <TouchableOpacity
+                                                testID="PM-Button"
                                                 style={[styles.periodButton, startTimeInput.period === "PM" && styles.periodButtonActive]}
                                                 onPress={() => handlePeriodChange("PM", "start")}
                                             >
@@ -915,6 +893,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                     <View style={styles.timeInputContainer}>
                                         <View style={styles.timeInputBox}>
                                             <TextInput
+                                                testID="endHourInput"
                                                 ref={endHourRef}
                                                 style={styles.timeInput}
                                                 placeholder="05"
@@ -932,6 +911,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                         <View style={styles.timeInputBox}>
                                             <TextInput
+                                                testID="endMinuteInput"
                                                 ref={endMinuteRef}
                                                 style={styles.timeInput}
                                                 placeholder="00"
@@ -1071,24 +1051,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                         </View>
                                     </Modal>
 
-                                    <View style={styles.budgetInputContainer}>
-                                        <Text style={styles.dollarSign}>$</Text>
-                                        <TextInput
-                                            ref={budgetRef}
-                                            style={styles.budgetInput}
-                                            placeholder="Budget (maximum per person)"
-                                            value={budget}
-                                            onChangeText={(text) => {
-                                                // Only allow numbers
-                                                if (/^\d*$/.test(text)) {
-                                                    setBudget(text)
-                                                }
-                                            }}
-                                            keyboardType="numeric"
-                                            returnKeyType="done"
-                                            blurOnSubmit={true}
-                                        />
-                                    </View>
+
 
                                     <View style={{ height: 100 }} />
                                 </ScrollView>
@@ -1554,25 +1517,10 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#6200ea",
     },
-    budgetInputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        height: 40,
-        borderColor: "#ccc",
-        borderWidth: 1,
-        borderRadius: 5,
-        marginBottom: 10,
-        paddingLeft: 10,
-    },
     dollarSign: {
         fontSize: 16,
         fontWeight: "bold",
         marginRight: 5,
-    },
-    budgetInput: {
-        flex: 1,
-        height: 40,
     },
     numberPickerTitle: {
         fontSize: 18,

@@ -60,7 +60,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
     const handleSignUp = async () => {
         if (!acceptedTerms) {
-            alert("You must accept terms and conditions.");
+            Alert.alert("You must accept terms and conditions.");
             return;
         }
 
