@@ -22,12 +22,12 @@ Before you get started, make sure the following are installed on your machine:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Stacit/STAC-IT.git
+git clone https://github.com/StacIt/STAC-IT.git
 ```
 
-### 2. Change Directory to STAC-IT
+### 2. Change Directory to STAC-IT app directory
 ```bash
-cd Stacit/STAC-IT
+cd STAC-IT/STAC-IT
 ```
 
 ### 3. Install Dependencies
@@ -46,5 +46,6 @@ When expo prompts to open app in Web, Android, or iOS, press:
 ```bash
 i - iOS Simulator
 a - Android Studio
+w - Web Browser
 ```
-If expo does not automatically open the emulators, opem it manually first and then start the expo server
+If expo does not automatically open the emulators, open it manually first and then start the expo server
