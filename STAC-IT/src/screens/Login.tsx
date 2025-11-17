@@ -93,9 +93,12 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                 <TextInput
                     style={[styles.input, { marginVertical: 4 }]}
                     value={email}
-                    onChangeText={(text) => { setEmail(text); validateEmail(text); }}
+                    onChangeText={(text) => { setEmail(text) }}
+                    onEndEditing={() => { validateEmail(email) }}
                     placeholder="Email"
                     autoCapitalize="none"
+                    autoComplete="email"
+                    inputMode="email"
                 />
                 <View style={styles.passwordContainer}>
                     <TextInput
@@ -105,6 +108,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                         placeholder="Password"
                         autoCapitalize="none"
                         secureTextEntry={!showPassword}
+                        autoComplete="current-password"
                     />
                     <TouchableOpacity
                         style={styles.visibilityToggle}
@@ -195,4 +199,4 @@ const styles = StyleSheet.create({
     visibilityToggle: {
         padding: 10,
     },
-});
+})
