@@ -120,7 +120,7 @@ interface StacFormProps {
     initialState?: string
     initialActivities?: string[]
     initialNumberOfPeople?: string
-    initialBudget?: string
+    initialBudget?: number
 }
 
 interface TimeInputState {
@@ -206,7 +206,6 @@ const StacForm: React.FC<StacFormProps> = ({
     initialState = "",
     initialActivities = [""],
     initialNumberOfPeople = "",
-    initialBudget = "",
 }) => {
     const [stacName, setStacName] = useState(initialStacName)
     const [date, setDate] = useState(initialDate)
@@ -216,7 +215,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [state, setState] = useState(initialState)
     const [activities, setActivities] = useState(initialActivities)
     const [numberOfPeople, setNumberOfPeople] = useState(initialNumberOfPeople)
-    const [budget, setBudget] = useState(initialBudget)
+    const [budget, setBudget] = useState<number | null>(null)
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
@@ -273,7 +272,7 @@ const StacForm: React.FC<StacFormProps> = ({
             setState("")
             setActivities([""])
             setNumberOfPeople("")
-            setBudget("")
+            setBudget(null)
             setModelResponse("")
             setOptions({})
             setSelectedOptions({})
@@ -419,7 +418,7 @@ const StacForm: React.FC<StacFormProps> = ({
             return false
         }
 
-        if (budget === "" || Number(budget) < 0) {
+        if (budget === null || Number(budget) < 0) {
             Alert.alert("Error", "Your budget should be 0 or higher.")
             return false
         }
@@ -455,19 +454,8 @@ const StacForm: React.FC<StacFormProps> = ({
             return
         }
 
-        let budgetCategory = ""
-        const budgetValue = Number.parseInt(budget, 10)
-
-        if (budgetValue < 30) {
-            budgetCategory = "cheap"
-        } else if (budgetValue >= 30 && budgetValue <= 60) {
-            budgetCategory = "moderate"
-        } else if (budgetValue > 60) {
-            budgetCategory = "expensive"
-        } else {
-            Alert.alert("Error", "Invalid budget value.")
-            return
-        }
+        //let budgetCategory = ""
+        const budgetStr = String(budget ?? "0")
 
         const filtered_activities = activities.filter((a) => a.trim() !== "");
         const preferences = filtered_activities.join(", ")
@@ -485,7 +473,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     date: date.toDateString(),
                     location: `${city}, ${state.toUpperCase()}`,
                     preferences,
-                    budget: budgetCategory,
+                    budget: budgetStr,
                     numberOfPeople,
                     createdAt: new Date().toISOString(),
                 })
@@ -494,7 +482,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     city,
                     state: state.toUpperCase(),
                     activities: filtered_activities,
-                    budget,
+                    budget: budgetStr,
                     period: makePeriod(date, startTime, endTime),
                     numberOfPeople,
                     keepOptions: '',
@@ -631,7 +619,7 @@ const StacForm: React.FC<StacFormProps> = ({
                 city,
                 state: state.toUpperCase(),
                 activities: prefsToUse,
-                budget,
+                budget: String(budget ?? "0"),
                 period: makePeriod(date, startTime, endTime),
                 numberOfPeople,
                 keepOptions: selectedInfo || '',
@@ -671,7 +659,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     setEndTime(null)
                     setCity("")
                     setState("")
-                    setBudget("")
+                    setBudget(null)
                     setActivities([""])
                     setNumberOfPeople("")
                     setDate(new Date())
@@ -1097,23 +1085,25 @@ const StacForm: React.FC<StacFormProps> = ({
                                         </View>
                                     </Modal>
 
-                                    <View style={styles.budgetInputContainer}>
-                                        <Text style={styles.dollarSign}>$</Text>
-                                        <TextInput
-                                            ref={budgetRef}
-                                            style={styles.budgetInput}
-                                            placeholder="Budget (maximum per person)"
-                                            value={budget}
-                                            onChangeText={(text) => {
-                                                // Only allow numbers
-                                                if (/^\d*$/.test(text)) {
-                                                    setBudget(text)
-                                                }
-                                            }}
-                                            keyboardType="numeric"
-                                            returnKeyType="done"
-                                            blurOnSubmit={true}
-                                        />
+                                    <Text style={styles.budgetLabel}>Budget</Text>
+                                    <View style={styles.budgetOptionsContainer}>
+                                        {[1, 2, 3, 4, 5].map((level) => (
+                                            <TouchableOpacity
+                                                key={level}
+                                                style={[
+                                                    styles.budgetOption,
+                                                    budget === level && styles.budgetOptionSelected
+                                                ]}
+                                                onPress={() => setBudget(level)}
+                                            >
+                                                <Text style={[
+                                                    styles.budgetOptionText,
+                                                    budget === level && styles.budgetOptionTextSelected
+                                                ]}>
+                                                    {"$".repeat(level)}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
                                     </View>
 
                                     <View style={{ height: 100 }} />
@@ -1610,6 +1600,40 @@ const styles = StyleSheet.create({
         width: "100%",
         alignItems: "center",
         marginTop: 10,
+    },
+    budgetLabel: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 5,
+    marginTop: 5,
+    },
+    budgetOptionsContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: 15,
+    },
+    budgetOption: {
+        flex: 1,
+        marginHorizontal: 3,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        alignItems: "center",
+        backgroundColor: "#f8f8f8",
+    },
+    budgetOptionSelected: {
+        backgroundColor: "#e0e0ff",
+        borderColor: "#6200ea",
+    },
+    budgetOptionText: {
+        fontSize: 16,
+        color: "#555",
+        fontWeight: "500",
+    },
+    budgetOptionTextSelected: {
+        color: "#6200ea",
+        fontWeight: "bold",
     },
 })
 
