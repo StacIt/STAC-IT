@@ -52,7 +52,7 @@ interface StrPeriod {
 
 function fmtDateStr(ds: string): string {
     const d: Date = new Date(ds)
-    return d.toLocaleTimeString()
+    return d.toLocaleTimeString([], {timeStyle: "short"})
 }
 
 function fmtStrPeriod(p: StrPeriod): StrPeriod {
@@ -119,8 +119,6 @@ interface StacFormProps {
     initialCity?: string
     initialState?: string
     initialActivities?: string[]
-    initialNumberOfPeople?: string
-    initialBudget?: number
 }
 
 interface TimeInputState {
@@ -205,7 +203,6 @@ const StacForm: React.FC<StacFormProps> = ({
     initialCity = "",
     initialState = "",
     initialActivities = [""],
-    initialNumberOfPeople = "",
 }) => {
     const [stacName, setStacName] = useState(initialStacName)
     const [date, setDate] = useState(initialDate)
@@ -214,7 +211,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [city, setCity] = useState(initialCity)
     const [state, setState] = useState(initialState)
     const [activities, setActivities] = useState(initialActivities)
-    const [numberOfPeople, setNumberOfPeople] = useState(initialNumberOfPeople)
+    const [numberOfPeople, setNumberOfPeople] = useState<number | null>(null)
     const [budget, setBudget] = useState<number | null>(null)
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [tempDate, setTempDate] = useState(new Date())
@@ -271,7 +268,7 @@ const StacForm: React.FC<StacFormProps> = ({
             setCity("")
             setState("")
             setActivities([""])
-            setNumberOfPeople("")
+            setNumberOfPeople(null)
             setBudget(null)
             setModelResponse("")
             setOptions({})
@@ -422,7 +419,7 @@ const StacForm: React.FC<StacFormProps> = ({
             Alert.alert("Error", "Your budget should be 0 or higher.")
             return false
         }
-        if (isNaN(Number(numberOfPeople)) || Number(numberOfPeople) <= 0) {
+        if (numberOfPeople === null || numberOfPeople <= 0) {
             Alert.alert("Error", "Number of people must be a positive number.")
             return false
         }
@@ -456,6 +453,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
         //let budgetCategory = ""
         const budgetStr = String(budget ?? "0")
+        const numPeopleStr = String(numberOfPeople ?? "1")
 
         const filtered_activities = activities.filter((a) => a.trim() !== "");
         const preferences = filtered_activities.join(", ")
@@ -474,7 +472,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     location: `${city}, ${state.toUpperCase()}`,
                     preferences,
                     budget: budgetStr,
-                    numberOfPeople,
+                    numberOfPeople: numPeopleStr,
                     createdAt: new Date().toISOString(),
                 })
 
@@ -484,7 +482,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     activities: filtered_activities,
                     budget: budgetStr,
                     period: makePeriod(date, startTime, endTime),
-                    numberOfPeople,
+                    numberOfPeople: numPeopleStr,
                     keepOptions: '',
                 }
                 const response: StacResponse = await callBackendModel(userInput)
@@ -621,7 +619,7 @@ const StacForm: React.FC<StacFormProps> = ({
                 activities: prefsToUse,
                 budget: String(budget ?? "0"),
                 period: makePeriod(date, startTime, endTime),
-                numberOfPeople,
+                numberOfPeople: String(numberOfPeople ?? "1"),
                 keepOptions: selectedInfo || '',
             }
             const response = await callBackendModel(userInput)
@@ -661,7 +659,7 @@ const StacForm: React.FC<StacFormProps> = ({
                     setState("")
                     setBudget(null)
                     setActivities([""])
-                    setNumberOfPeople("")
+                    setNumberOfPeople(null)
                     setDate(new Date())
                     setModelResponse("")
                     setOptions({})
@@ -774,12 +772,12 @@ const StacForm: React.FC<StacFormProps> = ({
     }
 
     // Handle number of people input validation
-    const handleNumberOfPeopleChange = (text: string) => {
-        // Only allow numbers
-        if (/^\d*$/.test(text)) {
-            setNumberOfPeople(text)
-        }
-    }
+    // const handleNumberOfPeopleChange = (text: string) => {
+        // // Only allow numbers
+        // if (/^\d*$/.test(text)) {
+            // setNumberOfPeople(text)
+        // }
+    // }
 
     // Open number picker modal
     const openNumberPicker = () => {
@@ -787,10 +785,10 @@ const StacForm: React.FC<StacFormProps> = ({
     }
 
     // Select number from modal
-    const selectNumber = (num: number) => {
-        setNumberOfPeople(num.toString())
-        setShowNumberPicker(false)
-    }
+    // const selectNumber = (num: number) => {
+        // setNumberOfPeople(num.toString())
+        // setShowNumberPicker(false)
+    // }
 
     return (
         <>
@@ -1041,53 +1039,30 @@ const StacForm: React.FC<StacFormProps> = ({
                                     ))}
 
                                     {/* Number of People Input */}
-                                    <TouchableOpacity style={styles.input} onPress={openNumberPicker}>
-                                        <Text style={numberOfPeople ? styles.inputText : styles.placeholderText}>
-                                            {numberOfPeople ? `Number of People: ${numberOfPeople}` : "Number of People (required)"}
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    {/* Number Picker Modal */}
-                                    <Modal
-                                        animationType="slide"
-                                        transparent={true}
-                                        visible={showNumberPicker}
-                                        onRequestClose={() => setShowNumberPicker(false)}
-                                    >
-                                        <View style={styles.datePickerModalContainer}>
-                                            <View style={styles.datePickerModalContent}>
-                                                <View style={styles.datePickerHeader}>
-                                                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowNumberPicker(false)}>
-                                                        <Text style={styles.datePickerButtonText}>Cancel</Text>
-                                                    </TouchableOpacity>
-                                                    <Text style={styles.numberPickerTitle}>Number of People</Text>
-                                                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowNumberPicker(false)}>
-                                                        <Text style={styles.datePickerButtonText}>Done</Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                                <View style={styles.numberPickerContainer}>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                                                        <TouchableOpacity
-                                                            key={num}
-                                                            style={styles.numberPickerButton}
-                                                            onPress={() => selectNumber(num)}
-                                                        >
-                                                            <Text style={styles.numberPickerButtonText}>{num}</Text>
-                                                        </TouchableOpacity>
-                                                    ))}
-                                                    <View style={styles.numberPickerCenterContainer}>
-                                                        <TouchableOpacity style={styles.numberPickerButton} onPress={() => selectNumber(10)}>
-                                                            <Text style={styles.numberPickerButtonText}>10</Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        </View>
-                                    </Modal>
+                                    <Text style={styles.budgetLabel}>Number of People</Text>
+                                    <View style={styles.budgetOptionsContainer}>
+                                        {[1, 2, 3].map((level) => (
+                                            <TouchableOpacity
+                                                key={level}
+                                                style={[
+                                                    styles.budgetOption,
+                                                    numberOfPeople === level && styles.budgetOptionSelected
+                                                ]}
+                                                onPress={() => setNumberOfPeople(level)}
+                                            >
+                                                <Text style={[
+                                                    styles.budgetOptionText,
+                                                    numberOfPeople === level && styles.budgetOptionTextSelected
+                                                ]}>
+                                                    {level == 3 ? "3+" : String(level)}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
 
                                     <Text style={styles.budgetLabel}>Budget</Text>
                                     <View style={styles.budgetOptionsContainer}>
-                                        {[1, 2, 3, 4, 5].map((level) => (
+                                        {[1, 2, 3].map((level) => (
                                             <TouchableOpacity
                                                 key={level}
                                                 style={[
