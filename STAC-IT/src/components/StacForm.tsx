@@ -497,7 +497,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
                 setModelResponse(JSON.stringify(response))
                 setResponseModalVisible(true)
-                onClose()
+                
             } catch (error) {
                 console.error("Error:", error)
                 Alert.alert("Error", "Failed to create STAC")
@@ -671,6 +671,10 @@ const StacForm: React.FC<StacFormProps> = ({
                 },
             },
         ])
+    }
+
+    const handleEdit = () => {
+    	setResponseModalVisible(false)
     }
 
     const dismissKeyboard = () => {
@@ -1195,7 +1199,9 @@ const StacForm: React.FC<StacFormProps> = ({
                             >
                                 <Text style={styles.buttonText}>{isLoading ? "Refreshing..." : "Refresh"}</Text>
                             </TouchableOpacity>
-
+			    <TouchableOpacity style={styles.button} onPress={handleEdit}>
+                                <Text style={styles.buttonText}>Edit</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity style={styles.button} onPress={handleFinalize}>
                                 <Text style={styles.buttonText}>Save</Text>
                             </TouchableOpacity>
@@ -1396,7 +1402,7 @@ const styles = StyleSheet.create({
         marginLeft: 32,
     },
     refreshButton: {
-        backgroundColor: "#2196F3",
+        backgroundColor: "#6200ea",
     },
     refreshingButton: {
         backgroundColor: "#aaa",
