@@ -14,7 +14,7 @@ interface HomePageProps {
 }
 
 interface Timing {
-    start: string
+    begin: string
     end: string
 }
 
@@ -40,7 +40,7 @@ interface Stac {
     }
     preferenceTimings?: {
         [key: string]: {
-            start: string
+            begin: string
             end: string
         }
     }
@@ -64,7 +64,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                     message += `\n\n🌟 ${preference}`
                     const timing = stac.preferenceTimings?.[preference]
                     if (timing) {
-                        message += ` (${timing.start} - ${timing.end})`
+                        message += ` (${timing.begin} - ${timing.end})`
                     }
                     for (const option of options) {
                         message += `\n- ${option.name}\n  ${option.description}\n  📍 ${option.location}`
@@ -327,7 +327,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                                                         <View style={styles.preferenceTimingContainer}>
                                                             <Ionicons name="time-outline" size={14} color={platformColors.textSecondary} style={styles.timingIcon} />
                                                             <Text style={styles.preferenceTimingText}>
-                                                                {selectedStac.preferenceTimings[preference].start} -{" "}
+                                                                {selectedStac.preferenceTimings[preference].begin} -{" "}
                                                                 {selectedStac.preferenceTimings[preference].end}
                                                             </Text>
                                                         </View>
@@ -486,7 +486,7 @@ const StacDetailsScreen: React.FC = () => {
                                             <View style={styles.preferenceTimingContainer}>
                                                 <Ionicons name="time-outline" size={14} color={platformColors.textSecondary} style={styles.timingIcon} />
                                                 <Text style={styles.preferenceTimingText}>
-                                                    {stac.preferenceTimings[preference].start} - {stac.preferenceTimings[preference].end}
+                                                    {stac.preferenceTimings[preference].begin} - {stac.preferenceTimings[preference].end}
                                                 </Text>
                                             </View>
                                         )}
