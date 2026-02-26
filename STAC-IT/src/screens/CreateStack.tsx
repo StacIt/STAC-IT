@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Button } from "react-native-paper";
 import StacForm from "../components/StacForm";
 import type { NavigationProp } from "@react-navigation/native";
 
@@ -14,14 +15,16 @@ const CreateStack: React.FC<CreateStackProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
+      <Button
+        mode="contained"
         style={styles.createButton}
+        contentStyle={styles.buttonContent}
         onPress={() => {
           setModalVisible(true);
         }}
       >
-        <Text style={styles.buttonText}>Create STAC</Text>
-      </TouchableOpacity>
+        Create STAC
+      </Button>
 
       <StacForm
         navigation={navigation}
@@ -40,14 +43,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   createButton: {
-    backgroundColor: "#6200ea",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    width: "70%",
   },
-  buttonText: {
-    color: "white",
-    fontSize: 18,
+  buttonContent: {
+    paddingVertical: 8,
   },
 });
 

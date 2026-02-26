@@ -1,16 +1,13 @@
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     StyleSheet,
-    ActivityIndicator,
     Alert,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { FIREBASE_AUTH } from '../../FirebaseConfig';
 import { sendPasswordResetEmail } from '@firebase/auth';
 import { NavigationProp } from '@react-navigation/native';
+import { ActivityIndicator, Button, Text, TextInput } from 'react-native-paper';
 
 interface ForgetPasswordProps {
     navigation: NavigationProp<any>;
@@ -20,7 +17,7 @@ const ForgetPassword: React.FC<ForgetPasswordProps> = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [resetSent, setResetSent] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(0); // Time left for resending the email
+    const [timeLeft, setTimeLeft] = useState(0);
 
     useEffect(() => {
         let timer: NodeJS.Timeout | undefined;
@@ -29,13 +26,13 @@ const ForgetPassword: React.FC<ForgetPasswordProps> = ({ navigation }) => {
         } else if (timer) {
             clearInterval(timer);
         }
-        return () => clearInterval(timer); // Cleanup timer on unmount
+        return () => clearInterval(timer);
     }, [timeLeft]);
 
     const handlePasswordReset = async () => {
         setLoading(true);
-        setResetSent(false);  // Reset the resetSent state when initiating the password reset
-        setTimeLeft(60); // Set the timer for 60 seconds after sending the email
+        setResetSent(false);
+        setTimeLeft(60);
 
         try {
             const auth = FIREBASE_AUTH;
@@ -63,36 +60,28 @@ const ForgetPassword: React.FC<ForgetPasswordProps> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Forgot Password</Text>
+            <Text variant="headlineMedium" style={styles.title}>Forgot Password</Text>
             <TextInput
+                mode="outlined"
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="Enter your email"
+                label="Enter your email"
                 autoCapitalize="none"
                 keyboardType="email-address"
             />
             {loading ? (
                 <ActivityIndicator size="small" color="#6200ea" />
             ) : (
-                <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
-                    <Text style={styles.buttonText}>Send Reset Link</Text>
-                </TouchableOpacity>
+                <Button mode="contained" style={styles.button} onPress={handlePasswordReset}>Send Reset Link</Button>
             )}
             {resetSent && timeLeft > 0 && (
                 <Text style={styles.timer}>Resend link in {timeLeft}s</Text>
             )}
             {resetSent && timeLeft === 0 && (
-                <TouchableOpacity
-                    style={styles.link}
-                    onPress={handlePasswordReset}
-                >
-                    <Text>Didn't receive the link? Resend here.</Text>
-                </TouchableOpacity>
+                <Button mode="text" onPress={handlePasswordReset}>Didn't receive the link? Resend here.</Button>
             )}
-            <TouchableOpacity style={styles.link} onPress={() => navigation.navigate("Login")}>
-                <Text>Back to Login</Text>
-            </TouchableOpacity>
+            <Button mode="text" onPress={() => navigation.navigate("Login")}>Back to Login</Button>
         </View>
     );
 };
@@ -106,33 +95,14 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     title: {
-        fontSize: 24,
         marginBottom: 20,
         textAlign: 'center',
     },
     input: {
         marginVertical: 4,
-        height: 50,
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 10,
-        backgroundColor: "#fff",
     },
     button: {
         marginVertical: 4,
-        alignItems: "center",
-        backgroundColor: "#6200ea",
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: "white",
-        fontWeight: "bold",
-    },
-    link: {
-        marginTop: 20,
-        alignItems: "center",
     },
     timer: {
         marginTop: 10,

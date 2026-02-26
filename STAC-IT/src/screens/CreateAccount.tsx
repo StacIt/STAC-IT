@@ -1,10 +1,6 @@
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     StyleSheet,
-    ActivityIndicator,
     Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
@@ -12,7 +8,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { NavigationProp } from "@react-navigation/native";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "@firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { Ionicons } from "@expo/vector-icons";
+import { ActivityIndicator, Button, Checkbox, Text, TextInput } from "react-native-paper";
 
 interface CreateAccountProps {
     navigation: NavigationProp<any>;
@@ -25,8 +21,8 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [verificationSent, setVerificationSent] = useState(false); // Track if the verification email was sent
-    const [timeLeft, setTimeLeft] = useState(0); // Timer for resending the verification email
+    const [verificationSent, setVerificationSent] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0);
 
     const auth = FIREBASE_AUTH;
 
@@ -37,21 +33,21 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         } else if (timer) {
             clearInterval(timer);
         }
-        return () => clearInterval(timer); // Cleanup timer on unmount
+        return () => clearInterval(timer);
     }, [timeLeft]);
 
-    const validateEmail = (email: string) => {
+    const validateEmail = (value: string) => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!regex.test(email)) {
+        if (!regex.test(value)) {
             setError("Invalid email address");
         } else {
             setError("");
         }
     };
 
-    const validatePassword = (password: string) => {
+    const validatePassword = (value: string) => {
         const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
-        if (!regex.test(password)) {
+        if (!regex.test(value)) {
             setError("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
         } else {
             setError("");
@@ -60,7 +56,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
     const handleSignUp = async () => {
         if (!acceptedTerms) {
-            alert("You must accept terms and conditions.");
+            Alert.alert("Terms Required", "You must accept terms and conditions.");
             return;
         }
 
@@ -69,28 +65,25 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Send verification email
             await sendEmailVerification(user);
-            setVerificationSent(true); // Mark verification as sent
-            setTimeLeft(60); // Set the timer for 60 seconds before allowing resend
+            setVerificationSent(true);
+            setTimeLeft(60);
 
-            // Show an alert indicating that the verification email has been sent
             Alert.alert("Verification Sent", "A verification email has been sent to your email address. Please check your inbox!");
 
-            // Save user data to Firestore
             try {
                 await setDoc(doc(FIREBASE_DB, "users", user.uid), {
                     email: user.email,
-                    acceptedTerms: acceptedTerms,
+                    acceptedTerms,
                     createdAt: new Date(),
                 });
             } catch (firestoreError) {
                 console.error("Error adding document to Firestore: ", firestoreError);
-                alert("Failed to save user data.");
+                Alert.alert("Error", "Failed to save user data.");
             }
         } catch (error) {
             console.log(error);
-            alert("Sign up failed: " + error);
+            Alert.alert("Error", "Sign up failed: " + error);
         }
         setLoading(false);
     };
@@ -100,83 +93,60 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
             try {
                 await sendEmailVerification(auth.currentUser);
                 setVerificationSent(true);
-                setTimeLeft(60); // Reset timer after resend
-                alert("Verification email resent. Please check your inbox.");
+                setTimeLeft(60);
+                Alert.alert("Verification Sent", "Verification email resent. Please check your inbox.");
             } catch (error) {
                 console.log(error);
-                alert("Failed to resend verification email: " + error);
+                Alert.alert("Error", "Failed to resend verification email: " + error);
             }
         } else if (timeLeft > 0) {
-            alert(`Please wait ${timeLeft} seconds before trying again.`);
+            Alert.alert("Please wait", `Please wait ${timeLeft} seconds before trying again.`);
         }
     };
-
-    const handleAlreadyHaveAccount = () => {
-        navigation.navigate("Login");
-    };
-
-    const ShowIcon = <Ionicons name="eye" size={24} color="black" />;
-    const HideIcon = <Ionicons name="eye-off" size={24} color="black" />;
 
     return (
         <View style={styles.container}>
             <TextInput
+                mode="outlined"
                 style={styles.input}
                 value={email}
                 onChangeText={(text) => { setEmail(text); validateEmail(text); }}
-                placeholder="Email"
+                label="Email"
                 autoCapitalize="none"
             />
-            <View style={styles.passwordContainer}>
-                <TextInput
-                    style={styles.passwordInput}
-                    value={password}
-                    onChangeText={(text) => { setPassword(text); validatePassword(text); }}
-                    placeholder="Password"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                />
-                <TouchableOpacity
-                    style={styles.visibilityToggle}
-                    onPress={() => setShowPassword(!showPassword)}
-                >
-                    {showPassword ? HideIcon : ShowIcon}
-                </TouchableOpacity>
-            </View>
+            <TextInput
+                mode="outlined"
+                style={styles.input}
+                value={password}
+                onChangeText={(text) => { setPassword(text); validatePassword(text); }}
+                label="Password"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
+            />
 
-            <Text style={{ color: "red" }}>{error}</Text>
+            <Text style={styles.errorText}>{error}</Text>
 
             {loading ? (
                 <ActivityIndicator size="small" color="#000000" />
             ) : (
                 <>
                     <View style={styles.checkboxContainer}>
-                        <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.checkbox}>
-                            {acceptedTerms ? <Text style={styles.checked}>✔️</Text> : <Text style={styles.unchecked}>⬜️</Text>}
-                        </TouchableOpacity>
-                        <Text style={styles.label}>
-                            I accept the <Text style={styles.link}>Terms and Conditions</Text>
-                        </Text>
+                        <Checkbox
+                            status={acceptedTerms ? "checked" : "unchecked"}
+                            onPress={() => setAcceptedTerms(!acceptedTerms)}
+                        />
+                        <Text>I accept the Terms and Conditions</Text>
                     </View>
-                    <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                        <Text style={{ color: "white" }}>Sign Up</Text>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.button} onPress={handleAlreadyHaveAccount}>
-                        <Text style={{ color: "white" }}>Account verified? Login here</Text>
-                    </TouchableOpacity>
+                    <Button mode="contained" style={styles.button} onPress={handleSignUp}>Sign Up</Button>
+                    <Button mode="contained-tonal" style={styles.button} onPress={() => navigation.navigate("Login")}>Account verified? Login here</Button>
 
-                    {/* Resend Verification Email Button */}
                     {verificationSent && timeLeft > 0 && (
                         <Text style={styles.timer}>Resend verification in {timeLeft}s</Text>
                     )}
                     {verificationSent && timeLeft === 0 && (
-                        <TouchableOpacity
-                            style={styles.link}
-                            onPress={handleResendVerification}
-                        >
-                            <Text>Didn't receive the verification email? Resend here.</Text>
-                        </TouchableOpacity>
+                        <Button mode="text" onPress={handleResendVerification}>Didn't receive the verification email? Resend here.</Button>
                     )}
                 </>
             )}
@@ -194,19 +164,9 @@ const styles = StyleSheet.create({
     },
     input: {
         marginVertical: 4,
-        height: 50,
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 10,
-        backgroundColor: "#fff",
     },
     button: {
         marginVertical: 4,
-        alignItems: "center",
-        backgroundColor: "#6200ea",
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
     },
     checkboxContainer: {
         flexDirection: "row",
@@ -214,41 +174,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    checkbox: {
-        marginRight: 10,
-    },
-    checked: {
-        fontSize: 18,
-    },
-    unchecked: {
-        fontSize: 18,
-    },
-    label: {
-        fontSize: 14,
-    },
-    link: {
-        marginTop: 20,
-        alignItems: "center",
-    },
     timer: {
         marginTop: 10,
         textAlign: "center",
         color: "gray",
     },
-    passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    errorText: {
+        color: "red",
         marginVertical: 4,
-        borderWidth: 1,
-        borderRadius: 4,
-        backgroundColor: "#fff",
-    },
-    passwordInput: {
-        flex: 1,
-        height: 50,
-        padding: 10,
-    },
-    visibilityToggle: {
-        padding: 10,
     },
 });

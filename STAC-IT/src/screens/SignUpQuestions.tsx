@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Alert, Modal } from 'react-native';
+import { View, StyleSheet, Platform, Alert, Modal, TouchableOpacity } from 'react-native';
 import { NavigationProp } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Button, Text, TextInput } from 'react-native-paper';
 
 interface SignUpQuestionsProps {
     navigation: NavigationProp<any>;
@@ -36,7 +37,7 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
         );
     };
 
-    const handleDateChange = (event: any, selectedDate?: Date) => {
+    const handleDateChange = (_event: any, selectedDate?: Date) => {
         if (selectedDate) {
             setTempDate(selectedDate);
         }
@@ -70,7 +71,7 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
                 await setDoc(
                     doc(FIREBASE_DB, "users", user.uid),
                     {
-                        fullName: fullName,
+                        fullName,
                         birthDate: birthDate.toISOString(),
                     },
                     { merge: true }
@@ -85,19 +86,16 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
         }
     };
 
-    const goBack = () => {
-        navigation.navigate('Login');
-    };
-
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Sign Up Questions</Text>
+            <Text variant="headlineMedium" style={styles.title}>Sign Up Questions</Text>
 
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Full Name</Text>
                 <TextInput
+                    mode="outlined"
                     style={styles.input}
-                    placeholder="Enter your full name"
+                    label="Enter your full name"
                     value={fullName}
                     onChangeText={setFullName}
                 />
@@ -105,28 +103,21 @@ const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
 
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Date of Birth</Text>
-                <TouchableOpacity
-                    style={styles.input}
+                <Button
+                    mode="outlined"
+                    style={styles.dateButton}
                     onPress={() => {
                         setTempDate(birthDate);
                         setShowDatePicker(true);
                     }}
                 >
-                    <Text>{birthDate.toLocaleDateString()}</Text>
-                </TouchableOpacity>
+                    {birthDate.toLocaleDateString()}
+                </Button>
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button} onPress={goBack}>
-                <Text style={styles.buttonText}>Go Back</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={showAlert} style={styles.infobutton}>
-                <Text style={styles.infobuttonText}>Why are we asking you this?</Text>
-            </TouchableOpacity>
+            <Button mode="contained" style={styles.button} onPress={handleSubmit}>Submit</Button>
+            <Button mode="contained-tonal" style={styles.button} onPress={() => navigation.navigate('Login')}>Go Back</Button>
+            <Button mode="text" onPress={showAlert}>Why are we asking you this?</Button>
 
             {showDatePicker && (
                 <Modal
@@ -169,8 +160,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
     },
@@ -183,38 +172,12 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#333',
     },
-    input: {
-        height: 50,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        padding: 10,
-        backgroundColor: '#fff',
+    input: {},
+    dateButton: {
         justifyContent: 'center',
-    },
-    infobutton: {
-        marginVertical: 10,
-        backgroundColor: 'transparent',
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        borderColor: 'gray',
-    },
-    infobuttonText: {
-        color: 'gray',
-        fontSize: 16,
     },
     button: {
         marginVertical: 10,
-        backgroundColor: '#6200ea',
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 18,
     },
     modalContainer: {
         flex: 1,
