@@ -11,11 +11,11 @@ interface LandingProps {
 const Landing: React.FC<LandingProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <Text variant="headlineLarge" style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
+      <Text variant="headlineLarge" style={{fontWeight: "bold"}}>
         Welcome to STAC-IT
       </Text>
 
-      <Button mode="contained" onPress={() => navigation.navigate("Login")} contentStyle={styles.buttonContent} style={styles.button}>
+      <Button mode="contained" onPress={() => navigation.navigate("Login")}>
         Get Started
       </Button>
     </View>
@@ -29,21 +29,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: platformColors.textPrimary,
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  button: {
-    backgroundColor: platformColors.accent,
-    width: "70%",
-  },
-  buttonContent: {
-    color: platformColors.white,
-    paddingVertical: 8,
+    gap: 24,
   },
 });

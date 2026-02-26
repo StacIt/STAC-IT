@@ -25,6 +25,8 @@ import { doc, setDoc } from "firebase/firestore"
 import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
 import { platformColors } from '../theme/platformColors';
+import { TimePickerModal } from "react-native-paper-dates"
+import { Button, Divider } from "react-native-paper"
 
 interface Period {
     begin: Date;
@@ -218,6 +220,7 @@ const StacForm: React.FC<StacFormProps> = ({
     const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
     const [showNumberPicker, setShowNumberPicker] = useState(false)
+    const [showTimePicker, setShowTimePicker] = useState(false)
 
     const LoadingOverlay = () => {
         if (!isLoading) return null
@@ -858,6 +861,19 @@ const StacForm: React.FC<StacFormProps> = ({
                                             </View>
                                         </View>
                                     </Modal>
+
+                                    {/* testing new time picker */}
+                                    <Divider/>
+                                    <Button icon="clock-outline" mode="text" onPress={() => setShowTimePicker(true)}>
+                                    Start time
+                                    </Button>
+                                    <TimePickerModal
+                                        locale="en"
+                                        visible={showTimePicker}
+                                        onDismiss={()=>setShowTimePicker(false)}
+                                        onConfirm={() =>setShowTimePicker(false)}
+                                    />
+                                    <Divider/>
 
                                     {/* Custom Start Time Input */}
                                     <Text style={styles.timeLabel}>Starting time</Text>
