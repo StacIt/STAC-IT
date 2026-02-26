@@ -384,7 +384,9 @@ const StacForm: React.FC<StacFormProps> = ({
                 preferences.push(preference)
                 options[preference] = actOpts.options.map((option: Activity) => option.name)
 
-                preferenceTimings[preference] = fmtStrPeriod(actOpts.timing);
+                const fs = fmtStrPeriod(actOpts.timing)
+                preferenceTimings[preference] = fs
+
 
                 actOpts.options.forEach((option: Activity) => {
                     descriptions[option.name] = option.description
@@ -1465,14 +1467,15 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     periodButtonActive: {
-        backgroundColor: platformColors.highlight,
+        backgroundColor: platformColors.accent,
     },
     periodButtonText: {
+        color: platformColors.placeholder,
         fontSize: 14,
     },
     periodButtonTextActive: {
         fontWeight: "bold",
-        color: platformColors.accent,
+        color: platformColors.white,
     },
     datePickerModalContainer: {
         flex: 1,
@@ -1599,8 +1602,8 @@ const styles = StyleSheet.create({
         backgroundColor: platformColors.tertiaryBackground,
     },
     budgetOptionSelected: {
-        backgroundColor: platformColors.highlight,
-        borderColor: platformColors.accent,
+        backgroundColor: platformColors.accent,
+        borderColor: platformColors.highlight,
     },
     budgetOptionText: {
         fontSize: 16,
@@ -1608,7 +1611,7 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
     budgetOptionTextSelected: {
-        color: platformColors.accent,
+        color: platformColors.white,
         fontWeight: "bold",
     },
 })

@@ -39,11 +39,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   button: {
-    // backgroundColor: platformColors.textPrimary,
+    backgroundColor: platformColors.accent,
     width: "70%",
   },
   buttonContent: {
-    // color: platformColors.white,
+    color: platformColors.white,
     paddingVertical: 8,
   },
 });
