@@ -11,6 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { FIREBASE_AUTH } from '../../FirebaseConfig';
 import { sendPasswordResetEmail } from '@firebase/auth';
 import { NavigationProp } from '@react-navigation/native';
+import { platformColors } from '../theme/platformColors';
 
 interface ForgetPasswordProps {
     navigation: NavigationProp<any>;
@@ -73,7 +74,7 @@ const ForgetPassword: React.FC<ForgetPasswordProps> = ({ navigation }) => {
                 keyboardType="email-address"
             />
             {loading ? (
-                <ActivityIndicator size="small" color="#6200ea" />
+                <ActivityIndicator size="small" color={platformColors.accent} />
             ) : (
                 <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
                     <Text style={styles.buttonText}>Send Reset Link</Text>
@@ -116,18 +117,18 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 10,
-        backgroundColor: "#fff",
+        backgroundColor: platformColors.white,
     },
     button: {
         marginVertical: 4,
         alignItems: "center",
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
     },
     buttonText: {
-        color: "white",
+        color: platformColors.white,
         fontWeight: "bold",
     },
     link: {
@@ -137,6 +138,6 @@ const styles = StyleSheet.create({
     timer: {
         marginTop: 10,
         textAlign: "center",
-        color: "gray",
+        color: platformColors.textSecondary,
     },
 });

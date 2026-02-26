@@ -13,6 +13,7 @@ import { NavigationProp } from "@react-navigation/native";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "@firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
+import { platformColors } from '../theme/platformColors';
 
 interface CreateAccountProps {
     navigation: NavigationProp<any>;
@@ -115,8 +116,8 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         navigation.navigate("Login");
     };
 
-    const ShowIcon = <Ionicons name="eye" size={24} color="black" />;
-    const HideIcon = <Ionicons name="eye-off" size={24} color="black" />;
+    const ShowIcon = <Ionicons name="eye" size={24} color={platformColors.black} />;
+    const HideIcon = <Ionicons name="eye-off" size={24} color={platformColors.black} />;
 
     return (
         <View style={styles.container}>
@@ -144,10 +145,10 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            <Text style={{ color: "red" }}>{error}</Text>
+            <Text style={{ color: platformColors.danger }}>{error}</Text>
 
             {loading ? (
-                <ActivityIndicator size="small" color="#000000" />
+                <ActivityIndicator size="small" color={platformColors.black} />
             ) : (
                 <>
                     <View style={styles.checkboxContainer}>
@@ -159,11 +160,11 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                         </Text>
                     </View>
                     <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                        <Text style={{ color: "white" }}>Sign Up</Text>
+                        <Text style={{ color: platformColors.white }}>Sign Up</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.button} onPress={handleAlreadyHaveAccount}>
-                        <Text style={{ color: "white" }}>Account verified? Login here</Text>
+                        <Text style={{ color: platformColors.white }}>Account verified? Login here</Text>
                     </TouchableOpacity>
 
                     {/* Resend Verification Email Button */}
@@ -198,12 +199,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 10,
-        backgroundColor: "#fff",
+        backgroundColor: platformColors.white,
     },
     button: {
         marginVertical: 4,
         alignItems: "center",
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     timer: {
         marginTop: 10,
         textAlign: "center",
-        color: "gray",
+        color: platformColors.textSecondary,
     },
     passwordContainer: {
         flexDirection: 'row',
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         borderWidth: 1,
         borderRadius: 4,
-        backgroundColor: "#fff",
+        backgroundColor: platformColors.white,
     },
     passwordInput: {
         flex: 1,

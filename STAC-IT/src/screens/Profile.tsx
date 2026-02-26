@@ -4,6 +4,7 @@ import { NavigationProp } from '@react-navigation/native';
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import { platformColors } from '../theme/platformColors';
 
 interface ProfileProps {
     navigation: NavigationProp<any>;
@@ -130,10 +131,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: platformColors.secondaryBackground,
     },
     darkContainer: {
-        backgroundColor: '#333',
+        backgroundColor: platformColors.textPrimary,
     },
     userInfo: {
         marginTop: 60,
@@ -149,23 +150,23 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#333',
+        color: platformColors.textPrimary,
     },
     darkText: {
-        color: '#ffffff',
+        color: platformColors.white,
     },
     userEmail: {
         fontSize: 16,
-        color: '#666',
+        color: platformColors.textSecondary,
         marginBottom: 10,
     },
     section: {
         marginVertical: 15,
         paddingVertical: 10,
         paddingHorizontal: 15,
-        backgroundColor: '#fff',
+        backgroundColor: platformColors.white,
         borderRadius: 10,
-        shadowColor: '#000',
+        shadowColor: platformColors.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 5,
@@ -174,17 +175,17 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#333',
+        color: platformColors.textPrimary,
         marginBottom: 10,
     },
     settingButton: {
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: platformColors.opaqueSeparator,
     },
     settingText: {
         fontSize: 16,
-        color: '#6200ea',
+        color: platformColors.accent,
     },
     achievementItem: {
         flexDirection: 'row',
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     },
     achievementText: {
         fontSize: 16,
-        color: '#333',
+        color: platformColors.textPrimary,
     },
     switchContainer: {
         flexDirection: 'row',
@@ -207,18 +208,18 @@ const styles = StyleSheet.create({
     },
     switchLabel: {
         fontSize: 16,
-        color: '#333',
+        color: platformColors.textPrimary,
     },
     logoutButton: {
         marginTop: 30,
-        backgroundColor: '#6200ea',
+        backgroundColor: platformColors.accent,
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 8,
         alignSelf: 'center',
     },
     logoutText: {
-        color: '#fff',
+        color: platformColors.white,
         fontSize: 18,
         fontWeight: 'bold',
     },

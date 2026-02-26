@@ -24,6 +24,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig"
 import { doc, setDoc } from "firebase/firestore"
 import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
+import { platformColors } from '../theme/platformColors';
 
 interface Period {
     begin: Date;
@@ -223,7 +224,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
         return (
             <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#6200ea" />
+                <ActivityIndicator size="large" color={platformColors.accent} />
                 <Text style={styles.loadingText}>Contain your excitement while I build you a cool Stac...</Text>
             </View>
         )
@@ -383,7 +384,9 @@ const StacForm: React.FC<StacFormProps> = ({
                 preferences.push(preference)
                 options[preference] = actOpts.options.map((option: Activity) => option.name)
 
-                preferenceTimings[preference] = fmtStrPeriod(actOpts.timing);
+                const fs = fmtStrPeriod(actOpts.timing)
+                preferenceTimings[preference] = fs
+
 
                 actOpts.options.forEach((option: Activity) => {
                     descriptions[option.name] = option.description
@@ -864,7 +867,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                 ref={startHourRef}
                                                 style={styles.timeInput}
                                                 placeholder="08"
-                                                placeholderTextColor="#aaa"
+                                                placeholderTextColor={platformColors.placeholder as string}
                                                 value={startTimeInput.hour}
                                                 onChangeText={(value) => handleTimeInputChange(value, "hour", "start")}
                                                 onBlur={() => handleTimeInputBlur("hour", "start")}
@@ -881,7 +884,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                 ref={startMinuteRef}
                                                 style={styles.timeInput}
                                                 placeholder="00"
-                                                placeholderTextColor="#aaa"
+                                                placeholderTextColor={platformColors.placeholder as string}
                                                 value={startTimeInput.minute}
                                                 onChangeText={(value) => handleTimeInputChange(value, "minute", "start")}
                                                 onBlur={() => handleTimeInputBlur("minute", "start")}
@@ -930,7 +933,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                 ref={endHourRef}
                                                 style={styles.timeInput}
                                                 placeholder="05"
-                                                placeholderTextColor="#aaa"
+                                                placeholderTextColor={platformColors.placeholder as string}
                                                 value={endTimeInput.hour}
                                                 onChangeText={(value) => handleTimeInputChange(value, "hour", "end")}
                                                 onBlur={() => handleTimeInputBlur("hour", "end")}
@@ -947,7 +950,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                 ref={endMinuteRef}
                                                 style={styles.timeInput}
                                                 placeholder="00"
-                                                placeholderTextColor="#aaa"
+                                                placeholderTextColor={platformColors.placeholder as string}
                                                 value={endTimeInput.minute}
                                                 onChangeText={(value) => handleTimeInputChange(value, "minute", "end")}
                                                 onBlur={() => handleTimeInputBlur("minute", "end")}
@@ -1027,7 +1030,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                             />
                                             {index > 0 && (
                                                 <TouchableOpacity onPress={() => removeActivity(index)} style={styles.iconButton}>
-                                                    <Ionicons name="remove-circle-outline" size={24} color="red" />
+                                                    <Ionicons name="remove-circle-outline" size={24} color={platformColors.danger} />
                                                 </TouchableOpacity>
                                             )}
                                             {index === activities.length - 1 && (
@@ -1130,7 +1133,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                             {preferenceTimings[preference] && (
                                                 <View style={styles.preferenceTimingContainer}>
-                                                    <Ionicons name="time-outline" size={16} color="#666" style={styles.timingIcon} />
+                                                    <Ionicons name="time-outline" size={16} color={platformColors.textSecondary} style={styles.timingIcon} />
                                                     <Text style={styles.preferenceTimingText}>
                                                         {preferenceTimings[preference].begin} - {preferenceTimings[preference].end}
                                                     </Text>
@@ -1158,7 +1161,7 @@ const StacForm: React.FC<StacFormProps> = ({
                                                             <Ionicons
                                                                 name={selectedOptions[preference]?.includes(option) ? "checkbox" : "square-outline"}
                                                                 size={24}
-                                                                color="black"
+                                                                color={platformColors.black}
                                                             />
                                                             <Text style={styles.checkboxLabel}>{option}</Text>
                                                         </TouchableOpacity>
@@ -1169,7 +1172,7 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                                         {locations[option] && (
                                                             <View style={styles.locationContainer}>
-                                                                <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
+                                                                <Ionicons name="location" size={16} color={platformColors.textSecondary} style={styles.locationIcon} />
                                                                 <Text style={styles.locationText}>{locations[option]}</Text>
                                                             </View>
                                                         )}
@@ -1213,12 +1216,12 @@ const StacForm: React.FC<StacFormProps> = ({
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: platformColors.overlay,
         justifyContent: "center",
     },
     modalContent: {
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: platformColors.white,
         margin: 20,
         borderRadius: 10,
         padding: 20,
@@ -1249,18 +1252,18 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     submitButton: {
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingHorizontal: 20,
     },
     footerButtonText: {
-        color: "white",
+        color: platformColors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
     input: {
         width: "100%",
         height: 40,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderWidth: 1,
         borderRadius: 5,
         paddingLeft: 10,
@@ -1268,17 +1271,17 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     inputText: {
-        color: "#000",
+        color: platformColors.black,
     },
     placeholderText: {
-        color: "#aaa",
+        color: platformColors.placeholder,
     },
     responseContainer: {
         flex: 1,
         marginVertical: 2,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: platformColors.secondaryBackground,
         borderWidth: 1,
-        borderColor: "#ddd",
+        borderColor: platformColors.neutralSoft,
         borderRadius: 5,
         overflow: "hidden", // This prevents content from spilling outside
     },
@@ -1307,7 +1310,7 @@ const styles = StyleSheet.create({
     },
     activityDescription: {
         fontSize: 14,
-        color: "#555",
+        color: platformColors.neutral,
         marginLeft: 32,
         marginBottom: 5,
         flexWrap: "wrap", // Add this to ensure text wraps properly
@@ -1323,18 +1326,18 @@ const styles = StyleSheet.create({
     },
     locationText: {
         fontSize: 14,
-        color: "#666",
+        color: platformColors.textSecondary,
         flexWrap: "wrap", // Add this to ensure text wraps properly
         flex: 1, // Add this to ensure the text takes available space
     },
     noOptionsText: {
         fontSize: 14,
-        color: "#777",
+        color: platformColors.textTertiary,
         marginLeft: 32,
     },
     noDataText: {
         fontSize: 16,
-        color: "#888",
+        color: platformColors.textTertiary,
         textAlign: "center",
         marginTop: 20,
     },
@@ -1344,14 +1347,14 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     button: {
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 12,
         paddingHorizontal: 25,
         borderRadius: 8,
         alignItems: "center",
     },
     buttonText: {
-        color: "white",
+        color: platformColors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
@@ -1360,12 +1363,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     deleteText: {
-        color: "red",
+        color: platformColors.danger,
         fontSize: 16,
         fontWeight: "bold",
     },
     disabledButton: {
-        backgroundColor: "#aaa",
+        backgroundColor: platformColors.placeholder,
     },
     activityContainer: {
         flexDirection: "row",
@@ -1375,7 +1378,7 @@ const styles = StyleSheet.create({
     activityInput: {
         flex: 1,
         height: 40,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderWidth: 1,
         borderRadius: 5,
         paddingLeft: 10,
@@ -1385,21 +1388,21 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     cancelText: {
-        color: "red",
+        color: platformColors.danger,
         fontSize: 16,
         marginRight: 10,
     },
     optionDivider: {
-        borderBottomColor: "#eee",
+        borderBottomColor: platformColors.opaqueSeparator,
         borderBottomWidth: 1,
         marginVertical: 5,
         marginLeft: 32,
     },
     refreshButton: {
-        backgroundColor: "#2196F3",
+        backgroundColor: platformColors.info,
     },
     refreshingButton: {
-        backgroundColor: "#aaa",
+        backgroundColor: platformColors.placeholder,
     },
     preferenceTimingContainer: {
         flexDirection: "row",
@@ -1412,11 +1415,11 @@ const styles = StyleSheet.create({
     },
     preferenceTimingText: {
         fontSize: 14,
-        color: "#666",
+        color: platformColors.textSecondary,
     },
     timeLabel: {
         fontSize: 16,
-        color: "#666",
+        color: platformColors.textSecondary,
         marginBottom: 5,
         marginTop: 5,
     },
@@ -1429,7 +1432,7 @@ const styles = StyleSheet.create({
     timeInputBox: {
         width: 70,
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderRadius: 5,
         padding: 5,
         alignItems: "center",
@@ -1442,7 +1445,7 @@ const styles = StyleSheet.create({
     },
     timeInputLabel: {
         fontSize: 12,
-        color: "#666",
+        color: platformColors.textSecondary,
         marginTop: 2,
     },
     timeSeparator: {
@@ -1454,7 +1457,7 @@ const styles = StyleSheet.create({
     periodContainer: {
         marginLeft: 5,
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderRadius: 5,
         overflow: "hidden",
     },
@@ -1464,22 +1467,23 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     periodButtonActive: {
-        backgroundColor: "#e0e0ff",
+        backgroundColor: platformColors.accent,
     },
     periodButtonText: {
+        color: platformColors.placeholder,
         fontSize: 14,
     },
     periodButtonTextActive: {
         fontWeight: "bold",
-        color: "#6200ea",
+        color: platformColors.white,
     },
     datePickerModalContainer: {
         flex: 1,
         justifyContent: "flex-end",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: platformColors.overlay,
     },
     datePickerModalContent: {
-        backgroundColor: "white",
+        backgroundColor: platformColors.white,
         borderTopLeftRadius: 10,
         borderTopRightRadius: 10,
         padding: 10,
@@ -1488,7 +1492,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
+        borderBottomColor: platformColors.separator,
         paddingBottom: 10,
         marginBottom: 10,
     },
@@ -1497,7 +1501,7 @@ const styles = StyleSheet.create({
     },
     datePickerButtonText: {
         fontSize: 16,
-        color: "#6200ea",
+        color: platformColors.accent,
     },
     datePickerDoneButton: {
         fontWeight: "bold",
@@ -1511,7 +1515,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
+        backgroundColor: platformColors.overlay,
         justifyContent: "center",
         alignItems: "center",
         zIndex: 1000,
@@ -1520,7 +1524,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 10,
         fontSize: 16,
-        color: "#6200ea",
+        color: platformColors.accent,
         fontWeight: "bold",
     },
     numberPickerContainer: {
@@ -1535,22 +1539,22 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderRadius: 5,
         margin: 5,
-        backgroundColor: "#f8f8f8",
+        backgroundColor: platformColors.tertiaryBackground,
     },
     numberPickerButtonText: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#6200ea",
+        color: platformColors.accent,
     },
     budgetInputContainer: {
         flexDirection: "row",
         alignItems: "center",
         width: "100%",
         height: 40,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderWidth: 1,
         borderRadius: 5,
         marginBottom: 10,
@@ -1568,7 +1572,7 @@ const styles = StyleSheet.create({
     numberPickerTitle: {
         fontSize: 18,
         fontWeight: "bold",
-        color: "#333",
+        color: platformColors.textPrimary,
         textAlign: "center",
     },
     numberPickerCenterContainer: {
@@ -1578,7 +1582,7 @@ const styles = StyleSheet.create({
     },
     budgetLabel: {
     fontSize: 16,
-    color: "#666",
+    color: platformColors.textSecondary,
     marginBottom: 5,
     marginTop: 5,
     },
@@ -1592,22 +1596,22 @@ const styles = StyleSheet.create({
         marginHorizontal: 3,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: platformColors.separator,
         borderRadius: 5,
         alignItems: "center",
-        backgroundColor: "#f8f8f8",
+        backgroundColor: platformColors.tertiaryBackground,
     },
     budgetOptionSelected: {
-        backgroundColor: "#e0e0ff",
-        borderColor: "#6200ea",
+        backgroundColor: platformColors.accent,
+        borderColor: platformColors.highlight,
     },
     budgetOptionText: {
         fontSize: 16,
-        color: "#555",
+        color: platformColors.neutral,
         fontWeight: "500",
     },
     budgetOptionTextSelected: {
-        color: "#6200ea",
+        color: platformColors.white,
         fontWeight: "bold",
     },
 })

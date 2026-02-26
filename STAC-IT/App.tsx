@@ -14,6 +14,7 @@ import { HomePage } from './src/screens/HomePage';
 import { StacDetailsScreen } from './src/screens/HomePage';
 import CreateStack from './src/screens/CreateStack';
 import Profile from './src/screens/Profile';
+import { platformColors } from './src/theme/platformColors';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -35,8 +36,8 @@ const MainTabs = () => {
 
           return iconName ? <Ionicons name={iconName} size={size} color={color} /> : null;
         },
-        tabBarActiveTintColor: '#6200ea',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: platformColors.accent as string,
+        tabBarInactiveTintColor: platformColors.textSecondary as string,
       })}
     >
       <Tab.Screen name="Home" component={HomePage} options={{ headerShown: false }} />
