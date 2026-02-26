@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Provider as PaperProvider } from 'react-native-paper';
 
 import Landing from './src/screens/Landing';
 import Login from './src/screens/Login';
@@ -13,7 +14,6 @@ import { HomePage } from './src/screens/HomePage';
 import { StacDetailsScreen } from './src/screens/HomePage';
 import CreateStack from './src/screens/CreateStack';
 import Profile from './src/screens/Profile';
-
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -48,45 +48,46 @@ const MainTabs = () => {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Landing">
-        <Stack.Screen
-          name="Landing"
-          component={Landing}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={Login}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="CreateAccount"
-          component={CreateAccount}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="SignUpQuestions"
-          component={SignUpQuestions}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ForgetPassword"
-          component={ForgetPassword}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="MainTabs"
-          component={MainTabs}
-          options={{ headerShown: false }}
-        />
-        {/* Add StacDetailsScreen here */}
-        <Stack.Screen
-          name="StacDetails"
-          component={StacDetailsScreen}
-          options={{ title: 'STAC Details' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <PaperProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Landing">
+          <Stack.Screen
+            name="Landing"
+            component={Landing}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Login"
+            component={Login}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CreateAccount"
+            component={CreateAccount}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SignUpQuestions"
+            component={SignUpQuestions}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ForgetPassword"
+            component={ForgetPassword}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="MainTabs"
+            component={MainTabs}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="StacDetails"
+            component={StacDetailsScreen}
+            options={{ title: 'STAC Details' }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PaperProvider>
   );
 }
