@@ -1,7 +1,6 @@
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
@@ -19,6 +18,8 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons';
 import { platformColors } from '../theme/platformColors';
+
+import { TextInput, Button, Divider, HelperText } from "react-native-paper"
 
 interface LoginProps {
     navigation: NavigationProp<any>;
@@ -91,53 +92,53 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <KeyboardAvoidingView behavior="padding">
+            <View style={{gap: 10}}>
                 <TextInput
-                    style={[styles.input, { marginVertical: 4 }]}
+                    //style={{ marginVertical: 4 }}
+                    label="Email"
                     value={email}
                     onChangeText={(text) => { setEmail(text) }}
                     onEndEditing={() => { validateEmail(email) }}
-                    placeholder="Email"
                     autoCapitalize="none"
-                    autoComplete="email"
-                    inputMode="email"
+                    autoComplete={"email"}
+                    error={error != ""}
+                    inputMode={"email"}
+                    autoCorrect={false}
                 />
-                <View style={styles.passwordContainer}>
-                    <TextInput
-                        style={styles.passwordInput}
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="Password"
-                        autoCapitalize="none"
-                        secureTextEntry={!showPassword}
-                        autoComplete="current-password"
-                    />
-                    <TouchableOpacity
-                        style={styles.visibilityToggle}
+                <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    label="Password"
+                    autoCapitalize="none"
+                    secureTextEntry={!showPassword}
+                    autoComplete="current-password"
+                    right=<TextInput.Icon
+                        icon={showPassword ? "eye-off" : "eye"}
                         onPress={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? HideIcon : ShowIcon}
-                    </TouchableOpacity>
+                        />
+                />
+            </View>
+            <HelperText type="error" visible={error != ""} padding="normal">
+            {error}
+            </HelperText>
+
+            {loading ? (
+                <ActivityIndicator size="small" color={platformColors.black} />
+            ) : (
+                <View style={{gap: 6}}>
+                    <Button mode="contained" onPress={handleLogin}>
+                    Login
+                    </Button>
+
+                    <Button mode="contained-tonal" onPress={handleSignUp}>
+                    Create account
+                    </Button>
+
+                    <Button mode="outlined" onPress={handlePasswordReset}>
+                    Forgot password?
+                    </Button>
                 </View>
-
-                <Text style={{ color: platformColors.danger }}>{error}</Text>
-
-                {loading ? (
-                    <ActivityIndicator size="small" color={platformColors.black} />
-                ) : (
-                    <>
-                        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                            <Text style={styles.buttonText}>Login</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                            <Text style={styles.buttonText}>New to STAC-IT? Create account</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.infobutton} onPress={handlePasswordReset}>
-                            <Text style={styles.infobuttonText}>Forgot password?</Text>
-                        </TouchableOpacity>
-                    </>
-                )}
+            )}
             </KeyboardAvoidingView>
         </View>
     );
