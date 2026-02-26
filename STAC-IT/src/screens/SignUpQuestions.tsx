@@ -10,6 +10,7 @@ interface SignUpQuestionsProps {
 import { FIREBASE_AUTH } from "../../FirebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { FIREBASE_DB } from "../../FirebaseConfig";
+import { platformColors } from '../theme/platformColors';
 
 const SignUpQuestions: React.FC<SignUpQuestionsProps> = ({ navigation }) => {
     const showAlert = () => {
@@ -181,15 +182,15 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 5,
         fontWeight: '500',
-        color: '#333',
+        color: platformColors.textPrimary,
     },
     input: {
         height: 50,
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: platformColors.separator,
         borderRadius: 4,
         padding: 10,
-        backgroundColor: '#fff',
+        backgroundColor: platformColors.white,
         justifyContent: 'center',
     },
     infobutton: {
@@ -199,30 +200,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 10,
         paddingHorizontal: 10,
-        borderColor: 'gray',
+        borderColor: platformColors.textSecondary,
     },
     infobuttonText: {
-        color: 'gray',
+        color: platformColors.textSecondary,
         fontSize: 16,
     },
     button: {
         marginVertical: 10,
-        backgroundColor: '#6200ea',
+        backgroundColor: platformColors.accent,
         paddingVertical: 10,
         alignItems: 'center',
         borderRadius: 5,
     },
     buttonText: {
-        color: '#fff',
+        color: platformColors.white,
         fontSize: 18,
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: platformColors.overlay,
     },
     modalContent: {
-        backgroundColor: '#fff',
+        backgroundColor: platformColors.white,
         borderTopLeftRadius: 10,
         borderTopRightRadius: 10,
         paddingBottom: Platform.OS === 'ios' ? 30 : 0,
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: platformColors.opaqueSeparator,
         width: '100%',
     },
     modalTitle: {
@@ -243,11 +244,11 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     cancelButton: {
-        color: '#007AFF',
+        color: platformColors.link,
         fontSize: 16,
     },
     doneButton: {
-        color: '#007AFF',
+        color: platformColors.link,
         fontSize: 16,
         fontWeight: '600',
     },

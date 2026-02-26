@@ -18,6 +18,7 @@ import {
 } from "@firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons';
+import { platformColors } from '../theme/platformColors';
 
 interface LoginProps {
     navigation: NavigationProp<any>;
@@ -84,8 +85,8 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         navigation.navigate("ForgetPassword");
     };
 
-    const ShowIcon = <Ionicons name="eye" size={24} color="black" />;
-    const HideIcon = <Ionicons name="eye-off" size={24} color="black" />;
+    const ShowIcon = <Ionicons name="eye" size={24} color={platformColors.black} />;
+    const HideIcon = <Ionicons name="eye-off" size={24} color={platformColors.black} />;
 
     return (
         <View style={styles.container}>
@@ -118,10 +119,10 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-                <Text style={{ color: "red" }}>{error}</Text>
+                <Text style={{ color: platformColors.danger }}>{error}</Text>
 
                 {loading ? (
-                    <ActivityIndicator size="small" color="#000000" />
+                    <ActivityIndicator size="small" color={platformColors.black} />
                 ) : (
                     <>
                         <TouchableOpacity style={styles.button} onPress={handleLogin}>
@@ -156,12 +157,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 10,
-        backgroundColor: "#fff",
+        backgroundColor: platformColors.white,
     },
     button: {
         marginVertical: 4,
         alignItems: "center",
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
@@ -173,14 +174,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 5,
         paddingHorizontal: 10,
-        borderColor: 'gray',
+        borderColor: platformColors.textSecondary,
     },
     buttonText: {
-        color: "white",
+        color: platformColors.white,
         fontWeight: "bold",
     },
     infobuttonText: {
-        color: "gray",
+        color: platformColors.textSecondary,
         fontWeight: "bold",
     },
     passwordContainer: {
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         borderWidth: 1,
         borderRadius: 4,
-        backgroundColor: "#fff",
+        backgroundColor: platformColors.white,
     },
     passwordInput: {
         flex: 1,

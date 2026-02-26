@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig"
 import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
 import StacForm from "../components/StacForm"
+import { platformColors } from '../theme/platformColors';
 
 interface HomePageProps {
     navigation: NavigationProp<any>
@@ -181,7 +182,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <View style={styles.headerContainer}>
                     <Text style={styles.title}>STAC-IT</Text>
                     <TouchableOpacity style={styles.infoButton} onPress={() => setInfoModalVisible(true)}>
-                        <Ionicons name="information-circle" size={28} color="#6200ea" />
+                        <Ionicons name="information-circle" size={28} color={platformColors.accent} />
                     </TouchableOpacity>
                 </View>
 
@@ -306,7 +307,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                         {selectedStac && (
                             <View style={styles.modalContent}>
                                 <TouchableOpacity style={{ alignSelf: "flex-start" }} onPress={() => setStacDetailsModalVisible(false)}>
-                                    <Ionicons name="close-circle" size={34} color="#6200ea" />
+                                    <Ionicons name="close-circle" size={34} color={platformColors.accent} />
                                 </TouchableOpacity>
                                 <Text style={styles.modalTitle}>{selectedStac.stacName}</Text>
                                 <Text style={styles.modalLabel}>Date: {selectedStac.date}</Text>
@@ -324,7 +325,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
                                                     {selectedStac.preferenceTimings && selectedStac.preferenceTimings[preference] && (
                                                         <View style={styles.preferenceTimingContainer}>
-                                                            <Ionicons name="time-outline" size={14} color="#666" style={styles.timingIcon} />
+                                                            <Ionicons name="time-outline" size={14} color={platformColors.textSecondary} style={styles.timingIcon} />
                                                             <Text style={styles.preferenceTimingText}>
                                                                 {selectedStac.preferenceTimings[preference].start} -{" "}
                                                                 {selectedStac.preferenceTimings[preference].end}
@@ -337,7 +338,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                                                         return (
                                                             <View key={option} style={styles.activityContainer}>
                                                                 <TouchableOpacity style={styles.checkboxContainer}>
-                                                                    <Ionicons name="checkbox" size={24} color="#6200ea" />
+                                                                    <Ionicons name="checkbox" size={24} color={platformColors.accent} />
                                                                     <Text style={styles.checkboxLabel}>{option}</Text>
                                                                 </TouchableOpacity>
 
@@ -347,7 +348,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
                                                                 {details.location && (
                                                                     <View style={styles.locationContainer}>
-                                                                        <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
+                                                                        <Ionicons name="location" size={16} color={platformColors.textSecondary} style={styles.locationIcon} />
                                                                         <Text style={styles.locationText}>{details.location}</Text>
                                                                     </View>
                                                                 )}
@@ -483,7 +484,7 @@ const StacDetailsScreen: React.FC = () => {
 
                                         {stac.preferenceTimings && stac.preferenceTimings[preference] && (
                                             <View style={styles.preferenceTimingContainer}>
-                                                <Ionicons name="time-outline" size={14} color="#666" style={styles.timingIcon} />
+                                                <Ionicons name="time-outline" size={14} color={platformColors.textSecondary} style={styles.timingIcon} />
                                                 <Text style={styles.preferenceTimingText}>
                                                     {stac.preferenceTimings[preference].start} - {stac.preferenceTimings[preference].end}
                                                 </Text>
@@ -498,7 +499,7 @@ const StacDetailsScreen: React.FC = () => {
                                                     {details.description && <Text style={styles.activityDescription}>{details.description}</Text>}
                                                     {details.location && (
                                                         <View style={styles.locationContainer}>
-                                                            <Ionicons name="location" size={16} color="#666" style={styles.locationIcon} />
+                                                            <Ionicons name="location" size={16} color={platformColors.textSecondary} style={styles.locationIcon} />
                                                             <Text style={styles.locationText}>{details.location}</Text>
                                                         </View>
                                                     )}
@@ -527,7 +528,7 @@ const StacDetailsScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f0f2f5",
+        backgroundColor: platformColors.groupedBackground,
     },
     headerContainer: {
         flexDirection: "row",
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 36,
         fontWeight: "bold",
-        color: "#333",
+        color: platformColors.textPrimary,
         textAlign: "center",
     },
     section: {
@@ -555,11 +556,11 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 24,
         fontWeight: "600",
-        color: "#4a4a4a",
+        color: platformColors.neutralStrong,
         marginBottom: 10,
     },
     activityButton: {
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 15,
         borderRadius: 8,
         alignItems: "center",
@@ -572,19 +573,19 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     stacButton: {
-        backgroundColor: "#4a4a4a",
+        backgroundColor: platformColors.neutralStrong,
         paddingVertical: 15,
         paddingHorizontal: 20,
         borderRadius: 8,
         flex: 1,
     },
     stacDetails: {
-        color: "#ddd",
+        color: platformColors.neutralSoft,
         fontSize: 12,
         marginTop: 4,
     },
     detailsContainer: {
-        backgroundColor: "#fff",
+        backgroundColor: platformColors.white,
         padding: 20,
         borderRadius: 10,
         marginBottom: 20,
@@ -593,17 +594,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         textAlign: "center",
-        color: "#4a4a4a",
+        color: platformColors.neutralStrong,
         marginTop: 10,
         marginBottom: 4,
     },
     modalText: {
         fontSize: 16,
-        color: "#666",
+        color: platformColors.textSecondary,
         marginBottom: 10,
     },
     closeButton: {
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         padding: 10,
         borderRadius: 5,
         alignItems: "center",
@@ -612,34 +613,34 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     closeButtonText: {
-        color: "#fff",
+        color: platformColors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
     noStacsText: {
         textAlign: "center",
-        color: "#666",
+        color: platformColors.textSecondary,
         marginTop: 10,
         fontStyle: "italic",
     },
     createButton: {
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
     },
     buttonText: {
-        color: "white",
+        color: platformColors.white,
         fontSize: 18,
     },
     modalContainer: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: platformColors.overlay,
         justifyContent: "center",
     },
     modalContent: {
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: platformColors.white,
         margin: 20,
         borderRadius: 10,
         padding: 20,
@@ -647,7 +648,7 @@ const styles = StyleSheet.create({
     },
     infoModalContent: {
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: platformColors.white,
         margin: 20,
         borderRadius: 10,
         padding: 0,
@@ -657,11 +658,11 @@ const styles = StyleSheet.create({
     infoModalTitle: {
         fontSize: 22,
         fontWeight: "bold",
-        color: "#333",
+        color: platformColors.textPrimary,
         textAlign: "center",
         paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: "#eee",
+        borderBottomColor: platformColors.opaqueSeparator,
     },
     infoScrollView: {
         flex: 1,
@@ -672,14 +673,14 @@ const styles = StyleSheet.create({
     },
     infoText: {
         fontSize: 16,
-        color: "#333",
+        color: platformColors.textPrimary,
         lineHeight: 22,
         marginBottom: 20,
     },
     infoSectionTitle: {
         fontSize: 18,
         fontWeight: "bold",
-        color: "#6200ea",
+        color: platformColors.accent,
         marginTop: 10,
         marginBottom: 15,
     },
@@ -691,12 +692,12 @@ const styles = StyleSheet.create({
     infoListNumber: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#6200ea",
+        color: platformColors.accent,
         width: 20,
     },
     infoListText: {
         fontSize: 16,
-        color: "#333",
+        color: platformColors.textPrimary,
         flex: 1,
         lineHeight: 22,
     },
@@ -705,17 +706,17 @@ const styles = StyleSheet.create({
     },
     infoModalFooter: {
         borderTopWidth: 1,
-        borderTopColor: "#eee",
+        borderTopColor: platformColors.opaqueSeparator,
         padding: 15,
     },
     closeInfoButton: {
-        backgroundColor: "#6200ea",
+        backgroundColor: platformColors.accent,
         paddingVertical: 12,
         borderRadius: 5,
         alignItems: "center",
     },
     closeInfoButtonText: {
-        color: "white",
+        color: platformColors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
@@ -723,7 +724,7 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontWeight: "bold",
         marginBottom: 10,
-        color: "#6200ea",
+        color: platformColors.accent,
         textAlign: "center",
     },
     scrollView: {
@@ -745,19 +746,19 @@ const styles = StyleSheet.create({
     activityContainer: {
         marginBottom: 10,
         padding: 10,
-        backgroundColor: "#f9f9f9",
+        backgroundColor: platformColors.tertiaryBackground,
         borderRadius: 5,
         borderWidth: 1,
-        borderColor: "#ddd",
+        borderColor: platformColors.neutralSoft,
     },
     activityName: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#333",
+        color: platformColors.textPrimary,
     },
     activityDescription: {
         fontSize: 14,
-        color: "#666",
+        color: platformColors.textSecondary,
         marginTop: 5,
         marginBottom: 5,
         paddingLeft: 5,
@@ -772,11 +773,11 @@ const styles = StyleSheet.create({
     },
     locationText: {
         fontSize: 14,
-        color: "#666",
+        color: platformColors.textSecondary,
         flex: 1,
     },
     deleteButton: {
-        backgroundColor: "#dc3545",
+        backgroundColor: platformColors.danger,
         padding: 10,
         borderRadius: 5,
         alignItems: "center",
@@ -785,7 +786,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     deleteButtonText: {
-        color: "#fff",
+        color: platformColors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
@@ -806,7 +807,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginTop: 10,
         marginBottom: 5,
-        color: "#6200ea",
+        color: platformColors.accent,
         flexWrap: "wrap", // Allow text to wrap
     },
     preferenceSection: {
@@ -827,11 +828,11 @@ const styles = StyleSheet.create({
     },
     preferenceTimingText: {
         fontSize: 14,
-        color: "#007bff",
+        color: platformColors.link,
         fontWeight: "500",
     },
     shareButton: {
-        backgroundColor: "#4CAF50",
+        backgroundColor: platformColors.success,
         padding: 10,
         borderRadius: 5,
         alignItems: "center",
@@ -840,16 +841,16 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     shareButtonText: {
-        color: "#fff",
+        color: platformColors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
     scrollViewWrapper: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#ddd",
+        borderColor: platformColors.neutralSoft,
         borderRadius: 5,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: platformColors.secondaryBackground,
         overflow: "hidden",
     },
     detailsScrollView: {

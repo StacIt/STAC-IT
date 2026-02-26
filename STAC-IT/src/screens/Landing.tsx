@@ -2,6 +2,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { NavigationProp } from "@react-navigation/native";
 import { Text, Button } from "react-native-paper";
+import { platformColors } from '../theme/platformColors';
 
 interface LandingProps {
   navigation: NavigationProp<any>;
@@ -33,16 +34,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#383753',
+    color: platformColors.textPrimary,
     textAlign: "center",
     marginBottom: 32,
   },
   button: {
-    // backgroundColor: '#383753',
+    // backgroundColor: platformColors.textPrimary,
     width: "70%",
   },
   buttonContent: {
-    // color: '#fff',
+    // color: platformColors.white,
     paddingVertical: 8,
   },
 });

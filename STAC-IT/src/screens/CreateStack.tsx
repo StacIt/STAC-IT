@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import StacForm from "../components/StacForm";
 import type { NavigationProp } from "@react-navigation/native";
+import { platformColors } from '../theme/platformColors';
 
 interface CreateStackProps {
   navigation: NavigationProp<any>;
@@ -40,13 +41,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   createButton: {
-    backgroundColor: "#6200ea",
+    backgroundColor: platformColors.accent,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
   },
   buttonText: {
-    color: "white",
+    color: platformColors.white,
     fontSize: 18,
   },
 });
