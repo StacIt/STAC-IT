@@ -1,19 +1,10 @@
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    ActivityIndicator,
-    Alert,
-} from "react-native";
+import { View, StyleSheet, Alert} from "react-native";
+import{ TextInput, Button, Text, Checkbox, ActivityIndicator} from "react-native-paper";
 import React, { useState, useEffect } from "react";
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { NavigationProp } from "@react-navigation/native";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "@firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { Ionicons } from "@expo/vector-icons";
-import { platformColors } from '../theme/platformColors';
 
 interface CreateAccountProps {
     navigation: NavigationProp<any>;
@@ -116,68 +107,75 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         navigation.navigate("Login");
     };
 
-    const ShowIcon = <Ionicons name="eye" size={24} color={platformColors.black} />;
-    const HideIcon = <Ionicons name="eye-off" size={24} color={platformColors.black} />;
 
     return (
         <View style={styles.container}>
             <TextInput
-                style={styles.input}
+                mode="outlined"
+                label="Email"
                 value={email}
                 onChangeText={(text) => { setEmail(text); validateEmail(text); }}
-                placeholder="Email"
                 autoCapitalize="none"
+                keyboardType="email-address"
+                style={styles.input}
+                error={!!error && email.length > 0}
             />
-            <View style={styles.passwordContainer}>
-                <TextInput
-                    style={styles.passwordInput}
-                    value={password}
-                    onChangeText={(text) => { setPassword(text); validatePassword(text); }}
-                    placeholder="Password"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                />
-                <TouchableOpacity
-                    style={styles.visibilityToggle}
-                    onPress={() => setShowPassword(!showPassword)}
-                >
-                    {showPassword ? HideIcon : ShowIcon}
-                </TouchableOpacity>
-            </View>
+            <TextInput
+                mode="outlined"
+                label="Password"
+                value={password}
+                onChangeText={(text) => { setPassword(text); validatePassword(text); }}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                style={styles.input}
+                error={!!error && password.length > 0}
+                right={
+                    <TextInput.Icon
+                        icon={showPassword ? "eye-off" : "eye"}
+                        onPress={() => setShowPassword(!showPassword)}
+                    />
+            }
+            />
 
-            <Text style={{ color: platformColors.danger }}>{error}</Text>
 
             {loading ? (
-                <ActivityIndicator size="small" color={platformColors.black} />
+                <ActivityIndicator animating={true} style={styles.loader} />
             ) : (
                 <>
-                    <View style={styles.checkboxContainer}>
-                        <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.checkbox}>
-                            {acceptedTerms ? <Text style={styles.checked}>✔️</Text> : <Text style={styles.unchecked}>⬜️</Text>}
-                        </TouchableOpacity>
-                        <Text style={styles.label}>
-                            I accept the <Text style={styles.link}>Terms and Conditions</Text>
+                    <View style={styles.checkboxRow}>
+                        <Checkbox.Android
+                            status={acceptedTerms ? 'checked' : 'unchecked'}
+                            onPress={() => setAcceptedTerms(!acceptedTerms)}
+                        />
+                        <Text variant="bodyMedium" onPress={() => setAcceptedTerms(!acceptedTerms)}>
+                            I accept the <Text style={styles.linkText}>Terms and Conditions</Text>
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                        <Text style={{ color: platformColors.white }}>Sign Up</Text>
-                    </TouchableOpacity>
+                    <Button
+                        mode="contained"
+                        onPress={handleSignUp}
+                        style={styles.button}
+                    >
+                        Sign Up
+                    </Button>
+                    <Button
+                        mode="text"
+                        onPress={handleAlreadyHaveAccount}
+                        style={styles.button}
+                    >
+                        Account verified? Login here
+                    </Button>
 
-                    <TouchableOpacity style={styles.button} onPress={handleAlreadyHaveAccount}>
-                        <Text style={{ color: platformColors.white }}>Account verified? Login here</Text>
-                    </TouchableOpacity>
-
-                    {/* Resend Verification Email Button */}
-                    {verificationSent && timeLeft > 0 && (
-                        <Text style={styles.timer}>Resend verification in {timeLeft}s</Text>
-                    )}
-                    {verificationSent && timeLeft === 0 && (
-                        <TouchableOpacity
-                            style={styles.link}
-                            onPress={handleResendVerification}
-                        >
-                            <Text>Didn't receive the verification email? Resend here.</Text>
-                        </TouchableOpacity>
+                    {verificationSent && (
+                        <View style={styles.resendContainer}>
+                            {timeLeft > 0 ? (
+                                <Text variant="bodySmall">Resend verification in {timeLeft}s</Text>
+                            ) : (
+                                <Button mode="outlined" compact onPress={handleResendVerification}>
+                                    Resend Email
+                                </Button>
+                            )}
+                        </View>
                     )}
                 </>
             )}
@@ -189,67 +187,32 @@ export default CreateAccount;
 
 const styles = StyleSheet.create({
     container: {
-        marginHorizontal: 20,
+        paddingHorizontal: 24,
         flex: 1,
         justifyContent: "center",
     },
     input: {
-        marginVertical: 4,
-        height: 50,
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 10,
-        backgroundColor: platformColors.white,
+        marginBottom: 12
     },
     button: {
-        marginVertical: 4,
-        alignItems: "center",
-        backgroundColor: platformColors.accent,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-    },
-    checkboxContainer: {
-        flexDirection: "row",
         marginVertical: 8,
+        paddingVertical: 4,
+
+    },
+    checkboxRow: {
+        flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
+        marginBottom: 16,
     },
-    checkbox: {
-        marginRight: 10,
+    linkText: {
+            textDecorationLine: 'underline',
+            color: '#2196F3',
     },
-    checked: {
-        fontSize: 18,
+    loader: {
+        marginVertical: 20,
     },
-    unchecked: {
-        fontSize: 18,
-    },
-    label: {
-        fontSize: 14,
-    },
-    link: {
-        marginTop: 20,
+    resendContainer: {
         alignItems: "center",
-    },
-    timer: {
         marginTop: 10,
-        textAlign: "center",
-        color: platformColors.textSecondary,
-    },
-    passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 4,
-        borderWidth: 1,
-        borderRadius: 4,
-        backgroundColor: platformColors.white,
-    },
-    passwordInput: {
-        flex: 1,
-        height: 50,
-        padding: 10,
-    },
-    visibilityToggle: {
-        padding: 10,
     },
 });
