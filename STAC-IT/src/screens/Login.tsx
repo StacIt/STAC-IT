@@ -86,15 +86,13 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         navigation.navigate("ForgetPassword");
     };
 
-    const ShowIcon = <Ionicons name="eye" size={24} color={platformColors.black} />;
-    const HideIcon = <Ionicons name="eye-off" size={24} color={platformColors.black} />;
-
     return (
         <View style={styles.container}>
             <KeyboardAvoidingView behavior="padding">
             <View style={{gap: 10}}>
                 <TextInput
                     //style={{ marginVertical: 4 }}
+                    mode="outlined"
                     label="Email"
                     value={email}
                     onChangeText={(text) => { setEmail(text) }}
@@ -107,6 +105,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                 />
                 <TextInput
                     value={password}
+                    mode="outlined"
                     onChangeText={setPassword}
                     label="Password"
                     autoCapitalize="none"

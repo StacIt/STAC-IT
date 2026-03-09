@@ -4,8 +4,6 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import {
     View,
-    Text,
-    TextInput,
     TouchableOpacity,
     StyleSheet,
     Modal,
@@ -25,8 +23,8 @@ import { doc, setDoc } from "firebase/firestore"
 import * as SMS from "expo-sms"
 import type { NavigationProp } from "@react-navigation/native"
 import { platformColors } from '../theme/platformColors';
-import { TimePickerModal } from "react-native-paper-dates"
-import { Button, Divider } from "react-native-paper"
+import { TimePickerModal, DatePickerModal } from "react-native-paper-dates"
+import { Button, Divider, Text, TextInput, SegmentedButtons, useTheme } from "react-native-paper"
 
 interface Period {
     begin: Date;
@@ -214,13 +212,14 @@ const StacForm: React.FC<StacFormProps> = ({
     const [city, setCity] = useState(initialCity)
     const [state, setState] = useState(initialState)
     const [activities, setActivities] = useState(initialActivities)
-    const [numberOfPeople, setNumberOfPeople] = useState<number | null>(null)
-    const [budget, setBudget] = useState<number | null>(null)
+    const [numberOfPeople, setNumberOfPeople] = useState<string>("1")
+    const [budget, setBudget] = useState<string>("1")
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [tempDate, setTempDate] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
     const [showNumberPicker, setShowNumberPicker] = useState(false)
-    const [showTimePicker, setShowTimePicker] = useState(false)
+    const [showStartTimePicker, setShowStartTimePicker] = useState(false)
+    const [showEndTimePicker, setShowEndTimePicker] = useState(false)
 
     const LoadingOverlay = () => {
         if (!isLoading) return null
@@ -243,6 +242,10 @@ const StacForm: React.FC<StacFormProps> = ({
     const [locations, setLocations] = useState<Record<string, string>>({})
     const [preferenceTimings, setPreferenceTimings] = useState<Record<string, StrPeriod>>({})
 
+    const defaultStartTime = new Date()
+    const defaultEndTime = new Date()
+    defaultEndTime.setHours(defaultEndTime.getHours() + 1)
+
     // Custom time input states
     const [startTimeInput, setStartTimeInput] = useState<TimeInputState>({
         hour: "",
@@ -255,6 +258,8 @@ const StacForm: React.FC<StacFormProps> = ({
         minute: "",
         period: "PM",
     })
+
+    const theme = useTheme()
 
     // Refs for time input fields
     const startHourRef = useRef<TextInput>(null)
@@ -272,8 +277,8 @@ const StacForm: React.FC<StacFormProps> = ({
             setCity("")
             setState("")
             setActivities([""])
-            setNumberOfPeople(null)
-            setBudget(null)
+            setNumberOfPeople("1")
+            setBudget("1")
             setModelResponse("")
             setOptions({})
             setSelectedOptions({})
@@ -411,22 +416,13 @@ const StacForm: React.FC<StacFormProps> = ({
     }
 
     const validateForm = () => {
-        if (!startTime || !endTime || !city || !state || activities.length === 0 || !budget || !numberOfPeople) {
+        if (!city || !state || activities.length === 0) {
             Alert.alert("Error", "All fields are required.")
             return false
         }
 
         if (!validStates.includes(state.toUpperCase())) {
             Alert.alert("Error", "Please enter a valid US state abbreviation.")
-            return false
-        }
-
-        if (budget === null || Number(budget) < 0) {
-            Alert.alert("Error", "Your budget should be 0 or higher.")
-            return false
-        }
-        if (numberOfPeople === null || numberOfPeople <= 0) {
-            Alert.alert("Error", "Number of people must be a positive number.")
             return false
         }
 
@@ -472,8 +468,8 @@ const StacForm: React.FC<StacFormProps> = ({
                 await setDoc(doc(FIREBASE_DB, "stacks", stackId), {
                     userId: user.uid,
                     stacName,
-                    startTime: startTime?.toISOString(),
-                    endTime: endTime?.toISOString(),
+                    startTime: startTime?.toISOString() ?? defaultStartTime.toISOString(),
+                    endTime: endTime?.toISOString() ?? defaultEndTime.toISOString(),
                     date: date.toDateString(),
                     location: `${city}, ${state.toUpperCase()}`,
                     preferences,
@@ -663,9 +659,9 @@ const StacForm: React.FC<StacFormProps> = ({
                     setEndTime(null)
                     setCity("")
                     setState("")
-                    setBudget(null)
+                    setBudget("")
                     setActivities([""])
-                    setNumberOfPeople(null)
+                    setNumberOfPeople("1")
                     setDate(new Date())
                     setModelResponse("")
                     setOptions({})
@@ -802,234 +798,117 @@ const StacForm: React.FC<StacFormProps> = ({
             <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
                     <TouchableWithoutFeedback onPress={dismissKeyboard}>
-                        <View style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
+                        <View style={[styles.modalContainer, {backgroundColor: theme.colors.backdrop}]}>
+                            <View style={[styles.modalContent, {backgroundColor: theme.colors.surface}]}>
                                 <LoadingOverlay />
-                                <Text style={styles.modalTitle}>Create a New STAC</Text>
+                                <Text variant="headlineMedium" style={styles.modalTitle}>Create a New STAC</Text>
 
                                 <ScrollView
                                     ref={scrollViewRef}
                                     style={styles.formScrollView}
-                                    contentContainerStyle={styles.scrollViewContent}
+                                    contentContainerStyle={[styles.scrollViewContent, {gap: 6}]}
                                     keyboardShouldPersistTaps="handled"
                                 >
+
                                     <TextInput
                                         ref={stacNameRef}
-                                        style={styles.input}
-                                        placeholder="STAC Name"
+                                        //style={styles.input}
+                                        label="Title"
+                                        style={[theme.fonts.headlineMedium]}
+                                        mode="outlined"
                                         value={stacName}
                                         onChangeText={setStacName}
                                         blurOnSubmit={true}
                                     />
 
-                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-                                        <Text>{date.toDateString()}</Text>
-                                    </TouchableOpacity>
+                                    <View style={{flexDirection: "row"}}>
+                                    <Button icon="calendar" mode="outlined" onPress={()=>setShowDatePicker(true)}>
+                                    {date.toDateString()}
+                                    </Button>
+                                    </View>
+                                    <View style={{gap: 4, flexDirection: "row", justifyContent: "center"}}>
+                                    <Button
+                                        mode="contained-tonal"
+                                        onPress={() => setShowStartTimePicker(true) }
+                                        style={{flex: 1}}
+                                        >
 
-                                    {/* Custom Date Picker Modal */}
-                                    <Modal
-                                        animationType="slide"
-                                        transparent={true}
+                                        {(startTime? startTime : defaultStartTime).toLocaleTimeString([], {timeStyle: "short"})}
+                                    </Button>
+                                    <Button
+                                        mode="contained-tonal"
+                                        onPress={() => setShowEndTimePicker(true) }
+                                        style={{flex: 1}}
+                                        >
+                                        {(endTime? endTime : defaultEndTime).toLocaleTimeString([], {timeStyle: "short"})}
+                                    </Button>
+                                    </View>
+                                    <DatePickerModal
+                                        locale="en"
+                                        label="Select date"
+                                        mode="single"
+                                        presentationStyle="pageSheet"
                                         visible={showDatePicker}
-                                        onRequestClose={() => setShowDatePicker(false)}
-                                    >
-                                        <View style={styles.datePickerModalContainer}>
-                                            <View style={styles.datePickerModalContent}>
-                                                <View style={styles.datePickerHeader}>
-                                                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(false)}>
-                                                        <Text style={styles.datePickerButtonText}>Cancel</Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity
-                                                        style={styles.datePickerButton}
-                                                        onPress={() => {
-                                                            setDate(tempDate)
-                                                            setShowDatePicker(false)
-                                                        }}
-                                                    >
-                                                        <Text style={[styles.datePickerButtonText, styles.datePickerDoneButton]}>Done</Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                                <DateTimePicker
-                                                    value={tempDate}
-                                                    mode="date"
-                                                    display="spinner"
-                                                    onChange={(event, selectedDate) => {
-                                                        if (selectedDate) setTempDate(selectedDate)
-                                                    }}
-                                                    style={styles.datePicker}
-                                                />
-                                            </View>
-                                        </View>
-                                    </Modal>
+                                        date={date}
+                                        onDismiss={() => setShowDatePicker(false)}
+                                        onConfirm={(p) => {
+                                            const nd: string = p.date?.toDateString()??"";
+                                            setShowDatePicker(false);
+                                            setDate(new Date(nd));
+                                        }}
+                                           />
+
 
                                     {/* testing new time picker */}
-                                    <Divider/>
-                                    <Button icon="clock-outline" mode="text" onPress={() => setShowTimePicker(true)}>
-                                    Start time
-                                    </Button>
                                     <TimePickerModal
                                         locale="en"
-                                        visible={showTimePicker}
-                                        onDismiss={()=>setShowTimePicker(false)}
-                                        onConfirm={() =>setShowTimePicker(false)}
+                                        visible={showStartTimePicker}
+                                        onDismiss={()=>setShowStartTimePicker(false)}
+                                        onConfirm={({hours, minutes})=>{
+                                            setShowStartTimePicker(false)
+                                            setStartTimeInput({hour: (hours % 12).toString(), minute: minutes.toString(), period: hours >= 12 ? "PM" : "AM"})
+                                        }}
+                                    />
+                                    <TimePickerModal
+                                        locale="en"
+                                        visible={showEndTimePicker}
+                                        onDismiss={()=>setShowEndTimePicker(false)}
+                                        onConfirm={({hours, minutes})=>{
+                                            setShowEndTimePicker(false)
+                                            setEndTimeInput({hour: (hours % 12).toString(), minute: minutes.toString(), period: hours >= 12 ? "PM" : "AM"})
+                                        }}
                                     />
                                     <Divider/>
 
-                                    {/* Custom Start Time Input */}
-                                    <Text style={styles.timeLabel}>Starting time</Text>
-                                    <View style={styles.timeInputContainer}>
-                                        <View style={styles.timeInputBox}>
-                                            <TextInput
-                                                ref={startHourRef}
-                                                style={styles.timeInput}
-                                                placeholder="08"
-                                                placeholderTextColor={platformColors.placeholder as string}
-                                                value={startTimeInput.hour}
-                                                onChangeText={(value) => handleTimeInputChange(value, "hour", "start")}
-                                                onBlur={() => handleTimeInputBlur("hour", "start")}
-                                                keyboardType="number-pad"
-                                                maxLength={2}
-                                            />
-                                            <Text style={styles.timeInputLabel}>Hour</Text>
-                                        </View>
 
-                                        <Text style={styles.timeSeparator}>:</Text>
-
-                                        <View style={styles.timeInputBox}>
-                                            <TextInput
-                                                ref={startMinuteRef}
-                                                style={styles.timeInput}
-                                                placeholder="00"
-                                                placeholderTextColor={platformColors.placeholder as string}
-                                                value={startTimeInput.minute}
-                                                onChangeText={(value) => handleTimeInputChange(value, "minute", "start")}
-                                                onBlur={() => handleTimeInputBlur("minute", "start")}
-                                                keyboardType="number-pad"
-                                                maxLength={2}
-                                            />
-                                            <Text style={styles.timeInputLabel}>Minute</Text>
-                                        </View>
-
-                                        <View style={styles.periodContainer}>
-                                            <TouchableOpacity
-                                                style={[styles.periodButton, startTimeInput.period === "AM" && styles.periodButtonActive]}
-                                                onPress={() => handlePeriodChange("AM", "start")}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.periodButtonText,
-                                                        startTimeInput.period === "AM" && styles.periodButtonTextActive,
-                                                    ]}
-                                                >
-                                                    AM
-                                                </Text>
-                                            </TouchableOpacity>
-
-                                            <TouchableOpacity
-                                                style={[styles.periodButton, startTimeInput.period === "PM" && styles.periodButtonActive]}
-                                                onPress={() => handlePeriodChange("PM", "start")}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.periodButtonText,
-                                                        startTimeInput.period === "PM" && styles.periodButtonTextActive,
-                                                    ]}
-                                                >
-                                                    PM
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-
-                                    {/* Custom End Time Input */}
-                                    <Text style={styles.timeLabel}>End time</Text>
-                                    <View style={styles.timeInputContainer}>
-                                        <View style={styles.timeInputBox}>
-                                            <TextInput
-                                                ref={endHourRef}
-                                                style={styles.timeInput}
-                                                placeholder="05"
-                                                placeholderTextColor={platformColors.placeholder as string}
-                                                value={endTimeInput.hour}
-                                                onChangeText={(value) => handleTimeInputChange(value, "hour", "end")}
-                                                onBlur={() => handleTimeInputBlur("hour", "end")}
-                                                keyboardType="number-pad"
-                                                maxLength={2}
-                                            />
-                                            <Text style={styles.timeInputLabel}>Hour</Text>
-                                        </View>
-
-                                        <Text style={styles.timeSeparator}>:</Text>
-
-                                        <View style={styles.timeInputBox}>
-                                            <TextInput
-                                                ref={endMinuteRef}
-                                                style={styles.timeInput}
-                                                placeholder="00"
-                                                placeholderTextColor={platformColors.placeholder as string}
-                                                value={endTimeInput.minute}
-                                                onChangeText={(value) => handleTimeInputChange(value, "minute", "end")}
-                                                onBlur={() => handleTimeInputBlur("minute", "end")}
-                                                keyboardType="number-pad"
-                                                maxLength={2}
-                                            />
-                                            <Text style={styles.timeInputLabel}>Minute</Text>
-                                        </View>
-
-                                        <View style={styles.periodContainer}>
-                                            <TouchableOpacity
-                                                style={[styles.periodButton, endTimeInput.period === "AM" && styles.periodButtonActive]}
-                                                onPress={() => handlePeriodChange("AM", "end")}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.periodButtonText,
-                                                        endTimeInput.period === "AM" && styles.periodButtonTextActive,
-                                                    ]}
-                                                >
-                                                    AM
-                                                </Text>
-                                            </TouchableOpacity>
-
-                                            <TouchableOpacity
-                                                style={[styles.periodButton, endTimeInput.period === "PM" && styles.periodButtonActive]}
-                                                onPress={() => handlePeriodChange("PM", "end")}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.periodButtonText,
-                                                        endTimeInput.period === "PM" && styles.periodButtonTextActive,
-                                                    ]}
-                                                >
-                                                    PM
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-
+                                    <View style={{flexDirection: "row", gap: 6}}>
                                     <TextInput
-                                        ref={cityRef}
-                                        style={styles.input}
-                                        placeholder="City"
+                                    style={{flex: 3}}
+                                        //style={[theme.fonts.headlineSmall]}
+                                        label="City"
+                                        mode="outlined"
                                         value={city}
                                         onChangeText={setCity}
                                         blurOnSubmit={true}
                                     />
 
                                     <TextInput
-                                        ref={stateRef}
-                                        style={styles.input}
-                                        placeholder="State (e.g., CA)"
+                                    style={{flex: 1}}
+                                        //style={styles.input}
+                                        label="State"
+                                        mode="outlined"
                                         value={state}
                                         onChangeText={setState}
                                         maxLength={2}
                                         blurOnSubmit={true}
                                     />
+                                    </View>
+                                    <Divider/>
 
                                     {activities.map((activity, index) => (
                                         <View key={index} style={styles.activityContainer}>
                                             <TextInput
-                                                ref={(ref) => {
+                                                ref={(ref: any) => {
                                                     // Initialize the array if needed
                                                     if (!activityRefs.current) {
                                                         activityRefs.current = []
@@ -1038,8 +917,10 @@ const StacForm: React.FC<StacFormProps> = ({
                                                     activityRefs.current[index] = ref
                                                 }}
                                                 style={styles.activityInput}
-                                                placeholder={`Activity ${index + 1} (e.g., ${activityExamples[index % activityExamples.length]
-                                                    })`}
+                                                mode="outlined"
+                                                label={`Activity ${index + 1}`}
+                                                placeholder={`${activityExamples[index % activityExamples.length]
+                                                    }`}
                                                 value={activity}
                                                 onChangeText={(text) => updateActivity(text, index)}
                                                 blurOnSubmit={true}
@@ -1059,69 +940,51 @@ const StacForm: React.FC<StacFormProps> = ({
 
                                     {/* Number of People Input */}
                                     <Text style={styles.budgetLabel}>Number of People</Text>
-                                    <View style={styles.budgetOptionsContainer}>
-                                        {[1, 2, 3].map((level) => (
-                                            <TouchableOpacity
-                                                key={level}
-                                                style={[
-                                                    styles.budgetOption,
-                                                    numberOfPeople === level && styles.budgetOptionSelected
-                                                ]}
-                                                onPress={() => setNumberOfPeople(level)}
-                                            >
-                                                <Text style={[
-                                                    styles.budgetOptionText,
-                                                    numberOfPeople === level && styles.budgetOptionTextSelected
-                                                ]}>
-                                                    {level == 3 ? "3+" : String(level)}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
+                                    <SegmentedButtons
+                                        value={numberOfPeople}
+                                        onValueChange={setNumberOfPeople}
+                                        buttons={[
+                                            {value: "1", icon: "account"},
+                                            {value: "2", icon: "account-multiple"},
+                                            {value: "3", icon: "account-group"}
+                                        ]}
+                                        />
 
                                     <Text style={styles.budgetLabel}>Budget</Text>
-                                    <View style={styles.budgetOptionsContainer}>
-                                        {[1, 2, 3].map((level) => (
-                                            <TouchableOpacity
-                                                key={level}
-                                                style={[
-                                                    styles.budgetOption,
-                                                    budget === level && styles.budgetOptionSelected
-                                                ]}
-                                                onPress={() => setBudget(level)}
-                                            >
-                                                <Text style={[
-                                                    styles.budgetOptionText,
-                                                    budget === level && styles.budgetOptionTextSelected
-                                                ]}>
-                                                    {"$".repeat(level)}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
+                                    <SegmentedButtons
+                                        value={budget}
+                                        onValueChange={setBudget}
+                                        buttons={[
+                                            {value: "1", label: "$"},
+                                            {value: "2", label: "$$"},
+                                            {value: "3", label: "$$$"}
+                                        ]}
+                                        />
 
                                     <View style={{ height: 100 }} />
                                 </ScrollView>
 
                                 <View style={styles.modalFooter}>
-                                    <TouchableOpacity
+                                    <Button
+                                    mode="outlined"
                                         onPress={() => {
                                             dismissKeyboard()
                                             onClose()
                                         }}
                                     >
-                                        <Text style={styles.cancelText}>Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.footerButton, styles.submitButton, isLoading && styles.disabledButton]}
+                                    Cancel
+                                    </Button>
+                                    <Button
+                                        //style={[styles.footerButton, styles.submitButton, isLoading && styles.disabledButton]}
                                         onPress={() => {
                                             dismissKeyboard()
                                             handleCreateStack()
                                         }}
+                                        mode="contained"
                                         disabled={isLoading}
                                     >
-                                        <Text style={styles.footerButtonText}>{isLoading ? "Loading..." : "Submit"}</Text>
-                                    </TouchableOpacity>
+                                    Submit
+                                    </Button>
                                 </View>
                             </View>
                         </View>
@@ -1232,7 +1095,6 @@ const StacForm: React.FC<StacFormProps> = ({
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        backgroundColor: platformColors.overlay,
         justifyContent: "center",
     },
     modalContent: {
@@ -1244,17 +1106,15 @@ const styles = StyleSheet.create({
         maxHeight: "80%",
     },
     modalTitle: {
-        fontSize: 24,
         fontWeight: "bold",
         marginBottom: 20,
         textAlign: "center",
     },
     formScrollView: {
-        height: 400,
     },
     scrollViewContent: {
         flexGrow: 1,
-        paddingBottom: 20,
+        gap: 10,
     },
     modalFooter: {
         flexDirection: "row",
@@ -1283,7 +1143,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 5,
         paddingLeft: 10,
-        marginBottom: 10,
+        margin: 10,
         justifyContent: "center",
     },
     inputText: {
@@ -1393,10 +1253,10 @@ const styles = StyleSheet.create({
     },
     activityInput: {
         flex: 1,
-        height: 40,
-        borderColor: platformColors.separator,
-        borderWidth: 1,
-        borderRadius: 5,
+        //height: 40,
+        //borderColor: platformColors.separator,
+        //borderWidth: 1,
+        //borderRadius: 5,
         paddingLeft: 10,
         marginRight: 10,
     },

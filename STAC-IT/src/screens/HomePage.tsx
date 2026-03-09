@@ -1,14 +1,21 @@
-"use client"
 import type React from "react"
 import { useState, useCallback, useRef } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert, Share } from "react-native"
+import { View, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert, Share } from "react-native"
 import { type NavigationProp, useNavigation, useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig"
 import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
+
+import { Appbar, IconButton, Divider, Button, FAB, Card, Modal as PModal, Portal, Text, useTheme} from "react-native-paper"
+
+import {
+  BottomSheetModal,
+  BottomSheetView,
+  BottomSheetModalProvider,
+} from '@gorhom/bottom-sheet'
+
 import StacForm from "../components/StacForm"
 import { platformColors } from '../theme/platformColors';
-
 interface HomePageProps {
     navigation: NavigationProp<any>
 }
@@ -54,6 +61,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     const [createModalVisible, setCreateModalVisible] = useState(false)
     const [infoModalVisible, setInfoModalVisible] = useState(false)
     const infoScrollViewRef = useRef<ScrollView>(null)
+
+    const theme = useTheme()
 
     const handleShare = async (stac: Stac) => {
         try {
@@ -160,16 +169,17 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
     const renderStacList = (stacs: Stac[], title: string) => (
         <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={[styles.sectionTitle, {color: theme.colors.outline}]}>{title}</Text>
             {stacs.length === 0 ? (
                 <Text style={styles.noStacsText}>No {title.toLowerCase()} available</Text>
             ) : (
                 stacs.map((stac) => (
                     <View key={stac.id} style={styles.stacContainer}>
-                        <TouchableOpacity style={styles.stacButton} onPress={() => handleStacPress(stac)}>
-                            <Text style={styles.buttonText}>{stac.stacName}</Text>
-                            <Text style={styles.stacDetails}>{new Date(stac.date).toLocaleDateString()}</Text>
-                        </TouchableOpacity>
+                    <Card style={{flex: 1, backgroundColor: theme.colors.secondaryContainer}}
+                    onPress={() => handleStacPress(stac)}
+                    >
+                    <Card.Title titleVariant="titleLarge" title={stac.stacName} titleStyle={{color: theme.colors.onSecondaryContainer}} subtitleStyle={{color: theme.colors.onSecondaryContainer}} subtitleVariant="labelMedium" subtitle={new Date(stac.date).toLocaleDateString()} />
+                    </Card>
                     </View>
                 ))
             )}
@@ -178,18 +188,11 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+        <Appbar.Header>
+        <Appbar.Content title="stacIT" titleStyle={{fontWeight: 'bold'}}/>
+        <Appbar.Action icon="information" onPress={() => setInfoModalVisible(true)}/>
+        </Appbar.Header>
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-                <View style={styles.headerContainer}>
-                    <Text style={styles.title}>STAC-IT</Text>
-                    <TouchableOpacity style={styles.infoButton} onPress={() => setInfoModalVisible(true)}>
-                        <Ionicons name="information-circle" size={28} color={platformColors.accent} />
-                    </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={styles.activityButton} onPress={() => setCreateModalVisible(true)}>
-                    <Text style={styles.buttonText}>Start New STAC</Text>
-                </TouchableOpacity>
-
                 <StacForm
                     navigation={navigation}
                     visible={createModalVisible}
@@ -198,6 +201,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 />
 
                 {/* Info Modal */}
+
                 <Modal
                     animationType="slide"
                     transparent={true}
@@ -305,77 +309,62 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 >
                     <View style={styles.modalContainer}>
                         {selectedStac && (
-                            <View style={styles.modalContent}>
-                                <TouchableOpacity style={{ alignSelf: "flex-start" }} onPress={() => setStacDetailsModalVisible(false)}>
-                                    <Ionicons name="close-circle" size={34} color={platformColors.accent} />
-                                </TouchableOpacity>
-                                <Text style={styles.modalTitle}>{selectedStac.stacName}</Text>
-                                <Text style={styles.modalLabel}>Date: {selectedStac.date}</Text>
-                                <Text style={styles.modalLabel}>Location: {selectedStac.location}</Text>
-                                <Text style={styles.modalLabel}>Selected Activities:</Text>
-
-                                <View style={styles.scrollViewWrapper}>
-                                    <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.detailsScrollViewContent}>
+                            <View style={[styles.modalContent, {gap: 4, backgroundColor: theme.colors.surface}]}>
+                            <IconButton icon="close" mode="contained-tonal" onPress={() => setStacDetailsModalVisible(false)}/>
+                            <Button mode="elevated" onPress={()=>{}}>
+                                <Text variant="headlineLarge" style={{color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center'}}>{selectedStac.stacName}</Text>
+                            </Button>
+                                <Button icon="calendar" mode="elevated" onPress={()=>{}}>
+                                {selectedStac.date}
+                                </Button>
+                                <Button icon="map-marker-outline" mode="elevated" onPress={()=>{}}>
+                                {selectedStac.location}
+                                </Button>
+                                <View style={{flex: 1, overflow: 'hidden'}}>
+                                    <ScrollView style={{flex: 1}} contentContainerStyle={{marginTop: 0, margin: 4}}>
                                         {selectedStac.selectedOptions &&
                                             (selectedStac.preferenceOrder || Object.keys(selectedStac.selectedOptions)).map((preference) => (
                                                 <View key={preference} style={styles.preferenceSection}>
-                                                    <View style={styles.preferenceHeaderContainer}>
-                                                        <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
-                                                    </View>
-
-                                                    {selectedStac.preferenceTimings && selectedStac.preferenceTimings[preference] && (
-                                                        <View style={styles.preferenceTimingContainer}>
-                                                            <Ionicons name="time-outline" size={14} color={platformColors.textSecondary} style={styles.timingIcon} />
-                                                            <Text style={styles.preferenceTimingText}>
-                                                                {selectedStac.preferenceTimings[preference].begin} -{" "}
-                                                                {selectedStac.preferenceTimings[preference].end}
-                                                            </Text>
-                                                        </View>
-                                                    )}
-
+                                                <Card style={{flex: 1}}>
+                                                <Card.Title title={preference} titleVariant='titleLarge' titleStyle={{color: theme.colors.onPrimaryContainer, fontWeight: 'bold'}} subtitle={selectedStac.preferenceTimings && (`${selectedStac.preferenceTimings[preference].begin} - ${selectedStac.preferenceTimings[preference].end}`)} subtitleVariant="labelMedium" />
+                                                <Card.Content>
                                                     {selectedStac.selectedOptions?.[preference]?.map((option) => {
                                                         const details = getOptionDetails(selectedStac, preference, option)
                                                         return (
-                                                            <View key={option} style={styles.activityContainer}>
-                                                                <TouchableOpacity style={styles.checkboxContainer}>
-                                                                    <Ionicons name="checkbox" size={24} color={platformColors.accent} />
-                                                                    <Text style={styles.checkboxLabel}>{option}</Text>
-                                                                </TouchableOpacity>
-
-                                                                {details.description && (
-                                                                    <Text style={styles.activityDescription}>{details.description}</Text>
-                                                                )}
-
-                                                                {details.location && (
-                                                                    <View style={styles.locationContainer}>
-                                                                        <Ionicons name="location" size={16} color={platformColors.textSecondary} style={styles.locationIcon} />
-                                                                        <Text style={styles.locationText}>{details.location}</Text>
-                                                                    </View>
-                                                                )}
+                                                            <View key={option}>
+                                                            <Card style={{flex: 1}} mode="contained">
+                                                            <Card.Content>
+                                                <Text variant='titleSmall' style={{fontWeight: 'bold'}}>
+                                                {option}
+                                                </Text>
+                                                <Divider style={{margin: 4}}/>
+                                                <Text variant="bodySmall">
+                                                {details.description}
+                                                </Text>
+                                                </Card.Content>
+                                                <Card.Actions>
+                                                <Button style={{flex: 1}} icon="map-marker" onPress={()=>{}}>
+                                                {details.location}
+                                                </Button>
+                                                </Card.Actions>
+                                                </Card>
                                                             </View>
                                                         )
                                                     })}
+                                                </Card.Content>
+                                                </Card>
+
                                                 </View>
                                             ))}
                                     </ScrollView>
                                 </View>
-
-                                <View style={styles.buttonContainer}>
-                                    <TouchableOpacity
-                                        style={styles.shareButton}
-                                        onPress={() => handleShare(selectedStac)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={styles.shareButtonText}>Share</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={styles.deleteButton}
-                                        onPress={() => deleteStac(selectedStac.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={styles.deleteButtonText}>Delete</Text>
-                                    </TouchableOpacity>
+                                <View style={{marginTop: 16, flexDirection: "row-reverse", gap: 10}}>
+                                <Button style={{flex: 1}} mode="contained" onPress={() => handleShare(selectedStac)}>
+                                Share
+                                </Button>
+                                <Button style={{flex: 1}} mode="outlined" onPress={() => deleteStac(selectedStac.id)}>
+                                Delete
+                                </Button>
                                 </View>
                             </View>
                         )}
@@ -385,6 +374,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 {renderStacList(scheduledStacs, "Scheduled STAC")}
                 {renderStacList(pastStacs, "Past History")}
             </ScrollView>
+        <FAB icon="pencil-outline" style={styles.fab} onPress={() => setCreateModalVisible(true)}/>
         </View>
     )
 }
@@ -543,6 +533,12 @@ const styles = StyleSheet.create({
         right: 0,
         top: 5,
         padding: 5,
+    },
+    fab: {
+        position: 'absolute',
+        margin: 16,
+        right: 0,
+        bottom: 0,
     },
     title: {
         fontSize: 36,

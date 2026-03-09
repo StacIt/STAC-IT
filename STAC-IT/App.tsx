@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import Landing from './src/screens/Landing';
 import Login from './src/screens/Login';
@@ -49,6 +50,7 @@ const MainTabs = () => {
 
 export default function App() {
   return (
+  <GestureHandlerRootView>
     <PaperProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Landing">
@@ -90,5 +92,6 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
+  </GestureHandlerRootView>
   );
 }
