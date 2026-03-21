@@ -17,6 +17,10 @@ import CreateStack from './src/screens/CreateStack';
 import Profile from './src/screens/Profile';
 import { platformColors } from './src/theme/platformColors';
 
+import { en, registerTranslation } from "react-native-paper-dates";
+
+registerTranslation("en", en);
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 

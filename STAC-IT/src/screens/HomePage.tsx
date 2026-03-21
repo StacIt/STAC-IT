@@ -8,13 +8,8 @@ import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/fire
 
 import { Appbar, IconButton, Divider, Button, FAB, Card, Modal as PModal, Portal, Text, useTheme} from "react-native-paper"
 
-import {
-  BottomSheetModal,
-  BottomSheetView,
-  BottomSheetModalProvider,
-} from '@gorhom/bottom-sheet'
-
 import StacForm from "../components/StacForm"
+import { Stac } from "../types";
 import { platformColors } from '../theme/platformColors';
 interface HomePageProps {
     navigation: NavigationProp<any>
@@ -23,34 +18,6 @@ interface HomePageProps {
 interface Timing {
     begin: string
     end: string
-}
-
-interface Stac {
-    id: string
-    userId: string
-    stacName: string
-    date: string
-    startTime: string
-    endTime: string
-    location: string
-    preferences: string
-    budget: string
-    numberOfPeople: string
-    modelResponse?: string
-    selectedOptions?: { [key: string]: string[] }
-    detailedSelectedOptions?: {
-        [key: string]: Array<{
-            name: string
-            description: string
-            location: string
-        }>
-    }
-    preferenceTimings?: {
-        [key: string]: {
-            begin: string
-            end: string
-        }
-    }
 }
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {

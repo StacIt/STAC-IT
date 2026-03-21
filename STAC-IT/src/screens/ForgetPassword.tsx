@@ -8,7 +8,7 @@ import {
     useTheme,
 } from 'react-native-paper';
 import { FIREBASE_AUTH } from '../../FirebaseConfig';
-import { sendPasswordResetEmail } from '@firebase/auth';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { NavigationProp } from '@react-navigation/native';
 
 interface ForgetPasswordProps {

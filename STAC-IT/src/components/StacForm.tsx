@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import {
@@ -15,7 +13,6 @@ import {
     Platform,
     ActivityIndicator,
 } from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
 import axios from "axios"
 import { Ionicons } from "@expo/vector-icons"
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig"
@@ -26,10 +23,16 @@ import { platformColors } from '../theme/platformColors';
 import { TimePickerModal, DatePickerModal } from "react-native-paper-dates"
 import { Button, Divider, Text, TextInput, SegmentedButtons, useTheme } from "react-native-paper"
 
-interface Period {
-    begin: Date;
-    end: Date;
-}
+import {
+    Period,
+    StrPeriod,
+    StacRequest,
+    StacResponse,
+    Place,
+    Activity,
+    ActivityOptions,
+    Itinerary,
+} from "../types";
 
 function makePeriod(date: Date, begin: Date | null, end: Date | null): Period {
     return {
@@ -44,11 +47,6 @@ function makePeriod(date: Date, begin: Date | null, end: Date | null): Period {
                       end?.getHours(),
                       end?.getMinutes())
     };
-}
-
-interface StrPeriod {
-    begin: string;
-    end: string;
 }
 
 function fmtDateStr(ds: string): string {
@@ -68,44 +66,6 @@ function fmtStrPeriod(p: StrPeriod): StrPeriod {
         begin: fmtDateStr(p.begin),
         end: fmtDateStr(p.end)
     };
-}
-
-interface StacRequest {
-    city: string;
-    state: string;
-    activities: string[];
-    budget: string;
-    period: Period;
-    numberOfPeople: string;
-    keepOptions?: string;
-}
-
-interface Place {
-    name: string;
-    display_name: string;
-    short_address: string;
-}
-
-interface Activity {
-    name: string;
-    description: string;
-    location: Place;
-}
-
-interface ActivityOptions {
-    label: string;
-    options: Activity[];
-    timing: StrPeriod;
-}
-
-interface Itinerary {
-    activities: ActivityOptions[];
-}
-
-interface StacResponse {
-  request_id: string;
-  timestamp: string;
-  itinerary: Itinerary;
 }
 
 interface StacFormProps {
@@ -262,10 +222,10 @@ const StacForm: React.FC<StacFormProps> = ({
     const theme = useTheme()
 
     // Refs for time input fields
-    const startHourRef = useRef<TextInput>(null)
-    const startMinuteRef = useRef<TextInput>(null)
-    const endHourRef = useRef<TextInput>(null)
-    const endMinuteRef = useRef<TextInput>(null)
+    const startHourRef = useRef<typeof TextInput>(null)
+    const startMinuteRef = useRef<typeof TextInput>(null)
+    const endHourRef = useRef<typeof TextInput>(null)
+    const endMinuteRef = useRef<typeof TextInput>(null)
 
     useEffect(() => {
         if (visible) {

@@ -14,7 +14,7 @@ import { NavigationProp } from '@react-navigation/native';
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail
-} from "@firebase/auth";
+} from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons';
 import { platformColors } from '../theme/platformColors';

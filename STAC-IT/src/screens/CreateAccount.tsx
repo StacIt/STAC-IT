@@ -10,7 +10,7 @@ import {
 import React, { useState, useEffect } from "react";
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 import { NavigationProp } from "@react-navigation/native";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "@firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { platformColors } from '../theme/platformColors';
