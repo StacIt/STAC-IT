@@ -42,9 +42,9 @@ export interface Itinerary {
 }
 
 export interface StacResponse {
-  request_id: string;
-  timestamp: string;
-  itinerary: Itinerary;
+    request_id: string;
+    timestamp: string;
+    itinerary: Itinerary;
 }
 
 export interface Stac {
