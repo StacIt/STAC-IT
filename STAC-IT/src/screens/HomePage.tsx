@@ -1,165 +1,205 @@
-import type React from "react"
-import { useState, useCallback, useRef } from "react"
-import { View, TouchableOpacity, StyleSheet, Modal, ScrollView, Alert, Share } from "react-native"
-import { type NavigationProp, useNavigation, useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native"
-import { Ionicons } from "@expo/vector-icons"
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig"
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { Ionicons } from "@expo/vector-icons";
+import {
+    useFocusEffect,
+    useNavigation,
+    useRoute,
+    type NavigationProp,
+    type RouteProp,
+} from "@react-navigation/native";
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    query,
+    where,
+} from "firebase/firestore";
+import type React from "react";
+import { useCallback, useRef, useState } from "react";
+import {
+    Alert,
+    Modal,
+    ScrollView,
+    Share,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 
-import { Appbar, IconButton, Divider, Button, FAB, Card, Modal as PModal, Portal, Text, useTheme} from "react-native-paper"
+import {
+    Appbar,
+    Button,
+    Card,
+    Divider,
+    FAB,
+    IconButton,
+    Text,
+    useTheme,
+} from "react-native-paper";
 
-import StacForm from "../components/StacForm"
+import StacForm from "../components/StacForm";
+import { platformColors } from "../theme/platformColors";
 import { Stac } from "../types";
-import { platformColors } from '../theme/platformColors';
+import { StacList } from "../components/StacCard";
+
 interface HomePageProps {
-    navigation: NavigationProp<any>
+    navigation: NavigationProp<any>;
 }
 
 interface Timing {
-    begin: string
-    end: string
+    begin: string;
+    end: string;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
-    const [scheduledStacs, setScheduledStacs] = useState<Stac[]>([])
-    const [pastStacs, setPastStacs] = useState<Stac[]>([])
-    const [selectedStac, setSelectedStac] = useState<Stac | null>(null)
-    const [stacDetailsModalVisible, setStacDetailsModalVisible] = useState(false)
-    const [createModalVisible, setCreateModalVisible] = useState(false)
-    const [infoModalVisible, setInfoModalVisible] = useState(false)
-    const infoScrollViewRef = useRef<ScrollView>(null)
+    const [scheduledStacs, setScheduledStacs] = useState<Stac[]>([]);
+    const [pastStacs, setPastStacs] = useState<Stac[]>([]);
+    const [selectedStac, setSelectedStac] = useState<Stac | null>(null);
+    const [stacDetailsModalVisible, setStacDetailsModalVisible] =
+        useState(false);
+    const [createModalVisible, setCreateModalVisible] = useState(false);
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
+    const infoScrollViewRef = useRef<ScrollView>(null);
 
-    const theme = useTheme()
+    const theme = useTheme();
 
     const handleShare = async (stac: Stac) => {
         try {
-            let message = `Here's my STAC: ${stac.stacName}\nDate: ${stac.date}\nLocation: ${stac.location}`
+            let message = `Here's my STAC: ${stac.stacName}\nDate: ${stac.date}\nLocation: ${stac.location}`;
 
             if (stac.detailedSelectedOptions) {
-                for (const [preference, options] of Object.entries(stac.detailedSelectedOptions)) {
-                    message += `\n\n🌟 ${preference}`
-                    const timing = stac.preferenceTimings?.[preference]
+                for (const [preference, options] of Object.entries(
+                    stac.detailedSelectedOptions,
+                )) {
+                    message += `\n\n🌟 ${preference}`;
+                    const timing = stac.preferenceTimings?.[preference];
                     if (timing) {
-                        message += ` (${timing.begin} - ${timing.end})`
+                        message += ` (${timing.begin} - ${timing.end})`;
                     }
                     for (const option of options) {
-                        message += `\n- ${option.name}\n  ${option.description}\n  📍 ${option.location}`
+                        message += `\n- ${option.name}\n  ${option.description}\n  📍 ${option.location}`;
                     }
                 }
             }
 
-            await Share.share({ message })
+            await Share.share({ message });
         } catch (error) {
-            Alert.alert("Error", "Failed to share STAC")
+            Alert.alert("Error", "Failed to share STAC");
         }
-    }
+    };
 
     const fetchStacs = useCallback(async () => {
-        const user = FIREBASE_AUTH.currentUser
-        if (!user) return
+        const user = FIREBASE_AUTH.currentUser;
+        if (!user) return;
 
         try {
-            const stacsRef = collection(FIREBASE_DB, "stacks")
-            const q = query(stacsRef, where("userId", "==", user.uid))
+            const stacsRef = collection(FIREBASE_DB, "stacks");
+            const q = query(stacsRef, where("userId", "==", user.uid));
 
-            const querySnapshot = await getDocs(q)
-            const currentDate = new Date()
-            currentDate.setHours(0, 0, 0, 0)
+            const querySnapshot = await getDocs(q);
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
 
-            const fetchedScheduledStacs: Stac[] = []
-            const fetchedPastStacs: Stac[] = []
+            const fetchedScheduledStacs: Stac[] = [];
+            const fetchedPastStacs: Stac[] = [];
 
             querySnapshot.forEach((doc) => {
-                const data = doc.data() as Stac
-                if (!data.date) return
+                const data = doc.data() as Stac;
+                if (!data.date) return;
 
-                const stacDate = new Date(data.date)
-                stacDate.setHours(0, 0, 0, 0)
+                const stacDate = new Date(data.date);
+                stacDate.setHours(0, 0, 0, 0);
 
                 if (
-                    (data.selectedOptions && Object.keys(data.selectedOptions).length > 0) ||
-                    (data.detailedSelectedOptions && Object.keys(data.detailedSelectedOptions).length > 0)
+                    (data.selectedOptions &&
+                        Object.keys(data.selectedOptions).length > 0) ||
+                    (data.detailedSelectedOptions &&
+                        Object.keys(data.detailedSelectedOptions).length > 0)
                 ) {
-                    const stac = { ...data, id: doc.id }
+                    const stac = { ...data, id: doc.id };
 
                     if (stacDate >= currentDate) {
-                        fetchedScheduledStacs.push(stac)
+                        fetchedScheduledStacs.push(stac);
                     } else {
-                        fetchedPastStacs.push(stac)
+                        fetchedPastStacs.push(stac);
                     }
                 }
-            })
+            });
 
-            setScheduledStacs(fetchedScheduledStacs)
-            setPastStacs(fetchedPastStacs)
+            setScheduledStacs(fetchedScheduledStacs);
+            setPastStacs(fetchedPastStacs);
         } catch (error) {
-            console.error("Error fetching stacs:", error)
-            Alert.alert("Error", "Failed to load STACs")
+            console.error("Error fetching stacs:", error);
+            Alert.alert("Error", "Failed to load STACs");
         }
-    }, [])
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
-            fetchStacs()
+            fetchStacs();
         }, [fetchStacs]),
-    )
+    );
 
     const deleteStac = async (stacId: string) => {
         try {
-            await deleteDoc(doc(FIREBASE_DB, "stacks", stacId))
-            Alert.alert("Success", "STAC deleted successfully!")
-            setStacDetailsModalVisible(false)
-            fetchStacs()
+            await deleteDoc(doc(FIREBASE_DB, "stacks", stacId));
+            Alert.alert("Success", "STAC deleted successfully!");
+            setStacDetailsModalVisible(false);
+            fetchStacs();
         } catch (error) {
-            console.error("Error deleting STAC:", error)
-            Alert.alert("Error", "Failed to delete STAC")
+            console.error("Error deleting STAC:", error);
+            Alert.alert("Error", "Failed to delete STAC");
         }
-    }
+    };
 
     const handleStacPress = (stac: Stac) => {
-        setSelectedStac(stac)
-        setStacDetailsModalVisible(true)
-    }
+        setSelectedStac(stac);
+        setStacDetailsModalVisible(true);
+    };
 
-    const getOptionDetails = (stac: Stac, preference: string, optionName: string) => {
-        if (stac.detailedSelectedOptions && stac.detailedSelectedOptions[preference]) {
-            const option = stac.detailedSelectedOptions[preference].find((opt) => opt.name === optionName)
+    const getOptionDetails = (
+        stac: Stac,
+        preference: string,
+        optionName: string,
+    ) => {
+        if (
+            stac.detailedSelectedOptions &&
+            stac.detailedSelectedOptions[preference]
+        ) {
+            const option = stac.detailedSelectedOptions[preference].find(
+                (opt) => opt.name === optionName,
+            );
             if (option) {
                 return {
                     description: option.description || "",
                     location: option.location || "",
-                }
+                };
             }
         }
-        return { description: "", location: "" }
-    }
+        return { description: "", location: "" };
+    };
 
     const renderStacList = (stacs: Stac[], title: string) => (
-        <View style={styles.section}>
-            <Text style={[styles.sectionTitle, {color: theme.colors.outline}]}>{title}</Text>
-            {stacs.length === 0 ? (
-                <Text style={styles.noStacsText}>No {title.toLowerCase()} available</Text>
-            ) : (
-                stacs.map((stac) => (
-                    <View key={stac.id} style={styles.stacContainer}>
-                    <Card style={{flex: 1, backgroundColor: theme.colors.secondaryContainer}}
-                    onPress={() => handleStacPress(stac)}
-                    >
-                    <Card.Title titleVariant="titleLarge" title={stac.stacName} titleStyle={{color: theme.colors.onSecondaryContainer}} subtitleStyle={{color: theme.colors.onSecondaryContainer}} subtitleVariant="labelMedium" subtitle={new Date(stac.date).toLocaleDateString()} />
-                    </Card>
-                    </View>
-                ))
-            )}
-        </View>
-    )
+        <StacList stacs={stacs} title={title} onItemPress={handleStacPress} />
+    );
 
     return (
         <View style={styles.container}>
-        <Appbar.Header>
-        <Appbar.Content title="stacIT" titleStyle={{fontWeight: 'bold'}}/>
-        <Appbar.Action icon="information" onPress={() => setInfoModalVisible(true)}/>
-        </Appbar.Header>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+            <Appbar.Header>
+                <Appbar.Content
+                    title="stacIT"
+                    titleStyle={{ fontWeight: "bold" }}
+                />
+                <Appbar.Action
+                    icon="information"
+                    onPress={() => setInfoModalVisible(true)}
+                />
+            </Appbar.Header>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+            >
                 <StacForm
                     navigation={navigation}
                     visible={createModalVisible}
@@ -177,60 +217,98 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 >
                     <View style={styles.modalContainer}>
                         <View style={styles.infoModalContent}>
-                            <Text style={styles.infoModalTitle}>What is STAC?</Text>
+                            <Text style={styles.infoModalTitle}>
+                                What is STAC?
+                            </Text>
 
                             <ScrollView
                                 ref={infoScrollViewRef}
                                 style={styles.infoScrollView}
-                                contentContainerStyle={styles.infoScrollViewContent}
+                                contentContainerStyle={
+                                    styles.infoScrollViewContent
+                                }
                             >
                                 <Text style={styles.infoText}>
-                                    STAC (Strategically Tailored Activity Coordination) is your all-in-one solution for planning fun
-                                    activities with friends. No more endless group texts or complicated planning—just simple, streamlined
-                                    social coordination.
+                                    STAC (Strategically Tailored Activity
+                                    Coordination) is your all-in-one solution
+                                    for planning fun activities with friends. No
+                                    more endless group texts or complicated
+                                    planning—just simple, streamlined social
+                                    coordination.
                                 </Text>
 
-                                <Text style={styles.infoSectionTitle}>How It Works</Text>
+                                <Text style={styles.infoSectionTitle}>
+                                    How It Works
+                                </Text>
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>1.</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        1.
+                                    </Text>
                                     <Text style={styles.infoListText}>
-                                        <Text style={styles.infoBold}>Create a STAC</Text>
-                                        {"\n"}Enter date, time, location, and what you want to do.
+                                        <Text style={styles.infoBold}>
+                                            Create a STAC
+                                        </Text>
+                                        {"\n"}Enter date, time, location, and
+                                        what you want to do.
                                     </Text>
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>2.</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        2.
+                                    </Text>
                                     <Text style={styles.infoListText}>
-                                        <Text style={styles.infoBold}>Get Smart Suggestions</Text>
-                                        {"\n"}For each activity, STAC gives you 3 curated options based on your preferences.
+                                        <Text style={styles.infoBold}>
+                                            Get Smart Suggestions
+                                        </Text>
+                                        {"\n"}For each activity, STAC gives you
+                                        3 curated options based on your
+                                        preferences.
                                     </Text>
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>3.</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        3.
+                                    </Text>
                                     <Text style={styles.infoListText}>
-                                        <Text style={styles.infoBold}>Refine Your Plan</Text>
-                                        {"\n"}Lock in your favorites. Refresh others until it's perfect.
+                                        <Text style={styles.infoBold}>
+                                            Refine Your Plan
+                                        </Text>
+                                        {"\n"}Lock in your favorites. Refresh
+                                        others until it's perfect.
                                     </Text>
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>4.</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        4.
+                                    </Text>
                                     <Text style={styles.infoListText}>
-                                        <Text style={styles.infoBold}>Save & Share</Text>
-                                        {"\n"}Save your plan and share it with friends—however you want.
+                                        <Text style={styles.infoBold}>
+                                            Save & Share
+                                        </Text>
+                                        {"\n"}Save your plan and share it with
+                                        friends—however you want.
                                     </Text>
                                 </View>
 
-                                <Text style={styles.infoSectionTitle}>Quick Start</Text>
+                                <Text style={styles.infoSectionTitle}>
+                                    Quick Start
+                                </Text>
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>1.</Text>
-                                    <Text style={styles.infoListText}>Tap "Create a New STAC"</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        1.
+                                    </Text>
+                                    <Text style={styles.infoListText}>
+                                        Tap "Create a New STAC"
+                                    </Text>
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>2.</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        2.
+                                    </Text>
                                     <Text style={styles.infoListText}>
                                         Fill in:
                                         {"\n"}- Name
@@ -242,26 +320,43 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>3.</Text>
-                                    <Text style={styles.infoListText}>Review and refine the suggestions</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        3.
+                                    </Text>
+                                    <Text style={styles.infoListText}>
+                                        Review and refine the suggestions
+                                    </Text>
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>4.</Text>
-                                    <Text style={styles.infoListText}>Tap "Save" to finalize</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        4.
+                                    </Text>
+                                    <Text style={styles.infoListText}>
+                                        Tap "Save" to finalize
+                                    </Text>
                                 </View>
 
                                 <View style={styles.infoListItem}>
-                                    <Text style={styles.infoListNumber}>5.</Text>
-                                    <Text style={styles.infoListText}>Share your STAC plan with your crew!</Text>
+                                    <Text style={styles.infoListNumber}>
+                                        5.
+                                    </Text>
+                                    <Text style={styles.infoListText}>
+                                        Share your STAC plan with your crew!
+                                    </Text>
                                 </View>
 
                                 <View style={{ height: 60 }} />
                             </ScrollView>
 
                             <View style={styles.infoModalFooter}>
-                                <TouchableOpacity style={styles.closeInfoButton} onPress={() => setInfoModalVisible(false)}>
-                                    <Text style={styles.closeInfoButtonText}>Close</Text>
+                                <TouchableOpacity
+                                    style={styles.closeInfoButton}
+                                    onPress={() => setInfoModalVisible(false)}
+                                >
+                                    <Text style={styles.closeInfoButtonText}>
+                                        Close
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -276,62 +371,179 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 >
                     <View style={styles.modalContainer}>
                         {selectedStac && (
-                            <View style={[styles.modalContent, {gap: 4, backgroundColor: theme.colors.surface}]}>
-                            <IconButton icon="close" mode="contained-tonal" onPress={() => setStacDetailsModalVisible(false)}/>
-                            <Button mode="elevated" onPress={()=>{}}>
-                                <Text variant="headlineLarge" style={{color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center'}}>{selectedStac.stacName}</Text>
-                            </Button>
-                                <Button icon="calendar" mode="elevated" onPress={()=>{}}>
-                                {selectedStac.date}
+                            <View
+                                style={[
+                                    styles.modalContent,
+                                    {
+                                        gap: 4,
+                                        backgroundColor: theme.colors.surface,
+                                    },
+                                ]}
+                            >
+                                <IconButton
+                                    icon="close"
+                                    mode="contained-tonal"
+                                    onPress={() =>
+                                        setStacDetailsModalVisible(false)
+                                    }
+                                />
+                                <Button mode="elevated" onPress={() => {}}>
+                                    <Text
+                                        variant="headlineLarge"
+                                        style={{
+                                            color: theme.colors.primary,
+                                            fontWeight: "bold",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {selectedStac.stacName}
+                                    </Text>
                                 </Button>
-                                <Button icon="map-marker-outline" mode="elevated" onPress={()=>{}}>
-                                {selectedStac.location}
+                                <Button
+                                    icon="calendar"
+                                    mode="elevated"
+                                    onPress={() => {}}
+                                >
+                                    {selectedStac.date}
                                 </Button>
-                                <View style={{flex: 1, overflow: 'hidden'}}>
-                                    <ScrollView style={{flex: 1}} contentContainerStyle={{marginTop: 0, margin: 4}}>
+                                <Button
+                                    icon="map-marker-outline"
+                                    mode="elevated"
+                                    onPress={() => {}}
+                                >
+                                    {selectedStac.location}
+                                </Button>
+                                <View style={{ flex: 1, overflow: "hidden" }}>
+                                    <ScrollView
+                                        style={{ flex: 1 }}
+                                        contentContainerStyle={{
+                                            marginTop: 0,
+                                            margin: 4,
+                                        }}
+                                    >
                                         {selectedStac.selectedOptions &&
-                                            (selectedStac.preferenceOrder || Object.keys(selectedStac.selectedOptions)).map((preference) => (
-                                                <View key={preference} style={styles.preferenceSection}>
-                                                <Card style={{flex: 1}}>
-                                                <Card.Title title={preference} titleVariant='titleLarge' titleStyle={{color: theme.colors.onPrimaryContainer, fontWeight: 'bold'}} subtitle={selectedStac.preferenceTimings && (`${selectedStac.preferenceTimings[preference].begin} - ${selectedStac.preferenceTimings[preference].end}`)} subtitleVariant="labelMedium" />
-                                                <Card.Content>
-                                                    {selectedStac.selectedOptions?.[preference]?.map((option) => {
-                                                        const details = getOptionDetails(selectedStac, preference, option)
-                                                        return (
-                                                            <View key={option}>
-                                                            <Card style={{flex: 1}} mode="contained">
-                                                            <Card.Content>
-                                                <Text variant='titleSmall' style={{fontWeight: 'bold'}}>
-                                                {option}
-                                                </Text>
-                                                <Divider style={{margin: 4}}/>
-                                                <Text variant="bodySmall">
-                                                {details.description}
-                                                </Text>
-                                                </Card.Content>
-                                                <Card.Actions>
-                                                <Button style={{flex: 1}} icon="map-marker" onPress={()=>{}}>
-                                                {details.location}
-                                                </Button>
-                                                </Card.Actions>
-                                                </Card>
-                                                            </View>
-                                                        )
-                                                    })}
-                                                </Card.Content>
-                                                </Card>
-
+                                            (
+                                                selectedStac.preferenceOrder ||
+                                                Object.keys(
+                                                    selectedStac.selectedOptions,
+                                                )
+                                            ).map((preference) => (
+                                                <View
+                                                    key={preference}
+                                                    style={
+                                                        styles.preferenceSection
+                                                    }
+                                                >
+                                                    <Card style={{ flex: 1 }}>
+                                                        <Card.Title
+                                                            title={preference}
+                                                            titleVariant="titleLarge"
+                                                            titleStyle={{
+                                                                color: theme
+                                                                    .colors
+                                                                    .onPrimaryContainer,
+                                                                fontWeight:
+                                                                    "bold",
+                                                            }}
+                                                            subtitle={
+                                                                selectedStac.preferenceTimings &&
+                                                                `${selectedStac.preferenceTimings[preference].begin} - ${selectedStac.preferenceTimings[preference].end}`
+                                                            }
+                                                            subtitleVariant="labelMedium"
+                                                        />
+                                                        <Card.Content>
+                                                            {selectedStac.selectedOptions?.[
+                                                                preference
+                                                            ]?.map((option) => {
+                                                                const details =
+                                                                    getOptionDetails(
+                                                                        selectedStac,
+                                                                        preference,
+                                                                        option,
+                                                                    );
+                                                                return (
+                                                                    <View
+                                                                        key={
+                                                                            option
+                                                                        }
+                                                                    >
+                                                                        <Card
+                                                                            style={{
+                                                                                flex: 1,
+                                                                            }}
+                                                                            mode="contained"
+                                                                        >
+                                                                            <Card.Content>
+                                                                                <Text
+                                                                                    variant="titleSmall"
+                                                                                    style={{
+                                                                                        fontWeight:
+                                                                                            "bold",
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        option
+                                                                                    }
+                                                                                </Text>
+                                                                                <Divider
+                                                                                    style={{
+                                                                                        margin: 4,
+                                                                                    }}
+                                                                                />
+                                                                                <Text variant="bodySmall">
+                                                                                    {
+                                                                                        details.description
+                                                                                    }
+                                                                                </Text>
+                                                                            </Card.Content>
+                                                                            <Card.Actions>
+                                                                                <Button
+                                                                                    style={{
+                                                                                        flex: 1,
+                                                                                    }}
+                                                                                    icon="map-marker"
+                                                                                    onPress={() => {}}
+                                                                                >
+                                                                                    {
+                                                                                        details.location
+                                                                                    }
+                                                                                </Button>
+                                                                            </Card.Actions>
+                                                                        </Card>
+                                                                    </View>
+                                                                );
+                                                            })}
+                                                        </Card.Content>
+                                                    </Card>
                                                 </View>
                                             ))}
                                     </ScrollView>
                                 </View>
-                                <View style={{marginTop: 16, flexDirection: "row-reverse", gap: 10}}>
-                                <Button style={{flex: 1}} mode="contained" onPress={() => handleShare(selectedStac)}>
-                                Share
-                                </Button>
-                                <Button style={{flex: 1}} mode="outlined" onPress={() => deleteStac(selectedStac.id)}>
-                                Delete
-                                </Button>
+                                <View
+                                    style={{
+                                        marginTop: 16,
+                                        flexDirection: "row-reverse",
+                                        gap: 10,
+                                    }}
+                                >
+                                    <Button
+                                        style={{ flex: 1 }}
+                                        mode="contained"
+                                        onPress={() =>
+                                            handleShare(selectedStac)
+                                        }
+                                    >
+                                        Share
+                                    </Button>
+                                    <Button
+                                        style={{ flex: 1 }}
+                                        mode="outlined"
+                                        onPress={() =>
+                                            deleteStac(selectedStac.id)
+                                        }
+                                    >
+                                        Delete
+                                    </Button>
                                 </View>
                             </View>
                         )}
@@ -341,73 +553,98 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 {renderStacList(scheduledStacs, "Scheduled STAC")}
                 {renderStacList(pastStacs, "Past History")}
             </ScrollView>
-        <FAB icon="pencil-outline" style={styles.fab} onPress={() => setCreateModalVisible(true)}/>
+            <FAB
+                icon="pencil-outline"
+                style={styles.fab}
+                onPress={() => setCreateModalVisible(true)}
+            />
         </View>
-    )
-}
+    );
+};
 
 // Also update the StacDetailsScreen component's ScrollView for consistency
 const StacDetailsScreen: React.FC = () => {
-    const route = useRoute<RouteProp<{ params: { stac: Stac; onDelete: () => void } }>>()
-    const navigation = useNavigation()
-    const { stac, onDelete } = route.params
+    const route =
+        useRoute<RouteProp<{ params: { stac: Stac; onDelete: () => void } }>>();
+    const navigation = useNavigation();
+    const { stac, onDelete } = route.params;
 
     const handleDelete = async () => {
-        Alert.alert("Delete STAC", "Are you sure you want to delete this STAC?", [
-            {
-                text: "Cancel",
-                style: "cancel",
-            },
-            {
-                text: "Delete",
-                style: "destructive",
-                onPress: async () => {
-                    try {
-                        await deleteDoc(doc(FIREBASE_DB, "stacks", stac.id))
-                        const stacsRef = collection(FIREBASE_DB, "stacks")
-                        const q = query(
-                            stacsRef,
-                            where("userId", "==", stac.userId),
-                            where("stacName", "==", stac.stacName),
-                            where("date", "==", stac.date),
-                        )
-                        const querySnapshot = await getDocs(q)
-
-                        querySnapshot.forEach(async (document) => {
-                            if (document.id !== stac.id) {
-                                await deleteDoc(doc(FIREBASE_DB, "stacks", document.id))
-                            }
-                        })
-
-                        Alert.alert("Success", "STAC deleted successfully")
-                        onDelete()
-                        navigation.goBack()
-                    } catch (error) {
-                        console.error("Error deleting STAC:", error)
-                        Alert.alert("Error", "Failed to delete STAC")
-                    }
+        Alert.alert(
+            "Delete STAC",
+            "Are you sure you want to delete this STAC?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel",
                 },
-            },
-        ])
-    }
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteDoc(
+                                doc(FIREBASE_DB, "stacks", stac.id),
+                            );
+                            const stacsRef = collection(FIREBASE_DB, "stacks");
+                            const q = query(
+                                stacsRef,
+                                where("userId", "==", stac.userId),
+                                where("stacName", "==", stac.stacName),
+                                where("date", "==", stac.date),
+                            );
+                            const querySnapshot = await getDocs(q);
 
-    const getOptionDetails = (stac: Stac, preference: string, optionName: string) => {
-        if (stac.detailedSelectedOptions && stac.detailedSelectedOptions[preference]) {
-            const option = stac.detailedSelectedOptions[preference].find((opt) => opt.name === optionName)
+                            querySnapshot.forEach(async (document) => {
+                                if (document.id !== stac.id) {
+                                    await deleteDoc(
+                                        doc(FIREBASE_DB, "stacks", document.id),
+                                    );
+                                }
+                            });
+
+                            Alert.alert("Success", "STAC deleted successfully");
+                            onDelete();
+                            navigation.goBack();
+                        } catch (error) {
+                            console.error("Error deleting STAC:", error);
+                            Alert.alert("Error", "Failed to delete STAC");
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
+    const getOptionDetails = (
+        stac: Stac,
+        preference: string,
+        optionName: string,
+    ) => {
+        if (
+            stac.detailedSelectedOptions &&
+            stac.detailedSelectedOptions[preference]
+        ) {
+            const option = stac.detailedSelectedOptions[preference].find(
+                (opt) => opt.name === optionName,
+            );
             if (option) {
                 return {
                     description: option.description || "",
                     location: option.location || "",
-                }
+                };
             }
         }
-        return { description: "", location: "" }
-    }
+        return { description: "", location: "" };
+    };
 
     return (
         <View style={styles.container}>
             <View style={styles.scrollViewWrapper}>
-                <ScrollView style={styles.detailsScrollView} contentContainerStyle={styles.scrollViewContent}>
+                <ScrollView
+                    style={styles.detailsScrollView}
+                    contentContainerStyle={styles.scrollViewContent}
+                >
                     <Text style={styles.modalTitle}>{stac.stacName}</Text>
                     <View style={styles.detailsContainer}>
                         <Text style={styles.modalLabel}>Date:</Text>
@@ -428,59 +665,167 @@ const StacDetailsScreen: React.FC = () => {
                         <Text style={styles.modalText}>{stac.budget}</Text>
 
                         <Text style={styles.modalLabel}>Number of People:</Text>
-                        <Text style={styles.modalText}>{stac.numberOfPeople}</Text>
+                        <Text style={styles.modalText}>
+                            {stac.numberOfPeople}
+                        </Text>
 
-                        {stac.selectedOptions && Object.keys(stac.selectedOptions).length > 0 && (
-                            <>
-                                <Text style={styles.modalLabel}>Selected Activities:</Text>
-                                {(stac.preferenceOrder || Object.keys(stac.selectedOptions)).map((preference) => (
-                                    <View key={preference} style={styles.preferenceSection}>
-                                        <View style={styles.preferenceHeaderContainer}>
-                                            <Text style={styles.preferenceTitle}>🌟 {preference}</Text>
-                                        </View>
-
-                                        {stac.preferenceTimings && stac.preferenceTimings[preference] && (
-                                            <View style={styles.preferenceTimingContainer}>
-                                                <Ionicons name="time-outline" size={14} color={platformColors.textSecondary} style={styles.timingIcon} />
-                                                <Text style={styles.preferenceTimingText}>
-                                                    {stac.preferenceTimings[preference].begin} - {stac.preferenceTimings[preference].end}
+                        {stac.selectedOptions &&
+                            Object.keys(stac.selectedOptions).length > 0 && (
+                                <>
+                                    <Text style={styles.modalLabel}>
+                                        Selected Activities:
+                                    </Text>
+                                    {(
+                                        stac.preferenceOrder ||
+                                        Object.keys(stac.selectedOptions)
+                                    ).map((preference) => (
+                                        <View
+                                            key={preference}
+                                            style={styles.preferenceSection}
+                                        >
+                                            <View
+                                                style={
+                                                    styles.preferenceHeaderContainer
+                                                }
+                                            >
+                                                <Text
+                                                    style={
+                                                        styles.preferenceTitle
+                                                    }
+                                                >
+                                                    🌟 {preference}
                                                 </Text>
                                             </View>
-                                        )}
 
-                                        {stac.selectedOptions?.[preference]?.map((option) => {
-                                            const details = getOptionDetails(stac, preference, option)
-                                            return (
-                                                <View key={option} style={styles.activityContainer}>
-                                                    <Text style={styles.activityName}>{option}</Text>
-                                                    {details.description && <Text style={styles.activityDescription}>{details.description}</Text>}
-                                                    {details.location && (
-                                                        <View style={styles.locationContainer}>
-                                                            <Ionicons name="location" size={16} color={platformColors.textSecondary} style={styles.locationIcon} />
-                                                            <Text style={styles.locationText}>{details.location}</Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-                                            )
-                                        })}
-                                    </View>
-                                ))}
-                            </>
-                        )}
+                                            {stac.preferenceTimings &&
+                                                stac.preferenceTimings[
+                                                    preference
+                                                ] && (
+                                                    <View
+                                                        style={
+                                                            styles.preferenceTimingContainer
+                                                        }
+                                                    >
+                                                        <Ionicons
+                                                            name="time-outline"
+                                                            size={14}
+                                                            color={
+                                                                platformColors.textSecondary
+                                                            }
+                                                            style={
+                                                                styles.timingIcon
+                                                            }
+                                                        />
+                                                        <Text
+                                                            style={
+                                                                styles.preferenceTimingText
+                                                            }
+                                                        >
+                                                            {
+                                                                stac
+                                                                    .preferenceTimings[
+                                                                    preference
+                                                                ].begin
+                                                            }{" "}
+                                                            -{" "}
+                                                            {
+                                                                stac
+                                                                    .preferenceTimings[
+                                                                    preference
+                                                                ].end
+                                                            }
+                                                        </Text>
+                                                    </View>
+                                                )}
+
+                                            {stac.selectedOptions?.[
+                                                preference
+                                            ]?.map((option) => {
+                                                const details =
+                                                    getOptionDetails(
+                                                        stac,
+                                                        preference,
+                                                        option,
+                                                    );
+                                                return (
+                                                    <View
+                                                        key={option}
+                                                        style={
+                                                            styles.activityContainer
+                                                        }
+                                                    >
+                                                        <Text
+                                                            style={
+                                                                styles.activityName
+                                                            }
+                                                        >
+                                                            {option}
+                                                        </Text>
+                                                        {details.description && (
+                                                            <Text
+                                                                style={
+                                                                    styles.activityDescription
+                                                                }
+                                                            >
+                                                                {
+                                                                    details.description
+                                                                }
+                                                            </Text>
+                                                        )}
+                                                        {details.location && (
+                                                            <View
+                                                                style={
+                                                                    styles.locationContainer
+                                                                }
+                                                            >
+                                                                <Ionicons
+                                                                    name="location"
+                                                                    size={16}
+                                                                    color={
+                                                                        platformColors.textSecondary
+                                                                    }
+                                                                    style={
+                                                                        styles.locationIcon
+                                                                    }
+                                                                />
+                                                                <Text
+                                                                    style={
+                                                                        styles.locationText
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        details.location
+                                                                    }
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
+                                    ))}
+                                </>
+                            )}
                     </View>
                 </ScrollView>
             </View>
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={handleDelete}
+                >
                     <Text style={styles.buttonText}>Delete STAC</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+                <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => navigation.goBack()}
+                >
                     <Text style={styles.closeButtonText}>Back to Home</Text>
                 </TouchableOpacity>
             </View>
         </View>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -502,7 +847,7 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     fab: {
-        position: 'absolute',
+        position: "absolute",
         margin: 16,
         right: 0,
         bottom: 0,
@@ -821,6 +1166,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 10,
     },
-})
+});
 
-export { HomePage, StacDetailsScreen }
+export { HomePage, StacDetailsScreen };

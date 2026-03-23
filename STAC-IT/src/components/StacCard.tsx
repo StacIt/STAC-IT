@@ -1,76 +1,123 @@
 import type React from "react";
-import {
-    useState,
-} from "react";
-import {
-    View,
-    StyleSheet,
-    ScrollView,
-} from "react-native";
-import {
-    Card,
-    Text,
-    useTheme,
-    MD3Theme,
-} from "react-native-paper";
-import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context'
+import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { Card, MD3Theme, Text, Avatar, useTheme } from "react-native-paper";
+import { EdgeInsets } from "react-native-safe-area-context";
+import { useStyles, StyleProps } from "../theme/theming";
 import { Stac } from "../types";
-import { useStyles, StyleFn } from "../theme/theming";
 
 interface SummaryCardProps {
-    stac: Stac,
-    onPress: (s: Stac) => void,
+    stac: Stac;
+    onPress: (s: Stac) => void;
 }
 
 const StacSummaryCard: React.FC<SummaryCardProps> = ({ stac, onPress }) => {
-    const [styles] = useStyles(styling);
+    const styles = useStyles(styling);
+    const theme = useTheme();
+
+    const { fontScale } = useWindowDimensions();
+
+    const dateobj = new Date(stac.date);
+    const month = dateobj.toLocaleString("default", {
+        month: "short",
+    });
+    const day = dateobj.getDate();
+
+    const ico = ({ size }: { size: number }) => {
+        return (
+            <View
+                style={{
+                    padding: 0,
+                    margin: 0,
+                    gap: 0,
+                    rowGap: 0,
+                }}
+            >
+                <Text
+                    variant="labelSmall"
+                    style={{
+                        marginTop: 3,
+                        padding: 0,
+                        textAlign: "center",
+                        color: theme.colors.onPrimary,
+                        fontSize: size / 2 + 4,
+                        borderWidth: 0,
+                    }}
+                >
+                    {month}
+                </Text>
+                <Text
+                    variant="labelSmall"
+                    style={{
+                        marginTop: -4,
+                        borderWidth: 0,
+                        padding: 0,
+                        textAlign: "center",
+                        color: theme.colors.onPrimary,
+                        fontSize: size / 2 + 1,
+                    }}
+                >
+                    {day}
+                </Text>
+            </View>
+        );
+    };
+
+    const mkavatar = (props: object) => <Avatar.Icon {...props} icon={ico} />;
 
     return (
-        <View key={stac.id} style={styles.container}>
-        <Card
-            style={styles.card}
-            onPress={() => onPress(stac)}
-        >
-            <Card.Title
-                titleVariant="titleLarge"
-                title={stac.stacName}
-                titleStyle={styles.title}
-                subtitleStyle={styles.subtitle}
-                subtitleVariant="labelMedium"
-                subtitle={new Date(stac.date).toLocaleDateString()}
-            />
-        </Card>
+        <View style={styles.container}>
+            <Card style={styles.card} onPress={() => onPress(stac)}>
+                <Card.Title
+                    titleVariant="titleLarge"
+                    title={stac.stacName}
+                    titleStyle={styles.title}
+                    subtitleStyle={styles.subtitle}
+                    subtitleVariant="bodyMedium"
+                    subtitle={stac.location}
+                    left={mkavatar}
+                />
+            </Card>
         </View>
-    )
-}
+    );
+};
 
 interface StacListProps {
-    stacs: Stac[],
-    title: string,
-    onItemPress: (s: Stac) => void,
+    stacs: Stac[];
+    title: string;
+    onItemPress: (s: Stac) => void;
 }
 
 const StacList: React.FC<StacListProps> = ({ stacs, title, onItemPress }) => {
-    const [styles] = useStyles(styling)
+    const styles = useStyles(styling);
+
+    const slist =
+        stacs.length === 0 ? (
+            <Text variant="bodySmall" style={styles.noStacsText}>
+                No {title.toLowerCase()}s available
+            </Text>
+        ) : (
+            stacs.map((stac) => (
+                <StacSummaryCard
+                    key={stac.id}
+                    stac={stac}
+                    onPress={onItemPress}
+                />
+            ))
+        );
+
     return (
         <View style={styles.section}>
-            <Text style={styles.listTitle}>{title}</Text>
-            {stacs.length === 0 ?
-                // TODO: styling
-                (<Text style={styles.noStacsText}>
-                    No {title.toLowerCase()} available
-                </Text>) :
-                (stacs.map((stac) => (
-                    <StacSummaryCard stac={stac} onPress={onItemPress}/>
-                )))
-            }
+            <Text variant="headlineMedium" style={styles.listTitle}>
+                {title}
+            </Text>
+            {slist}
         </View>
-    )
-}
+    );
+};
 
-export { StacSummaryCard, StacList }
+export { StacList, StacSummaryCard };
 
-const styling = (theme: MD3Theme, insets: EdgeInsets) => {
+const styling = ({ theme, insets }: StyleProps) => {
     return StyleSheet.create({
         container: {
             flex: 1,
@@ -84,6 +131,7 @@ const styling = (theme: MD3Theme, insets: EdgeInsets) => {
         },
         title: {
             color: theme.colors.onSecondaryContainer,
+            fontWeight: 400,
         },
         subtitle: {
             color: theme.colors.onSecondaryContainer,
@@ -94,6 +142,7 @@ const styling = (theme: MD3Theme, insets: EdgeInsets) => {
         listTitle: {
             // TODO
             color: theme.colors.outline,
+            fontWeight: 500,
             marginBottom: 10,
         },
         noStacsText: {
@@ -102,5 +151,5 @@ const styling = (theme: MD3Theme, insets: EdgeInsets) => {
             marginTop: 10,
             fontStyle: "italic",
         },
-    })
+    });
 };
