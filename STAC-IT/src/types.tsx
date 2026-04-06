@@ -16,6 +16,12 @@ export interface Period {
     end: Date;
 }
 
+export function fmtPeriod(p: Period): string {
+    const begin = `${p.begin.toLocaleTimeString([], { timeStyle: "short" })}`;
+    const end = `${p.end.toLocaleTimeString([], { timeStyle: "short" })}`;
+    return `${begin} - ${end}`;
+}
+
 export interface PeriodDb {
     begin: Timestamp;
     end: Timestamp;
@@ -111,6 +117,8 @@ export interface ItineraryDb {
 export interface Itinerary {
     activities: ActivityOptions[];
 }
+
+export type NewItinerary2 = NewActivityOptions[];
 
 export interface NewItinerary {
     activities: NewActivityOptions[];

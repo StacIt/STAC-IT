@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1061792458880",
+    "project_id": "stac-it",
+    "storage_bucket": "stac-it.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1061792458880:android:92fc0427ed5a4dcc241e65",
+        "android_client_info": {
+          "package_name": "com.stacit.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuAqu1hK_PkeOjtJIC3Zdkiqz-GxIZSJs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,27 +6,32 @@
     "version": "1.0.26",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+    "experiments": {
+      "reactCompiler": true,
+      "typedRoutes": true
     },
-    "newArchEnabled": true,
+    "scheme": "stacit",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stac-it.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "android.package": "com.company.STAC-IT",
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.stac-it.app"
+      "googleServicesFile": "./google-services.json",
+      "package": "com.stacit.app",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,17 +41,49 @@
         "projectId": "d55a4c2c-70ca-4be9-a788-4a2d8692793c"
       }
     },
-    "expo-splash-screen": {
-      "backgroundColor": "#FFFFFF",
-      "image": "./assets/images/splash-icon.png",
-      "dark": {
-        "image": "./assets/images/splash-icon-dark.png",
-        "backgroundColor": "#000000"
-      },
-      "imageWidth": 200
-    },
     "plugins": [
-      "@react-native-community/datetimepicker"
-    ]
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/splash-icon.png",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#000000"
+          },
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth",
+              "RNFBFirestore"
+            ]
+          }
+        }
+      ],
+      "expo-font",
+      "expo-router"
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d55a4c2c-70ca-4be9-a788-4a2d8692793c"
+    }
   }
 }

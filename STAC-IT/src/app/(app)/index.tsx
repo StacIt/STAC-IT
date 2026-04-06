@@ -13,8 +13,10 @@ import {
     getDocs,
     query,
     where,
-} from "firebase/firestore";
-import type React from "react";
+    getFirestore,
+} from "@react-native-firebase/firestore";
+import { getAuth } from "@react-native-firebase/auth";
+import React from "react";
 import { useCallback, useRef, useState } from "react";
 import {
     Alert,
@@ -25,7 +27,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
 
 import {
     Appbar,
@@ -38,21 +39,18 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import StacForm from "../components/StacForm";
-import { platformColors } from "../theme/platformColors";
-import { Stac } from "../types";
-import { StacList } from "../components/StacCard";
-
-interface HomePageProps {
-    navigation: NavigationProp<any>;
-}
+import StacForm from "@/components/StacForm";
+//import { InputForm } from "../components/InputForm";
+import { platformColors } from "@/theme/platformColors";
+import { Stac } from "@/types";
+import { StacList } from "@/components/StacCard";
 
 interface Timing {
     begin: string;
     end: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
+export default function HomePage() {
     const [scheduledStacs, setScheduledStacs] = useState<Stac[]>([]);
     const [pastStacs, setPastStacs] = useState<Stac[]>([]);
     const [selectedStac, setSelectedStac] = useState<Stac | null>(null);
@@ -60,7 +58,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         useState(false);
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [infoModalVisible, setInfoModalVisible] = useState(false);
-    const infoScrollViewRef = useRef<ScrollView>(null);
+    //const infoScrollViewRef = useRef<ScrollView>(null);
+    //const inputRef = useRef<InputForm>(null);
 
     const theme = useTheme();
 
@@ -89,12 +88,15 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         }
     };
 
+    const auth = getAuth();
+    const db = getFirestore();
+
     const fetchStacs = useCallback(async () => {
-        const user = FIREBASE_AUTH.currentUser;
+        const user = auth.currentUser;
         if (!user) return;
 
         try {
-            const stacsRef = collection(FIREBASE_DB, "stacks");
+            const stacsRef = collection(db, "stacks");
             const q = query(stacsRef, where("userId", "==", user.uid));
 
             const querySnapshot = await getDocs(q);
@@ -143,7 +145,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
     const deleteStac = async (stacId: string) => {
         try {
-            await deleteDoc(doc(FIREBASE_DB, "stacks", stacId));
+            await deleteDoc(doc(db, "stacks", stacId));
             Alert.alert("Success", "STAC deleted successfully!");
             setStacDetailsModalVisible(false);
             fetchStacs();
@@ -200,12 +202,21 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollViewContent}
             >
-                <StacForm
-                    navigation={navigation}
-                    visible={createModalVisible}
-                    onClose={() => setCreateModalVisible(false)}
-                    onFinalize={fetchStacs}
-                />
+                {/*
+                 * <StacForm
+                 *     navigation={navigation}
+                 *     visible={createModalVisible}
+                 *     onClose={() => setCreateModalVisible(false)}
+                 *     onFinalize={fetchStacs}
+                 * />
+                 */}
+                {/*
+                 * <InputForm
+                 *     ref={inputRef}
+                 *     onSubmit={(v) => {}}
+                 *     onResponse={(v) => {}}
+                 * />
+                 */}
 
                 {/* Info Modal */}
 
@@ -222,7 +233,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                             </Text>
 
                             <ScrollView
-                                ref={infoScrollViewRef}
+                                //ref={infoScrollViewRef}
                                 style={styles.infoScrollView}
                                 contentContainerStyle={
                                     styles.infoScrollViewContent
@@ -556,18 +567,20 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             <FAB
                 icon="pencil-outline"
                 style={styles.fab}
-                onPress={() => setCreateModalVisible(true)}
+                //onPress={() => inputRef.current?.expand()}
             />
         </View>
     );
-};
+}
 
 // Also update the StacDetailsScreen component's ScrollView for consistency
-const StacDetailsScreen: React.FC = () => {
+export function StacDetailsScreen() {
     const route =
         useRoute<RouteProp<{ params: { stac: Stac; onDelete: () => void } }>>();
     const navigation = useNavigation();
     const { stac, onDelete } = route.params;
+
+    const db = getFirestore();
 
     const handleDelete = async () => {
         Alert.alert(
@@ -583,10 +596,8 @@ const StacDetailsScreen: React.FC = () => {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            await deleteDoc(
-                                doc(FIREBASE_DB, "stacks", stac.id),
-                            );
-                            const stacsRef = collection(FIREBASE_DB, "stacks");
+                            await deleteDoc(doc(db, "stacks", stac.id));
+                            const stacsRef = collection(db, "stacks");
                             const q = query(
                                 stacsRef,
                                 where("userId", "==", stac.userId),
@@ -598,7 +609,7 @@ const StacDetailsScreen: React.FC = () => {
                             querySnapshot.forEach(async (document) => {
                                 if (document.id !== stac.id) {
                                     await deleteDoc(
-                                        doc(FIREBASE_DB, "stacks", document.id),
+                                        doc(db, "stacks", document.id),
                                     );
                                 }
                             });
@@ -825,7 +836,7 @@ const StacDetailsScreen: React.FC = () => {
             </View>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -1167,5 +1178,3 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
 });
-
-export { HomePage, StacDetailsScreen };

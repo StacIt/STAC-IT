@@ -1,25 +1,25 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
-    View,
+    createUserWithEmailAndPassword,
+    getAuth,
+    sendEmailVerification,
+} from "@react-native-firebase/auth";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
-    ActivityIndicator,
-    Alert,
+    View,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
-import { NavigationProp } from "@react-navigation/native";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { Ionicons } from "@expo/vector-icons";
-import { platformColors } from '../theme/platformColors';
+import validate from "validator";
+import { platformColors } from "../theme/platformColors";
+import { router } from "expo-router";
 
-interface CreateAccountProps {
-    navigation: NavigationProp<any>;
-}
-
-const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
+export default function CreateAccount() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -29,12 +29,15 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     const [verificationSent, setVerificationSent] = useState(false); // Track if the verification email was sent
     const [timeLeft, setTimeLeft] = useState(0); // Timer for resending the verification email
 
-    const auth = FIREBASE_AUTH;
+    const auth = getAuth();
 
     useEffect(() => {
         let timer: NodeJS.Timeout | undefined;
         if (timeLeft > 0) {
-            timer = setInterval(() => setTimeLeft(prevTime => prevTime - 1), 1000);
+            timer = setInterval(
+                () => setTimeLeft((prevTime) => prevTime - 1),
+                1000,
+            );
         } else if (timer) {
             clearInterval(timer);
         }
@@ -43,7 +46,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
     const validateEmail = (email: string) => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!regex.test(email)) {
+        if (!validate.isEmail(email)) {
             setError("Invalid email address");
         } else {
             setError("");
@@ -51,9 +54,12 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     };
 
     const validatePassword = (password: string) => {
-        const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
+        const regex =
+            /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/;
         if (!regex.test(password)) {
-            setError("Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.");
+            setError(
+                "Password must be at least 8 characters long and contain at least one capital letter, one number, and one special character.",
+            );
         } else {
             setError("");
         }
@@ -67,7 +73,11 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
         setLoading(true);
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password,
+            );
             const user = userCredential.user;
 
             // Send verification email
@@ -76,24 +86,16 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
             setTimeLeft(60); // Set the timer for 60 seconds before allowing resend
 
             // Show an alert indicating that the verification email has been sent
-            Alert.alert("Verification Sent", "A verification email has been sent to your email address. Please check your inbox!");
-
-            // Save user data to Firestore
-            try {
-                await setDoc(doc(FIREBASE_DB, "users", user.uid), {
-                    email: user.email,
-                    acceptedTerms: acceptedTerms,
-                    createdAt: new Date(),
-                });
-            } catch (firestoreError) {
-                console.error("Error adding document to Firestore: ", firestoreError);
-                alert("Failed to save user data.");
-            }
+            Alert.alert(
+                "Verification Sent",
+                "A verification email has been sent to your email address. Please check your inbox!",
+            );
         } catch (error) {
             console.log(error);
             alert("Sign up failed: " + error);
         }
         setLoading(false);
+        router.replace("/");
     };
 
     const handleResendVerification = async () => {
@@ -113,18 +115,25 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
     };
 
     const handleAlreadyHaveAccount = () => {
-        navigation.navigate("Login");
+        router.navigate("/login");
     };
 
-    const ShowIcon = <Ionicons name="eye" size={24} color={platformColors.black} />;
-    const HideIcon = <Ionicons name="eye-off" size={24} color={platformColors.black} />;
+    const ShowIcon = (
+        <Ionicons name="eye" size={24} color={platformColors.black} />
+    );
+    const HideIcon = (
+        <Ionicons name="eye-off" size={24} color={platformColors.black} />
+    );
 
     return (
         <View style={styles.container}>
             <TextInput
                 style={styles.input}
                 value={email}
-                onChangeText={(text) => { setEmail(text); validateEmail(text); }}
+                onChangeText={(text) => {
+                    setEmail(text);
+                    validateEmail(text);
+                }}
                 placeholder="Email"
                 autoCapitalize="none"
             />
@@ -132,7 +141,10 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
                 <TextInput
                     style={styles.passwordInput}
                     value={password}
-                    onChangeText={(text) => { setPassword(text); validatePassword(text); }}
+                    onChangeText={(text) => {
+                        setPassword(text);
+                        validatePassword(text);
+                    }}
                     placeholder="Password"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -152,40 +164,63 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
             ) : (
                 <>
                     <View style={styles.checkboxContainer}>
-                        <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.checkbox}>
-                            {acceptedTerms ? <Text style={styles.checked}>✔️</Text> : <Text style={styles.unchecked}>⬜️</Text>}
+                        <TouchableOpacity
+                            onPress={() => setAcceptedTerms(!acceptedTerms)}
+                            style={styles.checkbox}
+                        >
+                            {acceptedTerms ? (
+                                <Text style={styles.checked}>✔️</Text>
+                            ) : (
+                                <Text style={styles.unchecked}>⬜️</Text>
+                            )}
                         </TouchableOpacity>
                         <Text style={styles.label}>
-                            I accept the <Text style={styles.link}>Terms and Conditions</Text>
+                            I accept the{" "}
+                            <Text style={styles.link}>
+                                Terms and Conditions
+                            </Text>
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                        <Text style={{ color: platformColors.white }}>Sign Up</Text>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={handleSignUp}
+                    >
+                        <Text style={{ color: platformColors.white }}>
+                            Sign Up
+                        </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.button} onPress={handleAlreadyHaveAccount}>
-                        <Text style={{ color: platformColors.white }}>Account verified? Login here</Text>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={handleAlreadyHaveAccount}
+                    >
+                        <Text style={{ color: platformColors.white }}>
+                            Account verified? Login here
+                        </Text>
                     </TouchableOpacity>
 
                     {/* Resend Verification Email Button */}
                     {verificationSent && timeLeft > 0 && (
-                        <Text style={styles.timer}>Resend verification in {timeLeft}s</Text>
+                        <Text style={styles.timer}>
+                            Resend verification in {timeLeft}s
+                        </Text>
                     )}
                     {verificationSent && timeLeft === 0 && (
                         <TouchableOpacity
                             style={styles.link}
                             onPress={handleResendVerification}
                         >
-                            <Text>Didn't receive the verification email? Resend here.</Text>
+                            <Text>
+                                Didn't receive the verification email? Resend
+                                here.
+                            </Text>
                         </TouchableOpacity>
                     )}
                 </>
             )}
         </View>
     );
-};
-
-export default CreateAccount;
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -237,8 +272,8 @@ const styles = StyleSheet.create({
         color: platformColors.textSecondary,
     },
     passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         marginVertical: 4,
         borderWidth: 1,
         borderRadius: 4,

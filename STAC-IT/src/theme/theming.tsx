@@ -10,7 +10,11 @@ export interface StyleProps {
 
 type StyleFn<T> = ({ theme, insets }: StyleProps) => T;
 
-export function useStyles<T>(factory: StyleFn<T>): T {
+export function useStyles<T>(factory: StyleFn<T>): {
+    styles: T;
+    theme: MD3Theme;
+    insets: EdgeInsets;
+} {
     const theme = useTheme();
     const insets = useSafeAreaInsets();
 
@@ -18,5 +22,5 @@ export function useStyles<T>(factory: StyleFn<T>): T {
         return factory({ theme, insets });
     }, [theme, insets]);
 
-    return styles;
+    return { styles, theme, insets };
 }

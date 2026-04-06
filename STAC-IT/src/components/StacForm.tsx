@@ -14,8 +14,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../FirebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "@react-native-firebase/firestore";
 import * as SMS from "expo-sms";
 import type { NavigationProp } from "@react-navigation/native";
 import { platformColors } from "../theme/platformColors";
@@ -40,8 +39,14 @@ import {
     Place,
     Activity,
     ActivityOptions,
+    NewActivityOptions,
+    activityOptionsConv,
     Itinerary,
 } from "../types";
+
+import { useAuth } from "../contexts";
+
+import * as Location from "expo-location";
 
 import { ActivityInput } from "./ActivityInput";
 
@@ -197,9 +202,13 @@ const StacForm: React.FC<StacFormProps> = ({
     const [showNumberPicker, setShowNumberPicker] = useState(false);
     const [showStartTimePicker, setShowStartTimePicker] = useState(false);
     const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-    const [currentItinerary, setCurrentItinerary] = useState<ActivityOptions[]>(
-        [],
-    );
+    const [currentItinerary, setCurrentItinerary] = useState<
+        NewActivityOptions[]
+    >([]);
+
+    const [currentSelection, setCurrentSelection] = useState<
+        NewActivityOptions[]
+    >([]);
 
     const LoadingOverlay = () => {
         if (!isLoading) return null;
@@ -250,6 +259,9 @@ const StacForm: React.FC<StacFormProps> = ({
         minute: "",
         period: "PM",
     });
+    const [location, setLocation] = useState<Location.LocationObject | null>(
+        null,
+    );
 
     const theme = useTheme();
 
@@ -343,12 +355,12 @@ const StacForm: React.FC<StacFormProps> = ({
     }, [endTimeInput]);
 
     // Create refs for each input field
-    const stacNameRef = useRef<TextInput>(null);
-    const cityRef = useRef<TextInput>(null);
-    const stateRef = useRef<TextInput>(null);
-    const activityRefs = useRef<Array<TextInput | null>>([]);
-    const numberOfPeopleRef = useRef<TextInput>(null);
-    const budgetRef = useRef<TextInput>(null);
+    // const stacNameRef = useRef<TextInput>(null);
+    // const cityRef = useRef<TextInput>(null);
+    // const stateRef = useRef<TextInput>(null);
+    // const activityRefs = useRef<Array<TextInput | null>>([]);
+    // const numberOfPeopleRef = useRef<TextInput>(null);
+    // const budgetRef = useRef<TextInput>(null);
 
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -394,7 +406,10 @@ const StacForm: React.FC<StacFormProps> = ({
                     locations[option.name] = option.location.short_address;
                 });
             });
-            setCurrentItinerary(response.itinerary.activities);
+            setCurrentItinerary(
+                response.itinerary.activities.map(activityOptionsConv),
+            );
+            setCurrentSelection(Array(activities.length).fill(undefined));
 
             return {
                 preferences,
@@ -443,6 +458,8 @@ const StacForm: React.FC<StacFormProps> = ({
             throw error;
         }
     };
+    const { user } = useAuth();
+    const db = getFirestore();
 
     const handleCreateStack = async () => {
         setModelResponse("");
@@ -460,12 +477,11 @@ const StacForm: React.FC<StacFormProps> = ({
         const filtered_activities = activities.filter((a) => a.trim() !== "");
         const preferences = filtered_activities.join(", ");
 
-        const user = FIREBASE_AUTH.currentUser;
         if (user) {
             try {
                 const stackId = Date.now().toString();
 
-                await setDoc(doc(FIREBASE_DB, "stacks", stackId), {
+                await setDoc(doc(db, "stacks", stackId), {
                     userId: user.uid,
                     stacName,
                     startTime:
@@ -526,12 +542,6 @@ const StacForm: React.FC<StacFormProps> = ({
     };
 
     const handleFinalize = async () => {
-        const user = FIREBASE_AUTH.currentUser;
-        if (!user) {
-            Alert.alert("Error", "You must be logged in to finalize a STAC.");
-            return;
-        }
-
         const filteredOptions: Record<string, string[]> = {};
         preferences.forEach((preference) => {
             if (selectedOptions[preference]?.length > 0) {
@@ -581,7 +591,7 @@ const StacForm: React.FC<StacFormProps> = ({
                 createdAt: new Date().toISOString(),
             };
 
-            await setDoc(doc(FIREBASE_DB, "stacks", stackId), finalizedStac);
+            await setDoc(doc(db, "stacks", stackId), finalizedStac);
             setResponseModalVisible(false);
             if (onFinalize) onFinalize();
             navigation.navigate("Home");
@@ -896,7 +906,6 @@ const StacForm: React.FC<StacFormProps> = ({
                                     keyboardShouldPersistTaps="handled"
                                 >
                                     <TextInput
-                                        ref={stacNameRef}
                                         //style={styles.input}
                                         label="Title"
                                         style={[theme.fonts.headlineMedium]}
@@ -1118,7 +1127,11 @@ const StacForm: React.FC<StacFormProps> = ({
                         </Text>
                         <View style={styles.responseContainer}>
                             <ScrollView style={styles.responseScroll}>
-                                <StacOptions activities={currentItinerary} />
+                                <StacOptions
+                                    activities={currentItinerary}
+                                    selection={currentSelection}
+                                    setSelection={setCurrentSelection}
+                                />
                             </ScrollView>
                         </View>
                         <View style={[styles.buttonContainer, { gap: 8 }]}>

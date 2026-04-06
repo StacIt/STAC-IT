@@ -12,10 +12,30 @@ import {
     useTheme,
 } from "react-native-paper";
 
-//import { FIREBASE_DB, FIREBASE_AUTH } from "../../FirebaseConfig";
-//import { doc, setDoc, Timestamp } from "firebase/firestore";
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    Timestamp,
+} from "@react-native-firebase/firestore";
 import { useStyles, StyleProps } from "../theme/theming";
-import { ActivityOptions, Activity, Place, StrPeriod } from "../types";
+import {
+    Period,
+    PeriodDb,
+    ActivityOptionsDb,
+    NewActivityOptions,
+    NewItinerary,
+    ItineraryDb,
+    ActivityOptions,
+    Activity,
+    Place,
+    NewStac,
+    StrPeriod,
+    fmtPeriod,
+    NewStacDb,
+    newStacConverter,
+    NewItinerary2,
+} from "../types";
 
 function fmtDateStr(ds: string): string {
     const d: Date = new Date(ds);
@@ -27,22 +47,44 @@ function fmtStrPeriod(p: StrPeriod): string {
 }
 
 export interface StacOptionsProps {
-    activities: ActivityOptions[];
+    activities: NewActivityOptions[];
+    selection: NewActivityOptions[];
+    setSelection: (v: NewItinerary2) => void;
 }
 
-const StacOptions: React.FC<StacOptionsProps> = ({ activities }) => {
-    const acts = activities.map((act) => (
-        <StacActivityOption key={act.label} actopt={act} />
+const StacOptions: React.FC<StacOptionsProps> = ({
+    activities,
+    selection,
+    setSelection,
+}) => {
+    const acts = activities.map((act, idx) => (
+        <StacActivityOption
+            key={act.label}
+            actopt={act}
+            setValue={(v) => setSelection(selection.with(idx, v))}
+        />
     ));
     return <List.AccordionGroup>{acts}</List.AccordionGroup>;
 };
 
 export interface StacActivityOptionProps {
-    actopt: ActivityOptions;
+    actopt: NewActivityOptions;
+    setValue: (v: NewActivityOptions) => void;
 }
 
-const StacActivityOption: React.FC<StacActivityOptionProps> = ({ actopt }) => {
+const StacActivityOption: React.FC<StacActivityOptionProps> = ({
+    actopt,
+    setValue,
+}) => {
     const [selection, setSelection] = useState("");
+    const updateActivity = (act: string) => {
+        setSelection(act);
+        setValue({
+            ...actopt,
+            options: [actopt.options.find((a) => a.name == act)!],
+        });
+    };
+
     const theme = useTheme();
     const description = () => (
         <View
@@ -58,17 +100,17 @@ const StacActivityOption: React.FC<StacActivityOptionProps> = ({ actopt }) => {
                 color={theme.colors.outline}
             />
             <Text variant="bodyMedium" style={{ color: theme.colors.outline }}>
-                {fmtStrPeriod(actopt.timing)}
+                {fmtPeriod(actopt.timing)}
             </Text>
         </View>
     );
-    const opts = actopt.options.map((act: Activity, index) => {
+    const opts = actopt.options.map((act: Activity) => {
         return (
             <View>
                 <StacActivity
                     key={act.name}
                     activity={act}
-                    onPress={setSelection}
+                    onPress={updateActivity}
                 />
             </View>
         );
@@ -81,7 +123,7 @@ const StacActivityOption: React.FC<StacActivityOptionProps> = ({ actopt }) => {
             description={description()}
         >
             <RadioButton.Group
-                onValueChange={(newv) => setSelection(newv)}
+                onValueChange={(newv) => updateActivity(newv)}
                 value={selection}
             >
                 {opts}
@@ -92,7 +134,7 @@ const StacActivityOption: React.FC<StacActivityOptionProps> = ({ actopt }) => {
 
 export interface StacActivityProps {
     activity: Activity;
-    onPress: (s: string) => void;
+    onPress: (a: string) => void;
 }
 
 const StacActivity: React.FC<StacActivityProps> = ({ activity, onPress }) => {

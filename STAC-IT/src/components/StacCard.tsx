@@ -11,8 +11,7 @@ interface SummaryCardProps {
 }
 
 const StacSummaryCard: React.FC<SummaryCardProps> = ({ stac, onPress }) => {
-    const styles = useStyles(styling);
-    const theme = useTheme();
+    const { styles, theme } = useStyles(styling);
 
     const { fontScale } = useWindowDimensions();
 
@@ -88,7 +87,7 @@ interface StacListProps {
 }
 
 const StacList: React.FC<StacListProps> = ({ stacs, title, onItemPress }) => {
-    const styles = useStyles(styling);
+    const { styles } = useStyles(styling);
 
     const slist =
         stacs.length === 0 ? (
