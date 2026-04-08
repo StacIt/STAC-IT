@@ -1,7 +1,5 @@
 import {
     View,
-    Text,
-    TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -9,7 +7,6 @@ import {
 } from "react-native";
 
 import React, { useState } from "react";
-import { useNavigation, StaticScreenProps } from "@react-navigation/native";
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
@@ -21,8 +18,6 @@ import {
     getDoc,
     getFirestore,
 } from "@react-native-firebase/firestore";
-import { Ionicons } from "@expo/vector-icons";
-import { platformColors } from "@/theme/platformColors";
 import { router } from "expo-router";
 
 import { TextInput, Button, Divider, HelperText } from "react-native-paper";
@@ -139,10 +134,7 @@ function Login() {
                 </HelperText>
 
                 {!!loading ? (
-                    <ActivityIndicator
-                        size="small"
-                        color={platformColors.black}
-                    />
+                    <ActivityIndicator size="small" />
                 ) : (
                     <View style={{ gap: 6 }}>
                         <Button mode="contained" onPress={handleLogin}>
@@ -177,12 +169,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 10,
-        backgroundColor: platformColors.white,
+        //backgroundColor: platformColors.white,
     },
     button: {
         marginVertical: 4,
         alignItems: "center",
-        backgroundColor: platformColors.accent,
+        //backgroundColor: platformColors.accent,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
@@ -194,14 +186,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 5,
         paddingHorizontal: 10,
-        borderColor: platformColors.textSecondary,
+        //borderColor: platformColors.textSecondary,
     },
     buttonText: {
-        color: platformColors.white,
+        //color: platformColors.white,
         fontWeight: "bold",
     },
     infobuttonText: {
-        color: platformColors.textSecondary,
+        //color: platformColors.textSecondary,
         fontWeight: "bold",
     },
     passwordContainer: {
@@ -210,7 +202,7 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         borderWidth: 1,
         borderRadius: 4,
-        backgroundColor: platformColors.white,
+        //backgroundColor: platformColors.white,
     },
     passwordInput: {
         flex: 1,

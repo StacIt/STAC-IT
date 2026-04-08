@@ -2,7 +2,7 @@ import type React from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Card, MD3Theme, Text, Avatar, useTheme } from "react-native-paper";
 import { EdgeInsets } from "react-native-safe-area-context";
-import { useStyles, StyleProps } from "../theme/theming";
+import { useStyles, StyleProps } from "@/styling";
 import { Stac } from "../types";
 
 interface SummaryCardProps {
@@ -116,7 +116,7 @@ const StacList: React.FC<StacListProps> = ({ stacs, title, onItemPress }) => {
 
 export { StacList, StacSummaryCard };
 
-const styling = ({ theme, insets }: StyleProps) => {
+const styling = ({ theme }: StyleProps) => {
     return StyleSheet.create({
         container: {
             flex: 1,

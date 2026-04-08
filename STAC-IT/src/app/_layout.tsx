@@ -1,30 +1,15 @@
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-    Provider as PaperProvider,
-    ActivityIndicator,
-} from "react-native-paper";
+import { Provider as PaperProvider } from "react-native-paper";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import { Stack } from "expo-router";
 
-import {
-    createStaticNavigation,
-    StaticParamList,
-    useNavigation,
-} from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
-import { setReactNativeAsyncStorage } from "@react-native-firebase/app";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import {
-    AppContext,
-    useIsSignedIn,
-    useIsSignedOut,
-    useIsAuthReady,
-} from "@/contexts";
-
+import { setReactNativeAsyncStorage } from "@react-native-firebase/app";
 import { en, registerTranslation } from "react-native-paper-dates";
+
+import { AppContext, useIsSignedIn } from "@/contexts";
 
 registerTranslation("en", en);
 
@@ -34,9 +19,11 @@ export default function App() {
     return (
         <GestureHandlerRootView>
             <PaperProvider>
-                <AppContext>
-                    <RootNavigator />
-                </AppContext>
+                <BottomSheetModalProvider>
+                    <AppContext>
+                        <RootNavigator />
+                    </AppContext>
+                </BottomSheetModalProvider>
             </PaperProvider>
         </GestureHandlerRootView>
     );

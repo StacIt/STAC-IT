@@ -1,10 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
 import {
     createUserWithEmailAndPassword,
     getAuth,
     sendEmailVerification,
 } from "@react-native-firebase/auth";
-import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -15,8 +13,9 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+
+import { Icon, useTheme } from "react-native-paper";
 import validate from "validator";
-import { platformColors } from "../theme/platformColors";
 import { router } from "expo-router";
 
 export default function CreateAccount() {
@@ -29,6 +28,7 @@ export default function CreateAccount() {
     const [verificationSent, setVerificationSent] = useState(false); // Track if the verification email was sent
     const [timeLeft, setTimeLeft] = useState(0); // Timer for resending the verification email
 
+    const theme = useTheme();
     const auth = getAuth();
 
     useEffect(() => {
@@ -45,7 +45,6 @@ export default function CreateAccount() {
     }, [timeLeft]);
 
     const validateEmail = (email: string) => {
-        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!validate.isEmail(email)) {
             setError("Invalid email address");
         } else {
@@ -118,12 +117,8 @@ export default function CreateAccount() {
         router.navigate("/login");
     };
 
-    const ShowIcon = (
-        <Ionicons name="eye" size={24} color={platformColors.black} />
-    );
-    const HideIcon = (
-        <Ionicons name="eye-off" size={24} color={platformColors.black} />
-    );
+    const ShowIcon = <Icon source="eye" size={24} />;
+    const HideIcon = <Icon source="eye-off" size={24} />;
 
     return (
         <View style={styles.container}>
@@ -157,10 +152,10 @@ export default function CreateAccount() {
                 </TouchableOpacity>
             </View>
 
-            <Text style={{ color: platformColors.danger }}>{error}</Text>
+            <Text style={{ color: theme.colors.error }}>{error}</Text>
 
             {loading ? (
-                <ActivityIndicator size="small" color={platformColors.black} />
+                <ActivityIndicator size="small" />
             ) : (
                 <>
                     <View style={styles.checkboxContainer}>
@@ -185,16 +180,14 @@ export default function CreateAccount() {
                         style={styles.button}
                         onPress={handleSignUp}
                     >
-                        <Text style={{ color: platformColors.white }}>
-                            Sign Up
-                        </Text>
+                        <Text style={{ color: "white" }}>Sign Up</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.button}
                         onPress={handleAlreadyHaveAccount}
                     >
-                        <Text style={{ color: platformColors.white }}>
+                        <Text style={{ color: "white" }}>
                             Account verified? Login here
                         </Text>
                     </TouchableOpacity>
@@ -234,12 +227,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 4,
         padding: 10,
-        backgroundColor: platformColors.white,
+        backgroundColor: "white",
     },
     button: {
         marginVertical: 4,
         alignItems: "center",
-        backgroundColor: platformColors.accent,
+        backgroundColor: "purple",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
@@ -269,7 +262,7 @@ const styles = StyleSheet.create({
     timer: {
         marginTop: 10,
         textAlign: "center",
-        color: platformColors.textSecondary,
+        //color: platformColors.textSecondary,
     },
     passwordContainer: {
         flexDirection: "row",
@@ -277,7 +270,7 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         borderWidth: 1,
         borderRadius: 4,
-        backgroundColor: platformColors.white,
+        //backgroundColor: platformColors.white,
     },
     passwordInput: {
         flex: 1,

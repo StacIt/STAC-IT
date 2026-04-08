@@ -1,70 +1,40 @@
-import type React from "react";
-import { useState, useRef, useEffect, useImperativeHandle } from "react";
-import {
-    View,
-    TouchableOpacity,
-    StyleSheet,
-    Modal,
-    ScrollView,
-    Alert,
-    Keyboard,
-    TouchableWithoutFeedback,
-    KeyboardAvoidingView,
-    Platform,
-} from "react-native";
-import axios from "axios";
-import type { NavigationProp } from "@react-navigation/native";
-import { TimePickerModal, DatePickerModal } from "react-native-paper-dates";
 import * as Location from "expo-location";
-import BottomSheet, {
-    BottomSheetModal,
-    BottomSheetView,
-    BottomSheetModalProvider,
-} from "@gorhom/bottom-sheet";
+import * as React from "react";
+import {
+    useReducer,
+    useEffect,
+    useCallback,
+    useImperativeHandle,
+    useState,
+    Fragment,
+} from "react";
+import { StyleSheet, View } from "react-native";
 import {
     Button,
     Divider,
-    Text,
-    Icon,
-    IconButton,
-    TextInput,
-    Portal,
     SegmentedButtons,
-    ActivityIndicator,
+    Text,
+    TextInput,
 } from "react-native-paper";
+import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 
-import {
-    Period,
-    StrPeriod,
-    StacRequest,
-    StacResponse,
-    Place,
-    Activity,
-    ActivityOptions,
-    NewActivityOptions,
-    activityOptionsConv,
-    Itinerary,
-} from "../types";
+import { Period, StacRequest } from "@/types";
 
-import { useStyles, StyleProps } from "../theme/theming";
+import { StyleProps, useStyles } from "@/styling";
 
-import { ActivityInput } from "./ActivityInput";
-
-import { StacOptions, StacActivityOption, StacActivity } from "./StacOptions";
+import ActivityInput from "@/components/ActivityInput";
 
 export interface FormData extends StacRequest {
     title: string;
 }
 
-export interface InputFormMethods extends BottomSheet {
-    submit: (data: FormData) => void;
+export interface InputFormMethods {
+    submit: () => FormData;
 }
 
 export type InputForm = InputFormMethods;
 
 export interface InputFormProps {
-    onSubmit: (v: FormData) => void;
-    onResponse: (v: StacResponse) => void;
     ref?: React.RefObject<InputForm | null>;
 }
 
@@ -79,43 +49,64 @@ function getDefaultPeriod(): Period {
     return { begin, end };
 }
 
-async function callBackend(msg: StacRequest) {
-    try {
-        const response = await axios.post<StacResponse>(
-            "https://stac-1061792458880.us-east1.run.app/chatbot_api",
-            msg,
-            { headers: { "Content-Type": "application/json" } },
-        );
-        return response.data;
-    } catch (error) {
-        console.error(error);
-        Alert.alert("Error", "Model call failed");
-        throw error;
+function getInitialState(): FormData {
+    return {
+        title: "",
+        city: "",
+        state: "",
+        activities: [],
+        budget: "1",
+        period: getDefaultPeriod(),
+        numberOfPeople: "1",
+    };
+}
+
+export type FormAction =
+    | ({ type: "update" } & Partial<FormData>)
+    | { type: "set_date"; value: Date }
+    | { type: "set_start" | "set_end"; hours: number; minutes: number };
+
+function formHandler(state: FormData, action: FormAction) {
+    switch (action.type) {
+        case "update": {
+            return { ...state, ...action };
+        }
+        case "set_start": {
+            const begin = new Date(state.period.begin);
+            begin.setHours(action.hours, action.minutes);
+            return { ...state, period: { ...state.period, begin } };
+        }
+        case "set_end": {
+            const end = new Date(state.period.end);
+            end.setHours(action.hours, action.minutes);
+            return { ...state, period: { ...state.period, end } };
+        }
+        case "set_date": {
+            const begin = new Date(state.period.begin);
+            const end = new Date(state.period.end);
+            begin.setFullYear(
+                action.value.getFullYear(),
+                action.value.getMonth(),
+                action.value.getDate(),
+            );
+            end.setFullYear(
+                action.value.getFullYear(),
+                action.value.getMonth(),
+                action.value.getDate(),
+            );
+            return { ...state, period: { begin, end } };
+        }
     }
 }
 
-const InputForm: React.FC<InputFormProps> = ({ onSubmit, ref }) => {
-    const { styles, theme } = useStyles(styling);
+// function KBTextInput({ ...props }: ComponentProps<typeof PaperTextInput>) {
+// return (
+// <PaperTextInput {...props} render={(p) => <SheetTextInput {...p} />} />
+// );
+// }
 
-    const [title, setTitle] = useState("");
-
-    const defaultPeriod = getDefaultPeriod();
-    const [startTime, setStartTime] = useState(defaultPeriod.begin);
-    const [endTime, setEndTime] = useState(defaultPeriod.end);
-
-    const [numberOfPeople, setNumberOfPeople] = useState("1");
-    const [budget, setBudget] = useState("1");
-    const [city, setCity] = useState("");
-    const [state, setState] = useState("");
-    const [activities, setActivities] = useState([""]);
-
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-    const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-
-    const sheetRef = useRef<BottomSheet>(null);
-
-    function getLocation() {
+function useDefaultLocation(set: (arg0: FormAction) => void) {
+    useEffect(() => {
         async function getPermission() {
             const enabled = await Location.hasServicesEnabledAsync();
 
@@ -149,8 +140,11 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, ref }) => {
                 const addr = addrs[0];
 
                 if (addr && !cancel) {
-                    setCity(addr.city ?? "");
-                    setState(addr.region ?? "");
+                    set({
+                        type: "update",
+                        city: addr.city ?? undefined,
+                        state: addr.region ?? undefined,
+                    });
                 }
             } catch (e) {
                 // fail silently
@@ -164,199 +158,179 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, ref }) => {
         return () => {
             cancel = true;
         };
-    }
+    }, [set]);
+}
 
-    useEffect(getLocation, []);
+// eslint-disable-next-line
+export function InputForm() {
+    const { styles } = useStyles(styling);
 
-    function handleSubmit() {}
+    const [
+        {
+            period: { begin, end },
+            ...state
+        },
+        dispatch,
+    ] = useReducer(formHandler, null, getInitialState);
 
-    function handleResponse() {}
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+    const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
-    useImperativeHandle(ref, () => ({
-        submit: handleSubmit,
-        ...sheetRef.current!,
-    }));
+    useDefaultLocation(dispatch);
 
     return (
-        <BottomSheet ref={sheetRef} style={styles.container}>
-            <BottomSheetView style={styles.contentContainer}>
+        <>
+            <View style={styles.titleContainer}>
                 <TextInput
                     label="Title"
                     style={styles.titleInput}
                     mode="outlined"
-                    value={title}
-                    onChangeText={setTitle}
+                    value={state.title}
+                    onChangeText={(title) =>
+                        dispatch({ type: "update", title })
+                    }
                 />
+            </View>
 
-                <BottomSheetView style={styles.rowContainer}>
-                    <Button
-                        icon="calendar"
-                        mode="outlined"
-                        onPress={() => setShowDatePicker(true)}
-                    >
-                        {startTime.toDateString()}
-                    </Button>
-                </BottomSheetView>
-                <BottomSheetView style={styles.timeContainer}>
-                    <Button
-                        mode="contained-tonal"
-                        onPress={() => setShowStartTimePicker(true)}
-                        style={styles.timeButton}
-                    >
-                        {startTime.toLocaleTimeString([], {
-                            timeStyle: "short",
-                        })}
-                    </Button>
-                    <Button
-                        mode="contained-tonal"
-                        onPress={() => setShowEndTimePicker(true)}
-                        style={styles.timeButton}
-                    >
-                        {endTime.toLocaleTimeString([], {
-                            timeStyle: "short",
-                        })}
-                    </Button>
-                </BottomSheetView>
+            <View style={styles.rowContainer}>
+                <Button
+                    icon="calendar"
+                    mode="outlined"
+                    onPress={() => setShowDatePicker(true)}
+                >
+                    {begin.toDateString()}
+                </Button>
+            </View>
+            <View style={styles.timeContainer}>
+                <Button
+                    mode="contained-tonal"
+                    onPress={() => setShowStartTimePicker(true)}
+                    style={styles.timeButton}
+                >
+                    {begin.toLocaleTimeString([], {
+                        timeStyle: "short",
+                    })}
+                </Button>
+                <Button
+                    mode="contained-tonal"
+                    onPress={() => setShowEndTimePicker(true)}
+                    style={styles.timeButton}
+                >
+                    {end.toLocaleTimeString([], {
+                        timeStyle: "short",
+                    })}
+                </Button>
+            </View>
 
-                <DatePickerModal
-                    locale="en"
-                    label="Select date"
-                    mode="single"
-                    presentationStyle="pageSheet"
-                    visible={showDatePicker}
-                    date={startTime}
-                    onDismiss={() => setShowDatePicker(false)}
-                    onConfirm={({ date }) => {
-                        if (date) {
-                            setStartTime(
-                                new Date(
-                                    date.getFullYear(),
-                                    date.getMonth(),
-                                    date.getDate(),
-                                    startTime.getHours(),
-                                    startTime.getMinutes(),
-                                ),
-                            );
-                            setEndTime(
-                                new Date(
-                                    date.getFullYear(),
-                                    date.getMonth(),
-                                    date.getDate(),
-                                    endTime.getHours(),
-                                    endTime.getMinutes(),
-                                ),
-                            );
-                        }
-                        setShowDatePicker(false);
-                    }}
+            <DatePickerModal
+                locale="en"
+                label="Select date"
+                mode="single"
+                presentationStyle="pageSheet"
+                visible={showDatePicker}
+                date={begin}
+                onDismiss={() => setShowDatePicker(false)}
+                onConfirm={({ date }) => {
+                    if (date) {
+                        dispatch({ type: "set_date", value: date });
+                    }
+                    setShowDatePicker(false);
+                }}
+            />
+            <TimePickerModal
+                locale="en"
+                visible={showStartTimePicker}
+                onDismiss={() => setShowStartTimePicker(false)}
+                onConfirm={(value) => {
+                    dispatch({ type: "set_start", ...value });
+                    setShowStartTimePicker(false);
+                }}
+            />
+            <TimePickerModal
+                locale="en"
+                visible={showEndTimePicker}
+                onDismiss={() => setShowEndTimePicker(false)}
+                onConfirm={(value) => {
+                    dispatch({ type: "set_end", ...value });
+                    setShowEndTimePicker(false);
+                }}
+            />
+            <View style={styles.rowContainer}>
+                <TextInput
+                    style={styles.cityInput}
+                    label="City"
+                    mode="outlined"
+                    value={state.city}
+                    onChangeText={(city) => dispatch({ type: "update", city })}
                 />
-                <TimePickerModal
-                    locale="en"
-                    visible={showStartTimePicker}
-                    onDismiss={() => setShowStartTimePicker(false)}
-                    onConfirm={({ hours, minutes }) => {
-                        setStartTime(
-                            new Date(
-                                startTime.getFullYear(),
-                                startTime.getMonth(),
-                                startTime.getDate(),
-                                hours,
-                                minutes,
-                            ),
-                        );
-                        setShowStartTimePicker(false);
-                    }}
+                <TextInput
+                    style={styles.stateInput}
+                    label="State"
+                    mode="outlined"
+                    value={state.state}
+                    onChangeText={(state) =>
+                        dispatch({ type: "update", state })
+                    }
+                    maxLength={2}
                 />
-                <TimePickerModal
-                    locale="en"
-                    visible={showEndTimePicker}
-                    onDismiss={() => setShowEndTimePicker(false)}
-                    onConfirm={({ hours, minutes }) => {
-                        setEndTime(
-                            new Date(
-                                endTime.getFullYear(),
-                                endTime.getMonth(),
-                                endTime.getDate(),
-                                hours,
-                                minutes,
-                            ),
-                        );
-                        setShowEndTimePicker(false);
-                    }}
-                />
-                <BottomSheetView style={styles.rowContainer}>
-                    <TextInput
-                        style={styles.cityInput}
-                        label="City"
-                        mode="outlined"
-                        value={city}
-                        onChangeText={setCity}
-                    />
-                    <TextInput
-                        style={styles.stateInput}
-                        label="State"
-                        mode="outlined"
-                        value={state}
-                        onChangeText={setState}
-                        maxLength={2}
-                    />
-                </BottomSheetView>
-                <Divider style={styles.divider} />
-                <ActivityInput
-                    activities={activities}
-                    setActivities={setActivities}
-                />
-                <Divider style={styles.divider} />
-                <Text style={styles.radioButtonLabel}>Number of People</Text>
-                <SegmentedButtons
-                    style={styles.radioButton}
-                    value={numberOfPeople}
-                    onValueChange={setNumberOfPeople}
-                    buttons={[
-                        { value: "1", icon: "account" },
-                        {
-                            value: "2",
-                            icon: "account-multiple",
-                        },
-                        {
-                            value: "3",
-                            icon: "account-group",
-                        },
-                    ]}
-                />
+            </View>
+            <Divider style={styles.divider} />
+            <ActivityInput
+                activities={state.activities}
+                setActivities={(activities) =>
+                    dispatch({ type: "update", activities })
+                }
+            />
+            <Divider style={styles.divider} />
+            <Text style={styles.radioButtonLabel}>Number of People</Text>
+            <SegmentedButtons
+                style={styles.radioButton}
+                value={state.numberOfPeople}
+                onValueChange={(numberOfPeople) =>
+                    dispatch({ type: "update", numberOfPeople })
+                }
+                buttons={[
+                    { value: "1", icon: "account" },
+                    {
+                        value: "2",
+                        icon: "account-multiple",
+                    },
+                    {
+                        value: "3",
+                        icon: "account-group",
+                    },
+                ]}
+            />
 
-                <Text style={styles.radioButtonLabel}>Budget</Text>
-                <SegmentedButtons
-                    style={styles.radioButton}
-                    value={budget}
-                    onValueChange={setBudget}
-                    buttons={[
-                        { value: "1", label: "$" },
-                        { value: "2", label: "$$" },
-                        { value: "3", label: "$$$" },
-                    ]}
-                />
-            </BottomSheetView>
-        </BottomSheet>
+            <Text style={styles.radioButtonLabel}>Budget</Text>
+            <SegmentedButtons
+                style={styles.radioButton}
+                value={state.budget}
+                onValueChange={(budget) => dispatch({ type: "update", budget })}
+                buttons={[
+                    { value: "1", label: "$" },
+                    { value: "2", label: "$$" },
+                    { value: "3", label: "$$$" },
+                ]}
+            />
+        </>
     );
-};
+}
 
-export default InputForm;
-
-const styling = ({ theme, insets }: StyleProps) => {
+const styling = ({ theme }: StyleProps) => {
     return StyleSheet.create({
-        container: {
-            flex: 1,
-            flexDirection: "column",
-        },
         contentContainer: {
-            flex: 1,
-            padding: 12,
-            alignItems: "center",
+            paddingHorizontal: 12,
+            flexDirection: "column",
+            paddingBottom: 16,
+            gap: 4,
         },
         rowContainer: {
-            flex: 1,
+            //flex: 1,
             flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
         },
         footer: {
             flexDirection: "row",
@@ -369,6 +343,7 @@ const styling = ({ theme, insets }: StyleProps) => {
             flexDirection: "row",
             justifyContent: "center",
         },
+        titleContainer: {},
         titleInput: {
             ...theme.fonts.headlineMedium,
         },

@@ -1,45 +1,19 @@
-import type React from "react";
-import { useState, useRef } from "react";
-import {
-    View,
-    TouchableOpacity,
-    StyleSheet,
-    Modal,
-    ScrollView,
-    Alert,
-    Keyboard,
-    TouchableWithoutFeedback,
-    KeyboardAvoidingView,
-    Platform,
-} from "react-native";
+import * as React from "react";
 
-import {
-    Button,
-    Divider,
-    Text,
-    Icon,
-    IconButton,
-    TextInput,
-    useTheme,
-    ActivityIndicator,
-} from "react-native-paper";
+import { TextInput } from "react-native-paper";
 
 interface ActivityInputProps {
     activities: string[];
     setActivities: (arg0: string[]) => void;
 }
 
-const ActivityInput: React.FC<ActivityInputProps> = ({
+export default function ActivityInput({
     activities,
     setActivities,
-}) => {
-    const theme = useTheme();
-
-    const filled_acts = activities.slice(0, -1);
-
-    const acts = filled_acts.map((val, i) => (
+}: ActivityInputProps) {
+    const acts = activities.map((val, i) => (
         <TextInput
-            style={{ flex: 1 }}
+            key={`activity${i + 1}`}
             mode="outlined"
             label={`Activity ${i + 1}`}
             value={val}
@@ -55,16 +29,12 @@ const ActivityInput: React.FC<ActivityInputProps> = ({
 
     acts.push(
         <TextInput
-            style={{ flex: 1 }}
+            key={`activity${activities.length + 1}`}
             mode="outlined"
-            label={`Activity ${activities.length}`}
-            value={activities.at(-1)}
-            onChangeText={(text) =>
-                setActivities(activities.toSpliced(-1, 0, text))
-            }
+            label={`Activity ${activities.length + 1}`}
+            value=""
+            onChangeText={(text) => setActivities([...activities, text])}
         />,
     );
-    return <View>{acts}</View>;
-};
-
-export { ActivityInput };
+    return <>{acts}</>;
+}

@@ -17,7 +17,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { getFirestore, doc, setDoc } from "@react-native-firebase/firestore";
 import * as SMS from "expo-sms";
 import type { NavigationProp } from "@react-navigation/native";
-import { platformColors } from "../theme/platformColors";
 import { TimePickerModal, DatePickerModal } from "react-native-paper-dates";
 import {
     Button,
@@ -47,8 +46,6 @@ import {
 import { useAuth } from "../contexts";
 
 import * as Location from "expo-location";
-
-import { ActivityInput } from "./ActivityInput";
 
 import { StacOptions, StacActivityOption, StacActivity } from "./StacOptions";
 

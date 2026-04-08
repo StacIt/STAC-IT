@@ -24,7 +24,7 @@ import {
     getDoc,
     getFirestore,
 } from "@react-native-firebase/firestore";
-import { useStyles, StyleProps } from "@/theme/theming";
+import { useStyles, StyleProps } from "@/styling";
 import { useAuth } from "@/contexts";
 import { router } from "expo-router";
 

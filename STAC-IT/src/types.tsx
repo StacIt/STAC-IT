@@ -1,10 +1,10 @@
 import {
     Timestamp,
-    type FirestoreDataConverter,
-    type DocumentData,
-    type QueryDocumentSnapshot,
-    type SnapshotOptions,
-} from "firebase/firestore";
+    FirestoreDataConverter,
+    DocumentData,
+    QueryDocumentSnapshot,
+    SnapshotOptions,
+} from "@react-native-firebase/firestore";
 
 export interface StrPeriod {
     begin: string;
@@ -222,11 +222,11 @@ export interface Stac {
     modelResponse?: string;
     selectedOptions?: { [key: string]: string[] };
     detailedSelectedOptions?: {
-        [key: string]: Array<{
+        [key: string]: {
             name: string;
             description: string;
             location: string;
-        }>;
+        }[];
     };
     preferenceTimings?: {
         [key: string]: {

@@ -18,7 +18,7 @@ import {
     setDoc,
     Timestamp,
 } from "@react-native-firebase/firestore";
-import { useStyles, StyleProps } from "../theme/theming";
+import { useStyles, StyleProps } from "@/styling";
 import {
     Period,
     PeriodDb,
@@ -81,7 +81,7 @@ const StacActivityOption: React.FC<StacActivityOptionProps> = ({
         setSelection(act);
         setValue({
             ...actopt,
-            options: [actopt.options.find((a) => a.name == act)!],
+            options: [actopt.options.find((a) => a.name === act)!],
         });
     };
 
@@ -106,7 +106,7 @@ const StacActivityOption: React.FC<StacActivityOptionProps> = ({
     );
     const opts = actopt.options.map((act: Activity) => {
         return (
-            <View>
+            <View key={act.name}>
                 <StacActivity
                     key={act.name}
                     activity={act}

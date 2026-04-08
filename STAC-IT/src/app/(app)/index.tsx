@@ -3,7 +3,6 @@ import {
     useFocusEffect,
     useNavigation,
     useRoute,
-    type NavigationProp,
     type RouteProp,
 } from "@react-navigation/native";
 import {
@@ -16,8 +15,7 @@ import {
     getFirestore,
 } from "@react-native-firebase/firestore";
 import { getAuth } from "@react-native-firebase/auth";
-import React from "react";
-import { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
     Alert,
     Modal,
@@ -39,11 +37,10 @@ import {
     useTheme,
 } from "react-native-paper";
 
-import StacForm from "@/components/StacForm";
-//import { InputForm } from "../components/InputForm";
-import { platformColors } from "@/theme/platformColors";
+import { InputSheet } from "@/components/InputSheet";
 import { Stac } from "@/types";
 import { StacList } from "@/components/StacCard";
+import { useStyles, StyleProps } from "@/styling";
 
 interface Timing {
     begin: string;
@@ -56,12 +53,12 @@ export default function HomePage() {
     const [selectedStac, setSelectedStac] = useState<Stac | null>(null);
     const [stacDetailsModalVisible, setStacDetailsModalVisible] =
         useState(false);
-    const [createModalVisible, setCreateModalVisible] = useState(false);
     const [infoModalVisible, setInfoModalVisible] = useState(false);
     //const infoScrollViewRef = useRef<ScrollView>(null);
-    //const inputRef = useRef<InputForm>(null);
+    const inputRef = useRef<InputSheet>(null);
 
     const theme = useTheme();
+    const { styles } = useStyles(styling);
 
     const handleShare = async (stac: Stac) => {
         try {
@@ -202,22 +199,6 @@ export default function HomePage() {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollViewContent}
             >
-                {/*
-                 * <StacForm
-                 *     navigation={navigation}
-                 *     visible={createModalVisible}
-                 *     onClose={() => setCreateModalVisible(false)}
-                 *     onFinalize={fetchStacs}
-                 * />
-                 */}
-                {/*
-                 * <InputForm
-                 *     ref={inputRef}
-                 *     onSubmit={(v) => {}}
-                 *     onResponse={(v) => {}}
-                 * />
-                 */}
-
                 {/* Info Modal */}
 
                 <Modal
@@ -564,10 +545,11 @@ export default function HomePage() {
                 {renderStacList(scheduledStacs, "Scheduled STAC")}
                 {renderStacList(pastStacs, "Past History")}
             </ScrollView>
+            <InputSheet ref={inputRef} />
             <FAB
                 icon="pencil-outline"
                 style={styles.fab}
-                //onPress={() => inputRef.current?.expand()}
+                onPress={() => inputRef.current?.present()}
             />
         </View>
     );
@@ -581,6 +563,7 @@ export function StacDetailsScreen() {
     const { stac, onDelete } = route.params;
 
     const db = getFirestore();
+    const { styles } = useStyles(styling);
 
     const handleDelete = async () => {
         Alert.alert(
@@ -720,9 +703,6 @@ export function StacDetailsScreen() {
                                                         <Ionicons
                                                             name="time-outline"
                                                             size={14}
-                                                            color={
-                                                                platformColors.textSecondary
-                                                            }
                                                             style={
                                                                 styles.timingIcon
                                                             }
@@ -792,9 +772,6 @@ export function StacDetailsScreen() {
                                                                 <Ionicons
                                                                     name="location"
                                                                     size={16}
-                                                                    color={
-                                                                        platformColors.textSecondary
-                                                                    }
                                                                     style={
                                                                         styles.locationIcon
                                                                     }
@@ -838,343 +815,345 @@ export function StacDetailsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: platformColors.groupedBackground,
-    },
-    headerContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        position: "relative",
-        marginTop: 70,
-        marginBottom: 20,
-    },
-    infoButton: {
-        position: "absolute",
-        right: 0,
-        top: 5,
-        padding: 5,
-    },
-    fab: {
-        position: "absolute",
-        margin: 16,
-        right: 0,
-        bottom: 0,
-    },
-    title: {
-        fontSize: 36,
-        fontWeight: "bold",
-        color: platformColors.textPrimary,
-        textAlign: "center",
-    },
-    section: {
-        marginVertical: 10,
-    },
-    sectionTitle: {
-        fontSize: 24,
-        fontWeight: "600",
-        color: platformColors.neutralStrong,
-        marginBottom: 10,
-    },
-    activityButton: {
-        backgroundColor: platformColors.accent,
-        paddingVertical: 15,
-        borderRadius: 8,
-        alignItems: "center",
-        marginBottom: 20,
-    },
-    stacContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 10,
-    },
-    stacButton: {
-        backgroundColor: platformColors.neutralStrong,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        flex: 1,
-    },
-    stacDetails: {
-        color: platformColors.neutralSoft,
-        fontSize: 12,
-        marginTop: 4,
-    },
-    detailsContainer: {
-        backgroundColor: platformColors.white,
-        padding: 20,
-        borderRadius: 10,
-        marginBottom: 20,
-    },
-    modalLabel: {
-        fontSize: 16,
-        fontWeight: "bold",
-        textAlign: "center",
-        color: platformColors.neutralStrong,
-        marginTop: 10,
-        marginBottom: 4,
-    },
-    modalText: {
-        fontSize: 16,
-        color: platformColors.textSecondary,
-        marginBottom: 10,
-    },
-    closeButton: {
-        backgroundColor: platformColors.accent,
-        padding: 10,
-        borderRadius: 5,
-        alignItems: "center",
-        marginTop: 10,
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    closeButtonText: {
-        color: platformColors.white,
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    noStacsText: {
-        textAlign: "center",
-        color: platformColors.textSecondary,
-        marginTop: 10,
-        fontStyle: "italic",
-    },
-    createButton: {
-        backgroundColor: platformColors.accent,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: platformColors.white,
-        fontSize: 18,
-    },
-    modalContainer: {
-        flex: 1,
-        backgroundColor: platformColors.overlay,
-        justifyContent: "center",
-    },
-    modalContent: {
-        flex: 1,
-        backgroundColor: platformColors.white,
-        margin: 20,
-        borderRadius: 10,
-        padding: 20,
-        maxHeight: "80%",
-    },
-    infoModalContent: {
-        flex: 1,
-        backgroundColor: platformColors.white,
-        margin: 20,
-        borderRadius: 10,
-        padding: 0,
-        maxHeight: "80%",
-        overflow: "hidden",
-    },
-    infoModalTitle: {
-        fontSize: 22,
-        fontWeight: "bold",
-        color: platformColors.textPrimary,
-        textAlign: "center",
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: platformColors.opaqueSeparator,
-    },
-    infoScrollView: {
-        flex: 1,
-    },
-    infoScrollViewContent: {
-        padding: 20,
-        paddingBottom: 20,
-    },
-    infoText: {
-        fontSize: 16,
-        color: platformColors.textPrimary,
-        lineHeight: 22,
-        marginBottom: 20,
-    },
-    infoSectionTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: platformColors.accent,
-        marginTop: 10,
-        marginBottom: 15,
-    },
-    infoListItem: {
-        flexDirection: "row",
-        marginBottom: 15,
-        paddingLeft: 10,
-    },
-    infoListNumber: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: platformColors.accent,
-        width: 20,
-    },
-    infoListText: {
-        fontSize: 16,
-        color: platformColors.textPrimary,
-        flex: 1,
-        lineHeight: 22,
-    },
-    infoBold: {
-        fontWeight: "bold",
-    },
-    infoModalFooter: {
-        borderTopWidth: 1,
-        borderTopColor: platformColors.opaqueSeparator,
-        padding: 15,
-    },
-    closeInfoButton: {
-        backgroundColor: platformColors.accent,
-        paddingVertical: 12,
-        borderRadius: 5,
-        alignItems: "center",
-    },
-    closeInfoButtonText: {
-        color: platformColors.white,
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    modalTitle: {
-        fontSize: 30,
-        fontWeight: "bold",
-        marginBottom: 10,
-        color: platformColors.accent,
-        textAlign: "center",
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollViewContent: {
-        padding: 20,
-        paddingBottom: 100,
-    },
-    detailsScrollViewContent: {
-        paddingRight: 10,
-    },
-    buttonContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        width: "100%",
-        marginTop: 10,
-    },
-    activityContainer: {
-        marginBottom: 10,
-        padding: 10,
-        backgroundColor: platformColors.tertiaryBackground,
-        borderRadius: 5,
-        borderWidth: 1,
-        borderColor: platformColors.neutralSoft,
-    },
-    activityName: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: platformColors.textPrimary,
-    },
-    activityDescription: {
-        fontSize: 14,
-        color: platformColors.textSecondary,
-        marginTop: 5,
-        marginBottom: 5,
-        paddingLeft: 5,
-    },
-    locationContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 5,
-    },
-    locationIcon: {
-        marginRight: 5,
-    },
-    locationText: {
-        fontSize: 14,
-        color: platformColors.textSecondary,
-        flex: 1,
-    },
-    deleteButton: {
-        backgroundColor: platformColors.danger,
-        padding: 10,
-        borderRadius: 5,
-        alignItems: "center",
-        marginTop: 10,
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    deleteButtonText: {
-        color: platformColors.white,
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    checkboxContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 5,
-    },
-    checkboxLabel: {
-        marginLeft: 10,
-        fontSize: 16,
-        fontWeight: "500",
-        flex: 1,
-        flexWrap: "wrap",
-    },
-    preferenceTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        marginTop: 10,
-        marginBottom: 5,
-        color: platformColors.accent,
-        flexWrap: "wrap", // Allow text to wrap
-    },
-    preferenceSection: {
-        marginVertical: 10,
-    },
-    preferenceHeaderContainer: {
-        flexDirection: "column", // Changed from row to column
-        marginBottom: 2,
-    },
-    preferenceTimingContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 10,
-        marginLeft: 5, // Slight indent
-    },
-    timingIcon: {
-        marginRight: 5,
-    },
-    preferenceTimingText: {
-        fontSize: 14,
-        color: platformColors.link,
-        fontWeight: "500",
-    },
-    shareButton: {
-        backgroundColor: platformColors.success,
-        padding: 10,
-        borderRadius: 5,
-        alignItems: "center",
-        marginTop: 10,
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    shareButtonText: {
-        color: platformColors.white,
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    scrollViewWrapper: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: platformColors.neutralSoft,
-        borderRadius: 5,
-        backgroundColor: platformColors.secondaryBackground,
-        overflow: "hidden",
-    },
-    detailsScrollView: {
-        flex: 1,
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-    },
-});
+const styling = ({ theme }: StyleProps) => {
+    return StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: theme.colors.background,
+        },
+        headerContainer: {
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            position: "relative",
+            marginTop: 70,
+            marginBottom: 20,
+        },
+        infoButton: {
+            position: "absolute",
+            right: 0,
+            top: 5,
+            padding: 5,
+        },
+        fab: {
+            position: "absolute",
+            margin: 16,
+            right: 0,
+            bottom: 0,
+        },
+        title: {
+            fontSize: 36,
+            fontWeight: "bold",
+            color: theme.colors.onSurface,
+            textAlign: "center",
+        },
+        section: {
+            marginVertical: 10,
+        },
+        sectionTitle: {
+            fontSize: 24,
+            fontWeight: "600",
+            color: theme.colors.onSurface,
+            marginBottom: 10,
+        },
+        activityButton: {
+            backgroundColor: theme.colors.primary,
+            paddingVertical: 15,
+            borderRadius: 8,
+            alignItems: "center",
+            marginBottom: 20,
+        },
+        stacContainer: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 10,
+        },
+        stacButton: {
+            backgroundColor: theme.colors.primary,
+            paddingVertical: 15,
+            paddingHorizontal: 20,
+            borderRadius: 8,
+            flex: 1,
+        },
+        stacDetails: {
+            color: theme.colors.onSurface,
+            fontSize: 12,
+            marginTop: 4,
+        },
+        detailsContainer: {
+            backgroundColor: theme.colors.surface,
+            padding: 20,
+            borderRadius: 10,
+            marginBottom: 20,
+        },
+        modalLabel: {
+            fontSize: 16,
+            fontWeight: "bold",
+            textAlign: "center",
+            color: theme.colors.onSurface,
+            marginTop: 10,
+            marginBottom: 4,
+        },
+        modalText: {
+            fontSize: 16,
+            color: theme.colors.onSurface,
+            marginBottom: 10,
+        },
+        closeButton: {
+            backgroundColor: theme.colors.primary,
+            padding: 10,
+            borderRadius: 5,
+            alignItems: "center",
+            marginTop: 10,
+            flex: 1,
+            marginHorizontal: 5,
+        },
+        closeButtonText: {
+            color: theme.colors.onPrimary,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        noStacsText: {
+            textAlign: "center",
+            color: theme.colors.outline,
+            marginTop: 10,
+            fontStyle: "italic",
+        },
+        createButton: {
+            backgroundColor: theme.colors.primary,
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius: 5,
+        },
+        buttonText: {
+            color: theme.colors.onPrimary,
+            fontSize: 18,
+        },
+        modalContainer: {
+            flex: 1,
+            backgroundColor: theme.colors.backdrop,
+            justifyContent: "center",
+        },
+        modalContent: {
+            flex: 1,
+            backgroundColor: theme.colors.background,
+            margin: 20,
+            borderRadius: 10,
+            padding: 20,
+            maxHeight: "80%",
+        },
+        infoModalContent: {
+            flex: 1,
+            backgroundColor: theme.colors.background,
+            margin: 20,
+            borderRadius: 10,
+            padding: 0,
+            maxHeight: "80%",
+            overflow: "hidden",
+        },
+        infoModalTitle: {
+            fontSize: 22,
+            fontWeight: "bold",
+            color: theme.colors.primary,
+            textAlign: "center",
+            paddingVertical: 15,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.outline,
+        },
+        infoScrollView: {
+            flex: 1,
+        },
+        infoScrollViewContent: {
+            padding: 20,
+            paddingBottom: 20,
+        },
+        infoText: {
+            fontSize: 16,
+            //color: platformColors.textPrimary,
+            lineHeight: 22,
+            marginBottom: 20,
+        },
+        infoSectionTitle: {
+            fontSize: 18,
+            fontWeight: "bold",
+            //color: platformColors.accent,
+            marginTop: 10,
+            marginBottom: 15,
+        },
+        infoListItem: {
+            flexDirection: "row",
+            marginBottom: 15,
+            paddingLeft: 10,
+        },
+        infoListNumber: {
+            fontSize: 16,
+            fontWeight: "bold",
+            //color: platformColors.accent,
+            width: 20,
+        },
+        infoListText: {
+            fontSize: 16,
+            //color: platformColors.textPrimary,
+            flex: 1,
+            lineHeight: 22,
+        },
+        infoBold: {
+            fontWeight: "bold",
+        },
+        infoModalFooter: {
+            borderTopWidth: 1,
+            //borderTopColor: platformColors.opaqueSeparator,
+            padding: 15,
+        },
+        closeInfoButton: {
+            //backgroundColor: platformColors.accent,
+            paddingVertical: 12,
+            borderRadius: 5,
+            alignItems: "center",
+        },
+        closeInfoButtonText: {
+            //color: platformColors.white,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        modalTitle: {
+            fontSize: 30,
+            fontWeight: "bold",
+            marginBottom: 10,
+            //color: platformColors.accent,
+            textAlign: "center",
+        },
+        scrollView: {
+            flex: 1,
+        },
+        scrollViewContent: {
+            padding: 20,
+            paddingBottom: 100,
+        },
+        detailsScrollViewContent: {
+            paddingRight: 10,
+        },
+        buttonContainer: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "100%",
+            marginTop: 10,
+        },
+        activityContainer: {
+            marginBottom: 10,
+            padding: 10,
+            //backgroundColor: platformColors.tertiaryBackground,
+            borderRadius: 5,
+            borderWidth: 1,
+            //borderColor: platformColors.neutralSoft,
+        },
+        activityName: {
+            fontSize: 16,
+            fontWeight: "bold",
+            //color: platformColors.textPrimary,
+        },
+        activityDescription: {
+            fontSize: 14,
+            //color: platformColors.textSecondary,
+            marginTop: 5,
+            marginBottom: 5,
+            paddingLeft: 5,
+        },
+        locationContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: 5,
+        },
+        locationIcon: {
+            marginRight: 5,
+        },
+        locationText: {
+            fontSize: 14,
+            //color: platformColors.textSecondary,
+            flex: 1,
+        },
+        deleteButton: {
+            //backgroundColor: platformColors.danger,
+            padding: 10,
+            borderRadius: 5,
+            alignItems: "center",
+            marginTop: 10,
+            flex: 1,
+            marginHorizontal: 5,
+        },
+        deleteButtonText: {
+            //color: platformColors.white,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        checkboxContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 5,
+        },
+        checkboxLabel: {
+            marginLeft: 10,
+            fontSize: 16,
+            fontWeight: "500",
+            flex: 1,
+            flexWrap: "wrap",
+        },
+        preferenceTitle: {
+            fontSize: 18,
+            fontWeight: "bold",
+            marginTop: 10,
+            marginBottom: 5,
+            //color: platformColors.accent,
+            flexWrap: "wrap", // Allow text to wrap
+        },
+        preferenceSection: {
+            marginVertical: 10,
+        },
+        preferenceHeaderContainer: {
+            flexDirection: "column", // Changed from row to column
+            marginBottom: 2,
+        },
+        preferenceTimingContainer: {
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 10,
+            marginLeft: 5, // Slight indent
+        },
+        timingIcon: {
+            marginRight: 5,
+        },
+        preferenceTimingText: {
+            fontSize: 14,
+            //color: platformColors.link,
+            fontWeight: "500",
+        },
+        shareButton: {
+            //backgroundColor: platformColors.success,
+            padding: 10,
+            borderRadius: 5,
+            alignItems: "center",
+            marginTop: 10,
+            flex: 1,
+            marginHorizontal: 5,
+        },
+        shareButtonText: {
+            //color: platformColors.white,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        scrollViewWrapper: {
+            flex: 1,
+            borderWidth: 1,
+            //borderColor: platformColors.neutralSoft,
+            borderRadius: 5,
+            //backgroundColor: platformColors.secondaryBackground,
+            overflow: "hidden",
+        },
+        detailsScrollView: {
+            flex: 1,
+            paddingHorizontal: 10,
+            paddingVertical: 10,
+        },
+    });
+};

@@ -1,5 +1,4 @@
 import { getAuth, sendPasswordResetEmail } from "@react-native-firebase/auth";
-import { NavigationProp } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Alert, SafeAreaView, StyleSheet } from "react-native";
 import {
