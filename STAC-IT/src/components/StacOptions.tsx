@@ -1,41 +1,15 @@
 import type React from "react";
 import { useState } from "react";
-import { View, StyleSheet, ScrollView, Alert } from "react-native";
-import {
-    Button,
-    Card,
-    Divider,
-    List,
-    Text,
-    RadioButton,
-    Icon,
-    useTheme,
-} from "react-native-paper";
+import { View } from "react-native";
+import { Icon, List, RadioButton, Text, useTheme } from "react-native-paper";
 
 import {
-    getFirestore,
-    doc,
-    setDoc,
-    Timestamp,
-} from "@react-native-firebase/firestore";
-import { useStyles, StyleProps } from "@/styling";
-import {
-    Period,
-    PeriodDb,
-    ActivityOptionsDb,
-    NewActivityOptions,
-    NewItinerary,
-    ItineraryDb,
-    ActivityOptions,
     Activity,
-    Place,
-    NewStac,
-    StrPeriod,
     fmtPeriod,
-    NewStacDb,
-    newStacConverter,
+    NewActivityOptions,
     NewItinerary2,
-} from "../types";
+    StrPeriod,
+} from "@/types";
 
 function fmtDateStr(ds: string): string {
     const d: Date = new Date(ds);
@@ -187,4 +161,4 @@ const StacActivity: React.FC<StacActivityProps> = ({ activity, onPress }) => {
     );
 };
 
-export { StacOptions, StacActivity, StacActivityOption };
+export { StacActivity, StacActivityOption, StacOptions };

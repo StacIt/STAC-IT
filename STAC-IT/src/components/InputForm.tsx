@@ -3,7 +3,6 @@ import * as React from "react";
 import {
     useReducer,
     useEffect,
-    useCallback,
     useImperativeHandle,
     useState,
     Fragment,
@@ -18,6 +17,8 @@ import {
 } from "react-native-paper";
 import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 
+import validate from "validator";
+
 import { Period, StacRequest } from "@/types";
 
 import { StyleProps, useStyles } from "@/styling";
@@ -29,12 +30,14 @@ export interface FormData extends StacRequest {
 }
 
 export interface InputFormMethods {
-    submit: () => FormData;
+    submit: () => Promise<FormData>;
 }
 
 export type InputForm = InputFormMethods;
 
 export interface InputFormProps {
+    onDirty: () => void;
+    onValidate: (isValid: boolean) => void;
     ref?: React.RefObject<InputForm | null>;
 }
 
@@ -58,6 +61,7 @@ function getInitialState(): FormData {
         budget: "1",
         period: getDefaultPeriod(),
         numberOfPeople: "1",
+        keepOptions: "",
     };
 }
 
@@ -69,7 +73,8 @@ export type FormAction =
 function formHandler(state: FormData, action: FormAction) {
     switch (action.type) {
         case "update": {
-            return { ...state, ...action };
+            const { type: _ignore, ...rest } = action;
+            return { ...state, ...rest };
         }
         case "set_start": {
             const begin = new Date(state.period.begin);
@@ -104,6 +109,20 @@ function formHandler(state: FormData, action: FormAction) {
 // <PaperTextInput {...props} render={(p) => <SheetTextInput {...p} />} />
 // );
 // }
+
+function formValidate(data: FormData): boolean {
+    let valid = true;
+
+    valid &&= !validate.isEmpty(data.title, { ignore_whitespace: true });
+
+    valid &&= !validate.isEmpty(data.city, { ignore_whitespace: true });
+    valid &&= !validate.isEmpty(data.state, { ignore_whitespace: true });
+
+    valid &&= data.activities.length > 0;
+    valid &&= data.activities.every((e) => !validate.isEmpty(e));
+
+    return valid;
+}
 
 function useDefaultLocation(set: (arg0: FormAction) => void) {
     useEffect(() => {
@@ -162,22 +181,36 @@ function useDefaultLocation(set: (arg0: FormAction) => void) {
 }
 
 // eslint-disable-next-line
-export function InputForm() {
+export function InputForm({ ref, onDirty, onValidate }: InputFormProps) {
     const { styles } = useStyles(styling);
 
-    const [
-        {
-            period: { begin, end },
-            ...state
-        },
-        dispatch,
-    ] = useReducer(formHandler, null, getInitialState);
+    const [state, raw_dispatch] = useReducer(
+        formHandler,
+        null,
+        getInitialState,
+    );
+    const { begin, end } = state.period;
+
+    useEffect(() => onValidate(formValidate(state)), [state, onValidate]);
 
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showStartTimePicker, setShowStartTimePicker] = useState(false);
     const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
-    useDefaultLocation(dispatch);
+    useDefaultLocation(raw_dispatch);
+
+    const dispatch = (...a: Parameters<typeof raw_dispatch>) => {
+        raw_dispatch(...a);
+        onDirty();
+    };
+
+    useImperativeHandle(ref, () => {
+        return {
+            async submit() {
+                return state;
+            },
+        };
+    }, [state]);
 
     return (
         <>

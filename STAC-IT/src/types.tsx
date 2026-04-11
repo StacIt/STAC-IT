@@ -48,7 +48,7 @@ export interface StacRequest {
     budget: string;
     period: Period;
     numberOfPeople: string;
-    keepOptions?: string;
+    keepOptions: string;
 }
 
 export interface Place {

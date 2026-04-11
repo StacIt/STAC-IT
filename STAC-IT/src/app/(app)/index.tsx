@@ -549,7 +549,7 @@ export default function HomePage() {
             <FAB
                 icon="pencil-outline"
                 style={styles.fab}
-                onPress={() => inputRef.current?.present()}
+                onPress={() => inputRef.current?.open()}
             />
         </View>
     );
