@@ -143,53 +143,57 @@ export interface StacResponse {
 }
 
 export interface NewStac {
-    id: string;
-    userId: string;
-    sharedWith: string[];
-    stacName: string;
+    owner: string;
+    shared_with: string[];
+    title: string;
     location: string;
+    start_time: Date;
+    end_time: Date;
     budget: string;
-    numberOfPeople: string;
-    createdAt: Timestamp;
+    n_people: string;
+    created_at: Timestamp;
     itinerary: NewItinerary;
 }
 
 export interface NewStacDb {
-    id: string;
-    userId: string;
-    sharedWith: string[];
-    stacName: string;
+    owner: string;
+    shared_with: string[];
+    title: string;
     location: string;
+    start_time: Timestamp;
+    end_time: Timestamp;
     budget: string;
-    numberOfPeople: string;
-    createdAt: Timestamp;
+    n_people: string;
+    created_at: Timestamp;
     itinerary: ItineraryDb;
 }
 
 export function newStacToDb(value: NewStac): NewStacDb {
     return {
-        id: value.id,
-        userId: value.userId,
-        sharedWith: value.sharedWith,
-        stacName: value.stacName,
+        owner: value.owner,
+        shared_with: value.shared_with,
+        title: value.title,
         location: value.location,
+        start_time: Timestamp.fromDate(value.start_time),
+        end_time: Timestamp.fromDate(value.end_time),
         budget: value.budget,
-        numberOfPeople: value.numberOfPeople,
-        createdAt: value.createdAt,
+        n_people: value.n_people,
+        created_at: value.created_at,
         itinerary: itineraryToDb(value.itinerary),
     };
 }
 
 export function newStacFromDb(value: NewStacDb): NewStac {
     return {
-        id: value.id,
-        userId: value.userId,
-        sharedWith: value.sharedWith,
-        stacName: value.stacName,
+        owner: value.owner,
+        shared_with: value.shared_with,
+        title: value.title,
         location: value.location,
+        start_time: value.start_time.toDate(),
+        end_time: value.end_time.toDate(),
         budget: value.budget,
-        numberOfPeople: value.numberOfPeople,
-        createdAt: value.createdAt,
+        n_people: value.n_people,
+        created_at: value.created_at,
         itinerary: itineraryFromDb(value.itinerary),
     };
 }

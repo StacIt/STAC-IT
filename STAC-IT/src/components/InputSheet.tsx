@@ -15,6 +15,24 @@ import {
     useEffect,
     useEffectEvent,
 } from "react";
+
+import {
+    collection,
+    deleteDoc,
+    doc,
+    addDoc,
+    getDocs,
+    query,
+    getDoc,
+    DocumentReference,
+    updateDoc,
+    where,
+    Timestamp,
+    getFirestore,
+    orderBy,
+    onSnapshot,
+} from "@react-native-firebase/firestore";
+import { getAuth } from "@react-native-firebase/auth";
 import { Alert, StyleSheet, View } from "react-native";
 import {
     Button,
@@ -30,10 +48,13 @@ import { useStyles } from "@/styling";
 import {
     StacResponse,
     StacRequest,
+    NewStac,
     NewActivityOptions,
     NewItinerary,
     activityOptionsConv,
+    newStacConverter,
 } from "@/types";
+import { useAuth } from "@/contexts";
 import { StacOptions } from "@/components/StacOptions";
 
 interface HeaderProps extends BottomSheetHandleProps {
@@ -276,6 +297,8 @@ export function InputSheet({ ref }: InputSheetProps) {
     const sheet = useRef<BottomSheetModal>(null);
     const form = useRef<InputForm>(null);
 
+    const { user } = useAuth();
+
     const [state, dispatch] = useReducer(
         inputReducer,
         null,
@@ -302,9 +325,31 @@ export function InputSheet({ ref }: InputSheetProps) {
     function handleError(e: Error) {
         console.error(e);
     }
+    const db = collection(getFirestore(), "stacks_v2").withConverter(
+        newStacConverter,
+    );
+
+    const [newDoc, setNewDoc] = useState<DocumentReference | null>(null);
 
     const handleSubmit = async () => {
         dispatch({ type: "submit" });
+
+        const data = await form.current!.submit();
+        const doc_data: NewStac = {
+            owner: user.uid,
+            shared_with: [],
+            title: data.title,
+            location: `${data.city}, ${data.state}`,
+            start_time: data.period.begin,
+            end_time: data.period.end,
+            budget: data.budget,
+            n_people: data.numberOfPeople,
+            created_at: Timestamp.now(),
+            itinerary: { activities: [] },
+        };
+        const doc = await addDoc(db, doc_data);
+        console.log(`created new stac: ${doc.id}`);
+        setNewDoc(doc);
         await form
             .current!.submit()
             .then(callBackend)
@@ -312,6 +357,12 @@ export function InputSheet({ ref }: InputSheetProps) {
             .then((v) => dispatch({ type: "receive", data: v }))
             .catch(handleError);
     };
+
+    async function handleSave() {
+        if (newDoc && state.isResponse()) {
+            const doc = await updateDoc(newDoc, { itinerary: state.itinerary });
+        }
+    }
 
     const handlePressClose = () => {
         dispatch({ type: "close" });
