@@ -19,18 +19,14 @@ import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 
 import validate from "validator";
 
-import { Period, StacRequest } from "@/types";
+import { Period, CreateRequest } from "@/types";
 
 import { StyleProps, useStyles } from "@/styling";
 
 import ActivityInput from "@/components/ActivityInput";
 
-export interface FormData extends StacRequest {
-    title: string;
-}
-
 export interface InputFormMethods {
-    submit: () => Promise<FormData>;
+    submit: () => Promise<CreateRequest>;
 }
 
 export type InputForm = InputFormMethods;
@@ -38,6 +34,7 @@ export type InputForm = InputFormMethods;
 export interface InputFormProps {
     onDirty: () => void;
     onValidate: (isValid: boolean) => void;
+    visible: boolean;
     ref?: React.RefObject<InputForm | null>;
 }
 
@@ -52,7 +49,7 @@ function getDefaultPeriod(): Period {
     return { begin, end };
 }
 
-function getInitialState(): FormData {
+function getInitialState(): CreateRequest {
     return {
         title: "",
         city: "",
@@ -60,17 +57,16 @@ function getInitialState(): FormData {
         activities: [],
         budget: "1",
         period: getDefaultPeriod(),
-        numberOfPeople: "1",
-        keepOptions: "",
+        n_people: "1",
     };
 }
 
 export type FormAction =
-    | ({ type: "update" } & Partial<FormData>)
+    | ({ type: "update" } & Partial<CreateRequest>)
     | { type: "set_date"; value: Date }
     | { type: "set_start" | "set_end"; hours: number; minutes: number };
 
-function formHandler(state: FormData, action: FormAction) {
+function formHandler(state: CreateRequest, action: FormAction) {
     switch (action.type) {
         case "update": {
             const { type: _ignore, ...rest } = action;
@@ -110,7 +106,7 @@ function formHandler(state: FormData, action: FormAction) {
 // );
 // }
 
-function formValidate(data: FormData): boolean {
+function formValidate(data: CreateRequest): boolean {
     let valid = true;
 
     valid &&= !validate.isEmpty(data.title, { ignore_whitespace: true });
@@ -181,7 +177,12 @@ function useDefaultLocation(set: (arg0: FormAction) => void) {
 }
 
 // eslint-disable-next-line
-export function InputForm({ ref, onDirty, onValidate }: InputFormProps) {
+export function InputForm({
+    ref,
+    onDirty,
+    onValidate,
+    visible,
+}: InputFormProps) {
     const { styles } = useStyles(styling);
 
     const [state, raw_dispatch] = useReducer(
@@ -212,7 +213,7 @@ export function InputForm({ ref, onDirty, onValidate }: InputFormProps) {
         };
     }, [state]);
 
-    return (
+    const content = (
         <>
             <View style={styles.titleContainer}>
                 <TextInput
@@ -319,9 +320,9 @@ export function InputForm({ ref, onDirty, onValidate }: InputFormProps) {
             <Text style={styles.radioButtonLabel}>Number of People</Text>
             <SegmentedButtons
                 style={styles.radioButton}
-                value={state.numberOfPeople}
-                onValueChange={(numberOfPeople) =>
-                    dispatch({ type: "update", numberOfPeople })
+                value={state.n_people}
+                onValueChange={(n_people) =>
+                    dispatch({ type: "update", n_people })
                 }
                 buttons={[
                     { value: "1", icon: "account" },
@@ -349,6 +350,8 @@ export function InputForm({ ref, onDirty, onValidate }: InputFormProps) {
             />
         </>
     );
+
+    return visible ? content : null;
 }
 
 const styling = ({ theme }: StyleProps) => {

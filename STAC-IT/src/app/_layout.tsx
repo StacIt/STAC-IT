@@ -33,7 +33,7 @@ function RootNavigator() {
     const isauth = useIsSignedIn();
 
     return (
-        <Stack>
+        <Stack screenOptions={{ title: "stacIT" }}>
             <Stack.Protected guard={!!isauth}>
                 <Stack.Screen name="(app)/index" />
             </Stack.Protected>

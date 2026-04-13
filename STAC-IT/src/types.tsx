@@ -41,6 +41,20 @@ function periodFromDb(period: PeriodDb): Period {
     };
 }
 
+export interface CreateRequest {
+    title: string;
+    city: string;
+    state: string;
+    activities: string[];
+    budget: string;
+    period: Period;
+    n_people: string;
+}
+
+export interface CreateResponse {
+    doc_id: string;
+}
+
 export interface StacRequest {
     city: string;
     state: string;
@@ -124,16 +138,20 @@ export interface NewItinerary {
     activities: NewActivityOptions[];
 }
 
-function itineraryToDb(value: NewItinerary): ItineraryDb {
-    return {
-        activities: value.activities.map(activityOptionsToDb),
-    };
+function itineraryToDb(value: NewItinerary | null): ItineraryDb | null {
+    if (value) {
+        return { activities: value.activities.map(activityOptionsToDb) };
+    } else {
+        return null;
+    }
 }
 
-function itineraryFromDb(value: ItineraryDb): NewItinerary {
-    return {
-        activities: value.activities.map(activityOptionsFromDb),
-    };
+function itineraryFromDb(value: ItineraryDb | null): NewItinerary | null {
+    if (value) {
+        return { activities: value.activities.map(activityOptionsFromDb) };
+    } else {
+        return null;
+    }
 }
 
 export interface StacResponse {
@@ -147,12 +165,12 @@ export interface NewStac {
     shared_with: string[];
     title: string;
     location: string;
-    start_time: Date;
-    end_time: Date;
+    period: Period;
     budget: string;
     n_people: string;
     created_at: Timestamp;
-    itinerary: NewItinerary;
+    status: "pending" | "ready";
+    itinerary: NewItinerary | null;
 }
 
 export interface NewStacDb {
@@ -160,12 +178,12 @@ export interface NewStacDb {
     shared_with: string[];
     title: string;
     location: string;
-    start_time: Timestamp;
-    end_time: Timestamp;
+    period: PeriodDb;
     budget: string;
     n_people: string;
     created_at: Timestamp;
-    itinerary: ItineraryDb;
+    status: "pending" | "ready";
+    itinerary: ItineraryDb | null;
 }
 
 export function newStacToDb(value: NewStac): NewStacDb {
@@ -174,11 +192,11 @@ export function newStacToDb(value: NewStac): NewStacDb {
         shared_with: value.shared_with,
         title: value.title,
         location: value.location,
-        start_time: Timestamp.fromDate(value.start_time),
-        end_time: Timestamp.fromDate(value.end_time),
+        period: periodToDb(value.period),
         budget: value.budget,
         n_people: value.n_people,
         created_at: value.created_at,
+        status: value.status,
         itinerary: itineraryToDb(value.itinerary),
     };
 }
@@ -189,11 +207,11 @@ export function newStacFromDb(value: NewStacDb): NewStac {
         shared_with: value.shared_with,
         title: value.title,
         location: value.location,
-        start_time: value.start_time.toDate(),
-        end_time: value.end_time.toDate(),
+        period: periodFromDb(value.period),
         budget: value.budget,
         n_people: value.n_people,
         created_at: value.created_at,
+        status: value.status,
         itinerary: itineraryFromDb(value.itinerary),
     };
 }

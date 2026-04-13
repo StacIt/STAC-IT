@@ -43,11 +43,11 @@ import {
     ActivityIndicator,
 } from "react-native-paper";
 
-import { FormData, InputForm } from "@/components/InputForm";
+import { InputForm } from "@/components/InputForm";
 import { useStyles } from "@/styling";
 import {
-    StacResponse,
-    StacRequest,
+    CreateRequest,
+    CreateResponse,
     NewStac,
     NewActivityOptions,
     NewItinerary,
@@ -61,23 +61,15 @@ interface HeaderProps extends BottomSheetHandleProps {
     onSubmit: () => void;
     onDismiss: () => void;
     submitDisabled: boolean;
-    submitVisible: boolean;
 }
 
 function Header({
     submitDisabled,
     onSubmit,
     onDismiss,
-    submitVisible,
     ...props
 }: HeaderProps) {
     const { styles } = useStyles(styling);
-
-    const submitBtn = submitVisible ? (
-        <Button mode="contained" onPress={onSubmit} disabled={submitDisabled}>
-            Save
-        </Button>
-    ) : null;
 
     return (
         <View style={styles.header}>
@@ -91,18 +83,34 @@ function Header({
             <View style={styles.header_center}>
                 <BottomSheetHandle {...props} />
             </View>
-            <View style={styles.header_right}>{submitBtn}</View>
+            <View style={styles.header_right}>
+                <Button
+                    mode="contained"
+                    onPress={onSubmit}
+                    disabled={submitDisabled}
+                >
+                    Save
+                </Button>
+            </View>
         </View>
     );
 }
 
-async function callBackend(data: FormData): Promise<StacResponse> {
-    const { title: _, ...msg } = data;
+async function callBackend(
+    data: CreateRequest,
+    token: string,
+): Promise<CreateResponse> {
     return axios
-        .post<StacResponse>(
-            "https://stac-1061792458880.us-east1.run.app/chatbot_api",
-            msg,
-            { headers: { "Content-Type": "application/json" } },
+        .post<CreateResponse>(
+            "https://stac-1061792458880.us-east1.run.app/create",
+            data,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+            },
         )
         .then((v) => v.data);
 }
@@ -112,10 +120,9 @@ type InputAction =
     | { type: "validate"; value: boolean }
     | { type: "dirty"; value: boolean }
     | { type: "close" }
+    | { type: "ack"; value: string }
     | { type: "open" }
-    | { type: "preserve" }
-    | { type: "select"; selection: NewActivityOptions[] }
-    | { type: "receive"; data: NewActivityOptions[] };
+    | { type: "preserve" };
 
 type Tail<T extends unknown[]> = T extends [any, ...infer R] ? R : never;
 
@@ -124,12 +131,7 @@ type ConstructorTail<T extends abstract new (...args: any) => any> = Tail<
 >;
 
 abstract class InputState {
-    public abstract mode:
-        | "closed"
-        | "request"
-        | "loading"
-        | "response"
-        | "warning";
+    public abstract mode: "closed" | "request" | "loading" | "warning";
 
     public visible: boolean = false;
 
@@ -158,12 +160,12 @@ abstract class InputState {
         return this.mode === "loading";
     }
 
-    isRequesting(): this is RequestState {
-        return this.mode === "request";
+    isWarning(): this is WarningState {
+        return this.mode === "warning";
     }
 
-    isResponse(): this is ResponseState {
-        return this.mode === "response";
+    isRequesting(): this is RequestState {
+        return this.mode === "request";
     }
 
     isClosed(): this is ClosedState {
@@ -201,33 +203,6 @@ class RequestState extends InputState {
     }
 }
 
-class ResponseState extends InputState {
-    mode = "response" as const;
-
-    constructor(
-        link: InputState | null,
-        public itinerary: NewActivityOptions[],
-        public selection: NewActivityOptions[],
-    ) {
-        super(link);
-    }
-
-    handle(action: InputAction) {
-        switch (action.type) {
-            case "select":
-                return this.replace(
-                    ResponseState,
-                    this.itinerary,
-                    action.selection,
-                );
-            case "close": {
-                return new ClosedState(this);
-            }
-        }
-        throw new Error("bad state");
-    }
-}
-
 class ClosedState extends InputState {
     mode = "closed" as const;
 
@@ -247,8 +222,8 @@ class LoadingState extends InputState {
 
     handle(action: InputAction) {
         switch (action.type) {
-            case "receive":
-                return this.replace(ResponseState, action.data, []);
+            case "ack":
+                return new ClosedState(null);
         }
         return this;
     }
@@ -268,12 +243,7 @@ class WarningState extends InputState {
     }
 }
 
-type State =
-    | RequestState
-    | ResponseState
-    | LoadingState
-    | ClosedState
-    | WarningState;
+type State = RequestState | LoadingState | ClosedState | WarningState;
 
 function inputReducer(state: State, action: InputAction): State {
     return state.handle(action);
@@ -325,43 +295,20 @@ export function InputSheet({ ref }: InputSheetProps) {
     function handleError(e: Error) {
         console.error(e);
     }
-    const db = collection(getFirestore(), "stacks_v2").withConverter(
-        newStacConverter,
-    );
 
-    const [newDoc, setNewDoc] = useState<DocumentReference | null>(null);
-
-    const handleSubmit = async () => {
+    async function handleSubmit() {
         dispatch({ type: "submit" });
 
-        const data = await form.current!.submit();
-        const doc_data: NewStac = {
-            owner: user.uid,
-            shared_with: [],
-            title: data.title,
-            location: `${data.city}, ${data.state}`,
-            start_time: data.period.begin,
-            end_time: data.period.end,
-            budget: data.budget,
-            n_people: data.numberOfPeople,
-            created_at: Timestamp.now(),
-            itinerary: { activities: [] },
-        };
-        const doc = await addDoc(db, doc_data);
-        console.log(`created new stac: ${doc.id}`);
-        setNewDoc(doc);
+        const token = await user.getIdToken();
+
         await form
             .current!.submit()
-            .then(callBackend)
-            .then((d) => d.itinerary.activities.map(activityOptionsConv))
-            .then((v) => dispatch({ type: "receive", data: v }))
+            .then((data) => callBackend(data, token))
+            .then((resp) => {
+                dispatch({ type: "ack", value: resp.doc_id });
+                console.log(`received ack: ${resp.doc_id}`);
+            })
             .catch(handleError);
-    };
-
-    async function handleSave() {
-        if (newDoc && state.isResponse()) {
-            const doc = await updateDoc(newDoc, { itinerary: state.itinerary });
-        }
     }
 
     const handlePressClose = () => {
@@ -373,32 +320,13 @@ export function InputSheet({ ref }: InputSheetProps) {
             onSubmit={handleSubmit}
             onDismiss={handlePressClose}
             submitDisabled={state.isRequesting() && !state.valid}
-            submitVisible={state.isRequesting() || state.isResponse()}
             {...p}
         />
     );
 
-    let content;
-
-    if (state.mode === "loading") {
-        content = <ActivityIndicator size={128} />;
-    } else if (state.mode === "response") {
-        content = (
-            <StacOptions
-                activities={state.itinerary}
-                selection={state.selection}
-                setSelection={(v) => dispatch({ type: "select", selection: v })}
-            />
-        );
-    } else {
-        content = (
-            <InputForm
-                ref={form}
-                onDirty={() => dispatch({ type: "dirty", value: true })}
-                onValidate={(value) => dispatch({ type: "validate", value })}
-            />
-        );
-    }
+    const loadingWheel = (
+        <ActivityIndicator size={128} animating={state.isLoading()} />
+    );
 
     return (
         <>
@@ -432,7 +360,17 @@ export function InputSheet({ ref }: InputSheetProps) {
                     enablePanDownToClose={state.isRequesting() && !state.dirty}
                 >
                     <BottomSheetScrollView style={styles.contentContainer}>
-                        {content}
+                        {state.isLoading() ? loadingWheel : null}
+                        <InputForm
+                            ref={form}
+                            onDirty={() =>
+                                dispatch({ type: "dirty", value: true })
+                            }
+                            onValidate={(value) =>
+                                dispatch({ type: "validate", value })
+                            }
+                            visible={!state.isLoading()}
+                        />
                         <View style={{ height: 8 * 3 }} />
                     </BottomSheetScrollView>
                 </BottomSheetModal>

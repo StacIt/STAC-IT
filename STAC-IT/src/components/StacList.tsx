@@ -20,39 +20,53 @@ import {
     Share,
     StyleSheet,
     SectionList,
-    TouchableOpacity,
     View,
     useWindowDimensions,
 } from "react-native";
-import { Card, MD3Theme, Text, Avatar } from "react-native-paper";
-import { EdgeInsets } from "react-native-safe-area-context";
+import {
+    Card,
+    Text,
+    Avatar,
+    Surface,
+    Divider,
+    ActivityIndicator,
+} from "react-native-paper";
 import { useStyles, StyleProps } from "@/styling";
 import { useAuth } from "@/contexts";
 import { NewStac, newStacConverter } from "../types";
 
-export function StacLiveList() {
+export interface StacLiveListProps {
+    onPress: (arg: NewStac) => void;
+}
+
+export function StacLiveList({ onPress }: StacLiveListProps) {
     const { user } = useAuth();
+
+    const { styles } = useStyles(styling);
 
     const [userStacs, setUserStacs] = useState<[string, NewStac][]>([]);
     const [pastUserStacs, setPastUserStacs] = useState<[string, NewStac][]>([]);
     const [sharedStacs, setSharedStacs] = useState<[string, NewStac][]>([]);
+    const [pendingStacs, setPendingStacs] = useState<[string, NewStac][]>([]);
 
     useEffect(() => {
         const db = collection(getFirestore(), "stacks_v2").withConverter(
             newStacConverter,
         );
-        const ownq = query(db, where("owner", "==", user.uid));
+        const ownq = query(
+            db,
+            where("owner", "==", user.uid),
+            where("status", "==", "ready"),
+        );
 
         const unsub = onSnapshot(ownq, (snap) => {
             const ndata = snap.docs
                 .map((doc): [string, NewStac] => [doc.id, doc.data()])
                 .sort(([i, a], [j, b]) => {
-                    return a.start_time.getTime() - b.end_time.getTime();
+                    return a.period.begin.getTime() - b.period.end.getTime();
                 });
             const idx = ndata.findIndex(
-                ([id, s]) =>
-                    s.itinerary.activities[0].timing.begin.getTime() >
-                    Date.now(),
+                ([id, s]) => s.period.begin.getTime() > Date.now(),
             );
             setUserStacs(ndata.slice(0, idx));
             setPastUserStacs(ndata.slice(idx));
@@ -64,16 +78,37 @@ export function StacLiveList() {
         const db = collection(getFirestore(), "stacks_v2").withConverter(
             newStacConverter,
         );
+        const ownq = query(
+            db,
+            where("owner", "==", user.uid),
+            where("status", "==", "pending"),
+        );
+
+        const unsub = onSnapshot(ownq, (snap) => {
+            const ndata = snap.docs.map((doc): [string, NewStac] => [
+                doc.id,
+                doc.data(),
+            ]);
+            setPendingStacs(ndata);
+        });
+        return unsub;
+    }, [user]);
+
+    useEffect(() => {
+        const db = collection(getFirestore(), "stacks_v2").withConverter(
+            newStacConverter,
+        );
         const shareq = query(
             db,
             where("shared_with", "array-contains", user.uid),
+            where("status", "==", "ready"),
         );
 
         const unsub = onSnapshot(shareq, (snap) => {
             const ndata = snap.docs
                 .map((doc): [string, NewStac] => [doc.id, doc.data()])
                 .sort(([i, a], [j, b]) => {
-                    return a.start_time.getTime() - b.end_time.getTime();
+                    return a.period.begin.getTime() - b.period.end.getTime();
                 });
             setSharedStacs(ndata);
         });
@@ -81,17 +116,38 @@ export function StacLiveList() {
     }, [user]);
 
     const data = [
-        { title: "current", data: userStacs },
-        { title: "past", data: pastUserStacs },
-        { title: "shared", data: sharedStacs },
+        { title: "Pending", data: pendingStacs },
+        { title: "Current", data: userStacs },
+        { title: "Past", data: pastUserStacs },
+        { title: "Shared", data: sharedStacs },
     ];
+
+    function renderHeader(title: string, data: [string, NewStac][]) {
+        if (data.length > 0) {
+            return (
+                <Surface style={styles.header}>
+                    <Card.Title
+                        titleStyle={styles.headerText}
+                        titleVariant="headlineMedium"
+                        title={title}
+                    />
+                </Surface>
+            );
+        } else {
+            return null;
+        }
+    }
 
     return (
         <SectionList
             sections={data}
             renderItem={({ item }) => {
-                return <StacSummaryCard stac={item[1]} onPress={() => {}} />;
+                return <StacSummaryCard stac={item[1]} onPress={onPress} />;
             }}
+            renderSectionHeader={({ section: { title, data } }) =>
+                renderHeader(title, data)
+            }
+            SectionSeparatorComponent={Divider}
         />
     );
 }
@@ -101,16 +157,15 @@ interface SummaryCardProps {
     onPress: (s: NewStac) => void;
 }
 
-const StacSummaryCard: React.FC<SummaryCardProps> = ({ stac, onPress }) => {
+export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
     const { styles, theme } = useStyles(styling);
 
     const { fontScale } = useWindowDimensions();
 
-    const dateobj = new Date(stac.start_time);
-    const month = dateobj.toLocaleString("default", {
+    const month = stac.period.begin.toLocaleString("default", {
         month: "short",
     });
-    const day = dateobj.getDate();
+    const day = stac.period.begin.getDate();
 
     const ico = ({ size }: { size: number }) => {
         return (
@@ -154,6 +209,13 @@ const StacSummaryCard: React.FC<SummaryCardProps> = ({ stac, onPress }) => {
 
     const mkavatar = (props: object) => <Avatar.Icon {...props} icon={ico} />;
 
+    const spinner = (props: { size: number }) => (
+        <ActivityIndicator
+            size={props.size * 1.5}
+            animating={stac.status === "pending"}
+        />
+    );
+
     return (
         <View style={styles.container}>
             <Card style={styles.card} onPress={() => onPress(stac)}>
@@ -165,11 +227,14 @@ const StacSummaryCard: React.FC<SummaryCardProps> = ({ stac, onPress }) => {
                     subtitleVariant="bodyMedium"
                     subtitle={stac.location}
                     left={mkavatar}
+                    right={spinner}
+                    rightStyle={styles.spinnerContainer}
+                    style={styles.titleContainer}
                 />
             </Card>
         </View>
     );
-};
+}
 
 const styling = ({ theme }: StyleProps) => {
     return StyleSheet.create({
@@ -177,12 +242,25 @@ const styling = ({ theme }: StyleProps) => {
             flex: 1,
             flexDirection: "row",
             justifyContent: "space-between",
-            marginTop: 10,
+        },
+        titleContainer: {
+            paddingHorizontal: 16,
+        },
+        header: {
+            flex: 1,
+            margin: 0,
+            backgroundColor: theme.colors.surface,
+        },
+        headerText: {
+            color: theme.colors.outline,
+            fontWeight: 500,
         },
         card: {
             flex: 1,
-            backgroundColor: theme.colors.secondaryContainer,
+            backgroundColor: theme.colors.primaryContainer,
+            margin: 8,
         },
+        spinnerContainer: {},
         title: {
             color: theme.colors.onSecondaryContainer,
             fontWeight: 400,
