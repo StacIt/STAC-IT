@@ -1,6 +1,6 @@
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Provider as PaperProvider } from "react-native-paper";
+import { Provider as PaperProvider, useTheme } from "react-native-paper";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import { Stack } from "expo-router";
@@ -32,8 +32,19 @@ export default function App() {
 function RootNavigator() {
     const isauth = useIsSignedIn();
 
+    const theme = useTheme();
+
     return (
-        <Stack>
+        <Stack
+            screenOptions={{
+                headerStyle: { backgroundColor: theme.colors.background },
+                headerTitleStyle: {
+                    ...theme.fonts.headlineSmall,
+                    color: theme.colors.onBackground,
+                    fontWeight: 500,
+                },
+            }}
+        >
             <Stack.Protected guard={!!isauth}>
                 <Stack.Screen name="(app)/index" options={{ title: "Stacs" }} />
                 <Stack.Screen

@@ -90,28 +90,6 @@ export function ActivityView({
 
     const { styles, theme } = useStyles(styling);
 
-    const carsel = (
-        <Carousel
-            data={data.options}
-            loop={false}
-            onConfigurePanGesture={(gestureChain) =>
-                gestureChain.activeOffsetX([-10, 10])
-            }
-            renderItem={({ item, index }) => (
-                <ActivityCard
-                    data={item}
-                    onSelect={(v) => setSelection(selection.with(index, v))}
-                />
-            )}
-            snapEnabled={true}
-            style={{
-                width: "100%",
-                height: 180,
-            }}
-            mode="parallax"
-        />
-    );
-
     const slides = (
         <FlatList
             data={data.options}
@@ -225,10 +203,10 @@ function styling({ theme }: StyleProps) {
         },
         header: {
             margin: 0,
-            backgroundColor: theme.colors.elevation.level2,
+            backgroundColor: theme.colors.secondaryContainer,
         },
         headerText: {
-            color: theme.colors.outline,
+            color: theme.colors.onSecondaryContainer,
             fontWeight: 500,
         },
         cardHeader: {},
@@ -237,13 +215,13 @@ function styling({ theme }: StyleProps) {
             color: theme.colors.outline,
         },
         card: {
-            backgroundColor: theme.colors.elevation.level1,
+            backgroundColor: theme.colors.elevation.level3,
             //maxHeight: "100%",
         },
         listHeader: {
             flex: 1,
             margin: 0,
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.primaryContainer,
         },
         listHeaderText: {
             color: theme.colors.outline,

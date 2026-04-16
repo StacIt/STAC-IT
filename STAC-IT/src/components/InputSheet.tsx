@@ -51,7 +51,7 @@ import {
 import { getApp } from "@react-native-firebase/app";
 
 import { InputForm } from "@/components/InputForm";
-import { useStyles } from "@/styling";
+import { useStyles, StyleProps } from "@/styling";
 import {
     CreateRequest,
     CreateResponse,
@@ -361,11 +361,12 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
-            <View style={styles.container}>
+            <View>
                 <BottomSheetModal
                     handleComponent={renderHeader}
                     topInset={insets.top}
                     ref={sheet}
+                    backgroundStyle={styles.container}
                     enableDynamicSizing={true}
                     keyboardBehavior="interactive"
                     keyboardBlurBehavior="restore"
@@ -394,9 +395,11 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
     );
 }
 
-const styling = () => {
+const styling = ({ theme }: StyleProps) => {
     return StyleSheet.create({
-        container: {},
+        container: {
+            backgroundColor: theme.colors.background,
+        },
         contentContainer: {
             paddingHorizontal: 12,
             flexDirection: "column",

@@ -63,7 +63,6 @@ import {
 } from "@/types";
 import { useAuth } from "@/contexts";
 import { StacOptions } from "@/components/StacOptions";
-import { StacView } from "@/components/StacView";
 import { ActivityView, ActivityCard } from "@/components/Activity";
 
 import { presentContactPickerAsync } from "expo-contacts";
@@ -198,7 +197,7 @@ export default function Stac() {
     }
     const cansave = selection.every((v) => v.includes(true));
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             {renderHeader()}
             <FlatList
                 data={data.itinerary.activities}
@@ -269,13 +268,14 @@ const styling = ({ theme, insets }: StyleProps) => {
         },
         listHeader: {
             margin: 0,
+            backgroundColor: theme.colors.primaryContainer,
         },
         listHeaderText: {
-            color: theme.colors.onSurfaceVariant,
+            color: theme.colors.onPrimaryContainer,
             fontWeight: 500,
         },
         headerSub: {
-            color: theme.colors.outline,
+            color: theme.colors.onPrimaryContainer,
         },
         fab: {
             position: "absolute",
