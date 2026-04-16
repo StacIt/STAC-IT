@@ -6,6 +6,7 @@ import {
     useImperativeHandle,
     useState,
     Fragment,
+    ComponentProps,
 } from "react";
 import { StyleSheet, View } from "react-native";
 import {
@@ -13,9 +14,10 @@ import {
     Divider,
     SegmentedButtons,
     Text,
-    TextInput,
+    TextInput as PaperTextInput,
 } from "react-native-paper";
 import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
+import { BottomSheetTextInput as SheetTextInput } from "@gorhom/bottom-sheet";
 
 import validate from "validator";
 
@@ -100,11 +102,11 @@ function formHandler(state: CreateRequest, action: FormAction) {
     }
 }
 
-// function KBTextInput({ ...props }: ComponentProps<typeof PaperTextInput>) {
-// return (
-// <PaperTextInput {...props} render={(p) => <SheetTextInput {...p} />} />
-// );
-// }
+function TextInput({ ...props }: ComponentProps<typeof PaperTextInput>) {
+    return (
+        <PaperTextInput {...props} render={(p) => <SheetTextInput {...p} />} />
+    );
+}
 
 function formValidate(data: CreateRequest): boolean {
     let valid = true;

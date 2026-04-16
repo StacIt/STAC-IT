@@ -33,14 +33,23 @@ function RootNavigator() {
     const isauth = useIsSignedIn();
 
     return (
-        <Stack screenOptions={{ title: "stacIT" }}>
+        <Stack>
             <Stack.Protected guard={!!isauth}>
-                <Stack.Screen name="(app)/index" />
+                <Stack.Screen name="(app)/index" options={{ title: "Stacs" }} />
+                <Stack.Screen
+                    name="(app)/stacs/[stacid]"
+                    options={({ route }) => {
+                        return route.params as { title: string };
+                    }}
+                />
             </Stack.Protected>
             <Stack.Protected guard={!isauth}>
-                <Stack.Screen name="login" />
-                <Stack.Screen name="signup" />
-                <Stack.Screen name="forgot" />
+                <Stack.Screen name="login" options={{ title: "Login" }} />
+                <Stack.Screen name="signup" options={{ title: "Sign up" }} />
+                <Stack.Screen
+                    name="forgot"
+                    options={{ title: "Forgot password" }}
+                />
             </Stack.Protected>
         </Stack>
     );

@@ -245,82 +245,6 @@ function stateReducer(state: State, action: StacAction): State {
     return state.handle(action) as State;
 }
 
-export interface StacSheetProps {
-    ref?: RefObject<StacSheet | null>;
-    data: NewStac | null;
-}
-
-export interface StacSheetMethods {
-    open(): void;
-    close(): void;
-}
-
-export type StacSheet = StacSheetMethods;
-
-// eslint-disable-next-line
-export function StacSheet({ ref, data }: StacSheetProps) {
-    const { styles, insets } = useStyles(styling);
-
-    const sheet = useRef<BottomSheetModal>(null);
-
-    const [state, dispatch] = useReducer(
-        stateReducer,
-        null,
-        () => new ClosedState(null),
-    );
-
-    useImperativeHandle(
-        ref,
-        () => ({
-            open: () => dispatch({ type: "show" }),
-            close: () => dispatch({ type: "close" }),
-        }),
-        [],
-    );
-
-    function renderHeader(p: BottomSheetHandleProps) {
-        return (
-            <Header
-                onSave={() => {}}
-                onEdit={() => {}}
-                onDismiss={() => dispatch({ type: "close" })}
-                saveDisabled={true}
-                {...p}
-            />
-        );
-    }
-
-    useEffect(() => {
-        if (state.visible) {
-            sheet.current?.present();
-        } else {
-            sheet.current?.dismiss();
-        }
-    }, [state.visible]);
-
-    const loadingWheel = (
-        <ActivityIndicator size={128} animating={state.isLoading()} />
-    );
-
-    return (
-        <>
-            <View style={styles.container}>
-                <BottomSheetModal
-                    handleComponent={renderHeader}
-                    topInset={insets.top}
-                    ref={sheet}
-                    enableDynamicSizing={true}
-                    snapPoints={["10%", "100%"]}
-                    index={1}
-                    onDismiss={() => dispatch({ type: "close" })}
-                    enablePanDownToClose={true}
-                >
-                    {data ? <StacView data={data} /> : null}
-                </BottomSheetModal>
-            </View>
-        </>
-    );
-}
 
 export interface StacViewProps {
     data: NewStac;
@@ -328,8 +252,6 @@ export interface StacViewProps {
 
 export function StacView({ data }: StacViewProps) {
     const { styles } = useStyles(styling);
-
-    const bscroll = useBottomSheetScrollableCreator();
 
     if (!data.itinerary) {
         throw new Error("empty itinerary");
@@ -363,7 +285,6 @@ export function StacView({ data }: StacViewProps) {
                 renderSectionHeader={({ section: { label, timing, data } }) => {
                     return renderHeader(label, timing, data);
                 }}
-                renderScrollComponent={bscroll}
             />
         </>
     );

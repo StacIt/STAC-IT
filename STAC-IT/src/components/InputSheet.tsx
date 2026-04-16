@@ -43,6 +43,13 @@ import {
     ActivityIndicator,
 } from "react-native-paper";
 
+import {
+    connectFunctionsEmulator,
+    httpsCallable,
+    getFunctions,
+} from "@react-native-firebase/functions";
+import { getApp } from "@react-native-firebase/app";
+
 import { InputForm } from "@/components/InputForm";
 import { useStyles } from "@/styling";
 import {
@@ -251,6 +258,7 @@ function inputReducer(state: State, action: InputAction): State {
 
 export interface InputSheetProps {
     ref?: RefObject<InputSheet | null>;
+    onStateChange?: (v: boolean) => void;
 }
 
 export interface InputSheetMethods {
@@ -261,13 +269,15 @@ export interface InputSheetMethods {
 export type InputSheet = InputSheetMethods;
 
 // eslint-disable-next-line
-export function InputSheet({ ref }: InputSheetProps) {
+export function InputSheet({ ref, onStateChange }: InputSheetProps) {
     const { styles, insets } = useStyles(styling);
 
     const sheet = useRef<BottomSheetModal>(null);
     const form = useRef<InputForm>(null);
 
     const { user } = useAuth();
+
+    const functions = getFunctions();
 
     const [state, dispatch] = useReducer(
         inputReducer,
@@ -283,14 +293,14 @@ export function InputSheet({ ref }: InputSheetProps) {
         }),
         [],
     );
-
     useEffect(() => {
+        onStateChange?.(state.visible);
         if (state.visible) {
             sheet.current?.present();
         } else {
             sheet.current?.dismiss();
         }
-    }, [state.visible]);
+    }, [state.visible, onStateChange]);
 
     function handleError(e: Error) {
         console.error(e);
@@ -299,16 +309,19 @@ export function InputSheet({ ref }: InputSheetProps) {
     async function handleSubmit() {
         dispatch({ type: "submit" });
 
+        const create_stac = httpsCallable(functions, "create_stac");
         const token = await user.getIdToken();
 
         await form
             .current!.submit()
-            .then((data) => callBackend(data, token))
-            .then((resp) => {
-                dispatch({ type: "ack", value: resp.doc_id });
-                console.log(`received ack: ${resp.doc_id}`);
+            .then((data) => {
+                console.log(JSON.stringify(data));
+                return create_stac(JSON.stringify(data));
             })
-            .catch(handleError);
+            .then((resp) => {
+                dispatch({ type: "ack", value: "merp" });
+                console.log(`received ack: ${resp.data}`);
+            });
     }
 
     const handlePressClose = () => {
@@ -354,6 +367,8 @@ export function InputSheet({ ref }: InputSheetProps) {
                     topInset={insets.top}
                     ref={sheet}
                     enableDynamicSizing={true}
+                    keyboardBehavior="interactive"
+                    keyboardBlurBehavior="restore"
                     snapPoints={["10%", "100%"]}
                     index={1}
                     onDismiss={() => dispatch({ type: "close" })}
@@ -387,6 +402,7 @@ const styling = () => {
             flexDirection: "column",
             paddingBottom: 16,
             gap: 4,
+            flex: 1,
         },
         footer: {
             alignSelf: "flex-end",

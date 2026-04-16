@@ -26,6 +26,7 @@ import {
 import {
     Card,
     Text,
+    Snackbar,
     Avatar,
     Surface,
     Divider,
@@ -36,7 +37,7 @@ import { useAuth } from "@/contexts";
 import { NewStac, newStacConverter } from "../types";
 
 export interface StacLiveListProps {
-    onPress: (arg: NewStac) => void;
+    onPress: (id: string, title: string) => void;
 }
 
 export function StacLiveList({ onPress }: StacLiveListProps) {
@@ -65,11 +66,16 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
                 .sort(([i, a], [j, b]) => {
                     return a.period.begin.getTime() - b.period.end.getTime();
                 });
-            const idx = ndata.findIndex(
-                ([id, s]) => s.period.begin.getTime() > Date.now(),
+            setUserStacs(
+                ndata.filter(
+                    ([id, stac]) => stac.period.end.getTime() >= Date.now(),
+                ),
             );
-            setUserStacs(ndata.slice(0, idx));
-            setPastUserStacs(ndata.slice(idx));
+            setPastUserStacs(
+                ndata.filter(
+                    ([id, stac]) => stac.period.end.getTime() < Date.now(),
+                ),
+            );
         });
         return unsub;
     }, [user]);
@@ -119,7 +125,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         { title: "Pending", data: pendingStacs },
         { title: "Current", data: userStacs },
         { title: "Past", data: pastUserStacs },
-        { title: "Shared", data: sharedStacs },
+        { title: "Shared with me", data: sharedStacs },
     ];
 
     function renderHeader(title: string, data: [string, NewStac][]) {
@@ -141,8 +147,17 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
     return (
         <SectionList
             sections={data}
-            renderItem={({ item }) => {
-                return <StacSummaryCard stac={item[1]} onPress={onPress} />;
+            renderItem={({ item: [id, data] }) => {
+                return (
+                    <StacSummaryCard
+                        stac={data}
+                        onPress={() =>
+                            data.status === "pending"
+                                ? null
+                                : onPress(id, data.title)
+                        }
+                    />
+                );
             }}
             renderSectionHeader={({ section: { title, data } }) =>
                 renderHeader(title, data)
@@ -154,7 +169,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
 
 interface SummaryCardProps {
     stac: NewStac;
-    onPress: (s: NewStac) => void;
+    onPress: () => void;
 }
 
 export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
@@ -218,7 +233,7 @@ export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
 
     return (
         <View style={styles.container}>
-            <Card style={styles.card} onPress={() => onPress(stac)}>
+            <Card style={styles.card} onPress={onPress}>
                 <Card.Title
                     titleVariant="titleLarge"
                     title={stac.title}

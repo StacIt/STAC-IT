@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Share, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import {
+    Portal,
     Appbar,
     Button,
     Card,
@@ -20,11 +21,11 @@ import {
     IconButton,
     Text,
 } from "react-native-paper";
+import { useRouter } from "expo-router";
 
 import { InputSheet } from "@/components/InputSheet";
 import { NewStac, NewStacDb, newStacConverter } from "@/types";
 import { StacLiveList } from "@/components/StacList";
-import { StacSheet } from "@/components/StacView";
 
 import { useAuth } from "@/contexts";
 import { useStyles, StyleProps } from "@/styling";
@@ -32,29 +33,37 @@ import { useStyles, StyleProps } from "@/styling";
 export default function Home() {
     const { styles } = useStyles(styling);
     const inputRef = useRef<InputSheet>(null);
-    const viewRef = useRef<StacSheet>(null);
 
     const auth = useAuth();
     const db = getFirestore();
+    const router = useRouter();
 
-    const [selection, setSelection] = useState<NewStac | null>(null);
-
-    useEffect(() => {
-        viewRef.current!.open();
-    }, [selection]);
+    const [fab, setFab] = useState(false);
 
     return (
         <View style={styles.container}>
             <View style={styles.listContainer}>
-                <StacLiveList onPress={(e) => setSelection(e)} />
+                <StacLiveList
+                    onPress={(stacid, title) =>
+                        router.navigate({
+                            pathname: "/stacs/[stacid]",
+                            params: { stacid, title },
+                        })
+                    }
+                />
             </View>
-            <StacSheet ref={viewRef} data={selection} />
-            <InputSheet ref={inputRef} />
-            <FAB
-                icon="pencil-outline"
-                style={styles.fab}
-                onPress={() => inputRef.current?.open()}
-            />
+            <InputSheet ref={inputRef} onStateChange={(v) => setFab(!v)} />
+            <Portal>
+                <FAB
+                    icon="pencil-outline"
+                    style={styles.fab}
+                    visible={fab}
+                    onPress={() => {
+                        setFab(false);
+                        inputRef.current?.open();
+                    }}
+                />
+            </Portal>
         </View>
     );
 }
