@@ -33,7 +33,14 @@ import {
     orderBy,
     onSnapshot,
 } from "@react-native-firebase/firestore";
-import { StyleSheet, View, ScrollView, SectionList } from "react-native";
+import {
+    StyleSheet,
+    View,
+    ScrollView,
+    SectionList,
+    useWindowDimensions,
+    FlatList,
+} from "react-native";
 import {
     Button,
     IconButton,
@@ -51,7 +58,6 @@ import { useStyles, StyleProps } from "@/styling";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSharedValue } from "react-native-reanimated";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
-import { useWindowDimensions } from "react-native";
 
 import {
     CreateRequest,
@@ -106,8 +112,34 @@ export function ActivityView({
         />
     );
 
+    const slides = (
+        <FlatList
+            data={data.options}
+            horizontal={true}
+            renderItem={({ item, index }) => {
+                return (
+                    <View style={{ width, justifyContent: "center" }}>
+                        <ActivityCard
+                            data={item}
+                            onSelect={
+                                data.options.length !== 1
+                                    ? (v) =>
+                                          setSelection(selection.with(index, v))
+                                    : undefined
+                            }
+                            style={{ margin: 8 }}
+                        />
+                    </View>
+                );
+            }}
+            decelerationRate="fast"
+            disableIntervalMomentum={true}
+            pagingEnabled={true}
+        />
+    );
+
     return (
-        <View style={{ marginBottom: 8 }}>
+        <View>
             <Surface style={styles.header}>
                 <Card.Title
                     titleStyle={styles.headerText}
@@ -118,14 +150,7 @@ export function ActivityView({
                     subtitleVariant="bodyMedium"
                 />
             </Surface>
-            {data.options.length === 1 ? (
-                <ActivityCard
-                    data={data.options[0]}
-                    style={{ marginVertical: 8 }}
-                />
-            ) : (
-                carsel
-            )}
+            {slides}
         </View>
     );
 }
