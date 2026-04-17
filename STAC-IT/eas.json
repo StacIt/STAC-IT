@@ -27,6 +27,9 @@
       "env": {
         "EXPO_BUNDLE_IDENTIFIER": "com.stac-it.app"
       },
+      "android": {
+        "buildType": "apk"
+      },
       "channel": "preview"
     },
     "production": {
