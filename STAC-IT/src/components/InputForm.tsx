@@ -1,27 +1,26 @@
+import { BottomSheetTextInput as SheetTextInput } from "@gorhom/bottom-sheet";
 import * as Location from "expo-location";
 import * as React from "react";
 import {
-    useReducer,
+    ComponentProps,
     useEffect,
     useImperativeHandle,
+    useReducer,
     useState,
-    Fragment,
-    ComponentProps,
 } from "react";
 import { StyleSheet, View } from "react-native";
 import {
     Button,
     Divider,
+    TextInput as PaperTextInput,
     SegmentedButtons,
     Text,
-    TextInput as PaperTextInput,
 } from "react-native-paper";
 import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
-import { BottomSheetTextInput as SheetTextInput } from "@gorhom/bottom-sheet";
 
 import validate from "validator";
 
-import { Period, CreateRequest } from "@/types";
+import { CreateRequest, Period } from "@/types";
 
 import { StyleProps, useStyles } from "@/styling";
 

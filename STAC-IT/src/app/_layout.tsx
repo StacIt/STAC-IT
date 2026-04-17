@@ -1,7 +1,7 @@
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider as PaperProvider, useTheme } from "react-native-paper";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 import { Stack } from "expo-router";
 
@@ -43,6 +43,8 @@ function RootNavigator() {
                     color: theme.colors.onBackground,
                     fontWeight: 500,
                 },
+                contentStyle: { backgroundColor: theme.colors.background },
+                animation: "default",
             }}
         >
             <Stack.Protected guard={!!isauth}>

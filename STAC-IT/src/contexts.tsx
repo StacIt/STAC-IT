@@ -1,10 +1,12 @@
-import React, { createContext, useEffect, useState, useContext } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
+import { StacRecord, StacRecordDb } from "@/types";
 import {
+    FirebaseAuthTypes,
     getAuth,
     onAuthStateChanged,
-    FirebaseAuthTypes,
 } from "@react-native-firebase/auth";
+import { DocumentReference } from "@react-native-firebase/firestore";
 
 export type AuthState =
     | { status: "loading"; user: null }
@@ -65,6 +67,19 @@ export function useAuth() {
     const ctx = useAuthState();
     if (ctx.status !== "signedIn") {
         throw new Error("useAuth called from unauthenticated context");
+    }
+    return ctx;
+}
+
+export const StacContext = createContext<DocumentReference<
+    StacRecord,
+    StacRecordDb
+> | null>(null);
+
+export function useStac() {
+    const ctx = useContext(StacContext);
+    if (!ctx) {
+        throw new Error("stac context called without context");
     }
     return ctx;
 }

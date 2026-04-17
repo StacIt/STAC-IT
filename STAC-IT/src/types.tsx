@@ -1,15 +1,10 @@
 import {
-    Timestamp,
-    FirestoreDataConverter,
     DocumentData,
+    FirestoreDataConverter,
     QueryDocumentSnapshot,
     SnapshotOptions,
+    Timestamp,
 } from "@react-native-firebase/firestore";
-
-export interface StrPeriod {
-    begin: string;
-    end: string;
-}
 
 export interface Period {
     begin: Date;
@@ -55,16 +50,6 @@ export interface CreateResponse {
     doc_id: string;
 }
 
-export interface StacRequest {
-    city: string;
-    state: string;
-    activities: string[];
-    budget: string;
-    period: Period;
-    numberOfPeople: string;
-    keepOptions: string;
-}
-
 export interface Place {
     name: string;
     display_name: string;
@@ -74,6 +59,7 @@ export interface Place {
 export interface Activity {
     name: string;
     description: string;
+    tag?: string;
     location: Place;
 }
 
@@ -83,32 +69,13 @@ export interface ActivityOptionsDb {
     timing: PeriodDb;
 }
 
-export interface NewActivityOptions {
+export interface ActivityOptions {
     label: string;
     options: Activity[];
     timing: Period;
 }
 
-export interface ActivityOptions {
-    label: string;
-    options: Activity[];
-    timing: StrPeriod;
-}
-
-export function activityOptionsConv(
-    value: ActivityOptions,
-): NewActivityOptions {
-    return {
-        label: value.label,
-        options: value.options,
-        timing: {
-            begin: new Date(value.timing.begin),
-            end: new Date(value.timing.end),
-        },
-    };
-}
-
-function activityOptionsToDb(value: NewActivityOptions): ActivityOptionsDb {
+function activityOptionsToDb(value: ActivityOptions): ActivityOptionsDb {
     return {
         label: value.label,
         options: value.options,
@@ -116,7 +83,7 @@ function activityOptionsToDb(value: NewActivityOptions): ActivityOptionsDb {
     };
 }
 
-function activityOptionsFromDb(value: ActivityOptionsDb): NewActivityOptions {
+function activityOptionsFromDb(value: ActivityOptionsDb): ActivityOptions {
     return {
         label: value.label,
         options: value.options,
@@ -132,13 +99,7 @@ export interface Itinerary {
     activities: ActivityOptions[];
 }
 
-export type NewItinerary2 = NewActivityOptions[];
-
-export interface NewItinerary {
-    activities: NewActivityOptions[];
-}
-
-function itineraryToDb(value: NewItinerary | null): ItineraryDb | null {
+function itineraryToDb(value: Itinerary | null): ItineraryDb | null {
     if (value) {
         return { activities: value.activities.map(activityOptionsToDb) };
     } else {
@@ -146,7 +107,7 @@ function itineraryToDb(value: NewItinerary | null): ItineraryDb | null {
     }
 }
 
-function itineraryFromDb(value: ItineraryDb | null): NewItinerary | null {
+function itineraryFromDb(value: ItineraryDb | null): Itinerary | null {
     if (value) {
         return { activities: value.activities.map(activityOptionsFromDb) };
     } else {
@@ -154,13 +115,7 @@ function itineraryFromDb(value: ItineraryDb | null): NewItinerary | null {
     }
 }
 
-export interface StacResponse {
-    request_id: string;
-    timestamp: string;
-    itinerary: Itinerary;
-}
-
-export interface NewStac {
+export interface StacRecord {
     owner: string;
     shared_with: string[];
     title: string;
@@ -170,10 +125,10 @@ export interface NewStac {
     n_people: string;
     created_at: Timestamp;
     status: "pending" | "ready";
-    itinerary: NewItinerary | null;
+    itinerary: Itinerary | null;
 }
 
-export interface NewStacDb {
+export interface StacRecordDb {
     owner: string;
     shared_with: string[];
     title: string;
@@ -186,7 +141,7 @@ export interface NewStacDb {
     itinerary: ItineraryDb | null;
 }
 
-export function newStacToDb(value: NewStac): NewStacDb {
+export function newStacToDb(value: StacRecord): StacRecordDb {
     return {
         owner: value.owner,
         shared_with: value.shared_with,
@@ -201,7 +156,7 @@ export function newStacToDb(value: NewStac): NewStacDb {
     };
 }
 
-export function newStacFromDb(value: NewStacDb): NewStac {
+export function newStacFromDb(value: StacRecordDb): StacRecord {
     return {
         owner: value.owner,
         shared_with: value.shared_with,
@@ -216,44 +171,19 @@ export function newStacFromDb(value: NewStacDb): NewStac {
     };
 }
 
-export const newStacConverter: FirestoreDataConverter<NewStac, NewStacDb> = {
-    toFirestore(modelObject: NewStac): NewStacDb {
+export const newStacConverter: FirestoreDataConverter<
+    StacRecord,
+    StacRecordDb
+> = {
+    toFirestore(modelObject: StacRecord): StacRecordDb {
         return newStacToDb(modelObject);
     },
 
     fromFirestore(
         snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>,
         options?: SnapshotOptions,
-    ): NewStac {
-        const data = snapshot.data(options) as NewStacDb;
+    ): StacRecord {
+        const data = snapshot.data(options) as StacRecordDb;
         return newStacFromDb(data);
     },
 };
-
-export interface Stac {
-    id: string;
-    userId: string;
-    stacName: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    location: string;
-    preferences: string;
-    budget: string;
-    numberOfPeople: string;
-    modelResponse?: string;
-    selectedOptions?: { [key: string]: string[] };
-    detailedSelectedOptions?: {
-        [key: string]: {
-            name: string;
-            description: string;
-            location: string;
-        }[];
-    };
-    preferenceTimings?: {
-        [key: string]: {
-            begin: string;
-            end: string;
-        };
-    };
-}

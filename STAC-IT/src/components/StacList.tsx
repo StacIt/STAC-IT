@@ -1,40 +1,30 @@
 import * as React from "react";
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
+import { useAuth } from "@/contexts";
+import { StyleProps, useStyles } from "@/styling";
 import {
     collection,
-    deleteDoc,
-    doc,
-    getDocs,
+    getFirestore,
+    onSnapshot,
     query,
     where,
-    getFirestore,
-    orderBy,
-    onSnapshot,
 } from "@react-native-firebase/firestore";
-import { getAuth } from "@react-native-firebase/auth";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    Share,
-    StyleSheet,
     SectionList,
+    StyleSheet,
     View,
     useWindowDimensions,
 } from "react-native";
 import {
-    Card,
-    Text,
-    Snackbar,
-    Avatar,
-    Surface,
-    Divider,
     ActivityIndicator,
+    Avatar,
+    Card,
+    Divider,
+    Surface,
+    Text,
 } from "react-native-paper";
-import { useStyles, StyleProps } from "@/styling";
-import { useAuth } from "@/contexts";
-import { NewStac, newStacConverter } from "../types";
+import { StacRecord, newStacConverter } from "../types";
 
 export interface StacLiveListProps {
     onPress: (id: string, title: string) => void;
@@ -45,10 +35,14 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
 
     const { styles } = useStyles(styling);
 
-    const [userStacs, setUserStacs] = useState<[string, NewStac][]>([]);
-    const [pastUserStacs, setPastUserStacs] = useState<[string, NewStac][]>([]);
-    const [sharedStacs, setSharedStacs] = useState<[string, NewStac][]>([]);
-    const [pendingStacs, setPendingStacs] = useState<[string, NewStac][]>([]);
+    const [userStacs, setUserStacs] = useState<[string, StacRecord][]>([]);
+    const [pastUserStacs, setPastUserStacs] = useState<[string, StacRecord][]>(
+        [],
+    );
+    const [sharedStacs, setSharedStacs] = useState<[string, StacRecord][]>([]);
+    const [pendingStacs, setPendingStacs] = useState<[string, StacRecord][]>(
+        [],
+    );
 
     useEffect(() => {
         const db = collection(getFirestore(), "stacks_v2").withConverter(
@@ -62,7 +56,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
 
         const unsub = onSnapshot(ownq, (snap) => {
             const ndata = snap.docs
-                .map((doc): [string, NewStac] => [doc.id, doc.data()])
+                .map((doc): [string, StacRecord] => [doc.id, doc.data()])
                 .sort(([i, a], [j, b]) => {
                     return a.period.begin.getTime() - b.period.end.getTime();
                 });
@@ -91,7 +85,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         );
 
         const unsub = onSnapshot(ownq, (snap) => {
-            const ndata = snap.docs.map((doc): [string, NewStac] => [
+            const ndata = snap.docs.map((doc): [string, StacRecord] => [
                 doc.id,
                 doc.data(),
             ]);
@@ -112,7 +106,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
 
         const unsub = onSnapshot(shareq, (snap) => {
             const ndata = snap.docs
-                .map((doc): [string, NewStac] => [doc.id, doc.data()])
+                .map((doc): [string, StacRecord] => [doc.id, doc.data()])
                 .sort(([i, a], [j, b]) => {
                     return a.period.begin.getTime() - b.period.end.getTime();
                 });
@@ -128,7 +122,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         { title: "Shared with me", data: sharedStacs },
     ];
 
-    function renderHeader(title: string, data: [string, NewStac][]) {
+    function renderHeader(title: string, data: [string, StacRecord][]) {
         if (data.length > 0) {
             return (
                 <Surface style={styles.header}>
@@ -168,7 +162,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
 }
 
 interface SummaryCardProps {
-    stac: NewStac;
+    stac: StacRecord;
     onPress: () => void;
 }
 

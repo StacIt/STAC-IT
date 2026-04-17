@@ -1,69 +1,37 @@
-import * as React from "react";
+import { ActivityView } from "@/components/Activity";
+import { StacContext } from "@/contexts";
+import { StyleProps, useStyles } from "@/styling";
 import {
-    RefObject,
-    useReducer,
-    useImperativeHandle,
-    useRef,
-    useState,
-    useEffect,
-    useEffectEvent,
-} from "react";
+    ActivityOptions,
+    Itinerary,
+    StacRecord,
+    newStacConverter,
+} from "@/types";
 import {
+    arrayUnion,
     collection,
     deleteDoc,
     doc,
-    addDoc,
     getDocs,
+    getFirestore,
     limit,
+    onSnapshot,
     query,
-    arrayUnion,
-    getDoc,
-    DocumentReference,
     updateDoc,
     where,
-    Timestamp,
-    getFirestore,
-    orderBy,
-    onSnapshot,
 } from "@react-native-firebase/firestore";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { FlatList, StyleSheet, View, useWindowDimensions } from "react-native";
 import {
-    StyleSheet,
-    View,
-    ScrollView,
-    FlatList,
-    useWindowDimensions,
-} from "react-native";
-import {
-    Button,
-    FAB,
-    Snackbar,
-    IconButton,
-    SegmentedButtons,
-    Card,
-    Portal,
-    Text,
-    Dialog,
-    Surface,
-    Divider,
     ActivityIndicator,
+    Card,
+    FAB,
+    Portal,
+    Snackbar,
+    Surface,
 } from "react-native-paper";
-import { useStyles, StyleProps } from "@/styling";
-import {
-    CreateRequest,
-    CreateResponse,
-    NewStac,
-    NewActivityOptions,
-    Activity,
-    Period,
-    NewItinerary,
-    activityOptionsConv,
-    fmtPeriod,
-    newStacConverter,
-} from "@/types";
-import { useAuth } from "@/contexts";
-import { StacOptions } from "@/components/StacOptions";
-import { ActivityView, ActivityCard } from "@/components/Activity";
 
 import { presentContactPickerAsync } from "expo-contacts";
 
@@ -74,7 +42,7 @@ export default function Stac() {
     const router = useRouter();
     const { stacid }: { stacid: string } = useLocalSearchParams();
 
-    const [data, setData] = useState<NewStac | null>(null);
+    const [data, setData] = useState<StacRecord | null>(null);
 
     const [selection, setSelection] = useState<boolean[][]>([[]]);
 
@@ -182,13 +150,13 @@ export default function Stac() {
         }
         const acts = data.itinerary.activities;
         console.log(selection);
-        const keep: NewActivityOptions[] = acts.map((ao, i) => {
+        const keep: ActivityOptions[] = acts.map((ao, i) => {
             return {
                 ...ao,
                 options: ao.options.filter((opt, j) => selection[i][j]),
             };
         });
-        const newitin: NewItinerary = { activities: keep };
+        const newitin: Itinerary = { activities: keep };
         const db = collection(getFirestore(), "stacks_v2").withConverter(
             newStacConverter,
         );
@@ -196,65 +164,72 @@ export default function Stac() {
         await updateDoc(docRef, { itinerary: newitin });
     }
     const cansave = selection.every((v) => v.includes(true));
+
+    const actions = [
+        {
+            icon: "delete",
+            label: "Delete",
+            onPress: onDelete,
+            style: {
+                backgroundColor: theme.colors.tertiaryContainer,
+            },
+        },
+        { icon: "share", label: "Share", onPress: onShare },
+        {
+            icon: "refresh",
+            label: "Refresh",
+            onPress: onRefresh,
+        },
+    ];
+
+    if (cansave) {
+        actions.push({
+            icon: "content-save",
+            label: "Save",
+            onPress: onSave,
+        });
+    }
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            {renderHeader()}
-            <FlatList
-                data={data.itinerary.activities}
-                renderItem={({ item, index }) => (
-                    <ActivityView
-                        data={item}
-                        selection={selection[index]}
-                        setSelection={(v) =>
-                            setSelection(selection.with(index, v))
-                        }
-                        onRefresh={() => {}}
-                    />
-                )}
-                ListFooterComponent={<View style={{ height: 200 }} />}
-            />
-            <Portal>
-                <Snackbar visible={!!snack} onDismiss={() => setSnack("")}>
-                    {snack}
-                </Snackbar>
-                <FAB.Group
-                    style={styles.fab}
-                    icon={fab ? "close" : "plus"}
-                    open={fab}
-                    visible={true}
-                    onStateChange={({ open }) => setFab(open)}
-                    actions={[
-                        {
-                            icon: "delete",
-                            label: "Delete",
-                            onPress: onDelete,
-                            style: {
-                                backgroundColor: theme.colors.tertiaryContainer,
-                            },
-                        },
-                        { icon: "share", label: "Share", onPress: onShare },
-                        {
-                            icon: "refresh",
-                            label: "Refresh",
-                            onPress: onRefresh,
-                        },
-                        {
-                            icon: "content-save",
-                            label: "Save",
-                            onPress: onSave,
-                            color: !cansave
-                                ? theme.colors.onSurfaceDisabled
-                                : undefined,
-                            style: {
-                                backgroundColor: cansave
-                                    ? undefined
-                                    : theme.colors.surfaceDisabled,
-                            },
-                        },
-                    ]}
+        <StacContext
+            value={doc(
+                collection(getFirestore(), "stacks_v2").withConverter(
+                    newStacConverter,
+                ),
+                stacid,
+            )}
+        >
+            <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+                {renderHeader()}
+                <FlatList
+                    data={data.itinerary.activities}
+                    renderItem={({ item, index }) => (
+                        <ActivityView
+                            data={item}
+                            index={index}
+                            selection={selection[index]}
+                            setSelection={(v) =>
+                                setSelection(selection.with(index, v))
+                            }
+                            onRefresh={() => {}}
+                        />
+                    )}
+                    ListFooterComponent={<View style={{ height: 200 }} />}
                 />
-            </Portal>
-        </View>
+                <Portal>
+                    <Snackbar visible={!!snack} onDismiss={() => setSnack("")}>
+                        {snack}
+                    </Snackbar>
+                    <FAB.Group
+                        style={styles.fab}
+                        icon={fab ? "close" : "plus"}
+                        open={fab}
+                        visible={true}
+                        onStateChange={({ open }) => setFab(open)}
+                        actions={actions}
+                    />
+                </Portal>
+            </View>
+        </StacContext>
     );
 }
 

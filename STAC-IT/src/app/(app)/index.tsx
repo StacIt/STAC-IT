@@ -1,34 +1,15 @@
-import {
-    collection,
-    deleteDoc,
-    doc,
-    getDocs,
-    query,
-    where,
-    getFirestore,
-} from "@react-native-firebase/firestore";
-import * as React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, Share, StyleSheet, View } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import {
-    Portal,
-    Appbar,
-    Button,
-    Card,
-    Divider,
-    FAB,
-    IconButton,
-    Text,
-} from "react-native-paper";
+import { getFirestore } from "@react-native-firebase/firestore";
 import { useRouter } from "expo-router";
+import * as React from "react";
+import { useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { FAB, Portal } from "react-native-paper";
 
 import { InputSheet } from "@/components/InputSheet";
-import { NewStac, NewStacDb, newStacConverter } from "@/types";
 import { StacLiveList } from "@/components/StacList";
 
 import { useAuth } from "@/contexts";
-import { useStyles, StyleProps } from "@/styling";
+import { StyleProps, useStyles } from "@/styling";
 
 export default function Home() {
     const { styles } = useStyles(styling);

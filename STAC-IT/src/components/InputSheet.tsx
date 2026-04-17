@@ -8,61 +8,28 @@ import axios from "axios";
 import * as React from "react";
 import {
     RefObject,
-    useReducer,
-    useImperativeHandle,
-    useRef,
-    useState,
     useEffect,
-    useEffectEvent,
+    useImperativeHandle,
+    useReducer,
+    useRef,
 } from "react";
 
+import { StyleSheet, View } from "react-native";
 import {
-    collection,
-    deleteDoc,
-    doc,
-    addDoc,
-    getDocs,
-    query,
-    getDoc,
-    DocumentReference,
-    updateDoc,
-    where,
-    Timestamp,
-    getFirestore,
-    orderBy,
-    onSnapshot,
-} from "@react-native-firebase/firestore";
-import { getAuth } from "@react-native-firebase/auth";
-import { Alert, StyleSheet, View } from "react-native";
-import {
+    ActivityIndicator,
     Button,
+    Dialog,
     IconButton,
     Portal,
     Text,
-    Dialog,
-    ActivityIndicator,
 } from "react-native-paper";
 
-import {
-    connectFunctionsEmulator,
-    httpsCallable,
-    getFunctions,
-} from "@react-native-firebase/functions";
-import { getApp } from "@react-native-firebase/app";
+import { getFunctions, httpsCallable } from "@react-native-firebase/functions";
 
 import { InputForm } from "@/components/InputForm";
-import { useStyles, StyleProps } from "@/styling";
-import {
-    CreateRequest,
-    CreateResponse,
-    NewStac,
-    NewActivityOptions,
-    NewItinerary,
-    activityOptionsConv,
-    newStacConverter,
-} from "@/types";
 import { useAuth } from "@/contexts";
-import { StacOptions } from "@/components/StacOptions";
+import { StyleProps, useStyles } from "@/styling";
+import { CreateRequest, CreateResponse } from "@/types";
 
 interface HeaderProps extends BottomSheetHandleProps {
     onSubmit: () => void;

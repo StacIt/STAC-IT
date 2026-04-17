@@ -1,6 +1,6 @@
 import React from "react";
-import { useTheme, MD3Theme } from "react-native-paper";
-import { useSafeAreaInsets, EdgeInsets } from "react-native-safe-area-context";
+import { MD3Theme, useTheme } from "react-native-paper";
+import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface StyleProps {
     theme: MD3Theme;
