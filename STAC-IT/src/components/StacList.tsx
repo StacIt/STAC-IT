@@ -51,7 +51,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         const ownq = query(
             db,
             where("owner", "==", user.uid),
-            where("status", "==", "ready"),
+            where("status", "in", ["ready", "refreshing"]),
         );
 
         const unsub = onSnapshot(ownq, (snap) => {
@@ -101,7 +101,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         const shareq = query(
             db,
             where("shared_with", "array-contains", user.uid),
-            where("status", "==", "ready"),
+            where("status", "==", ["ready", "refreshing"]),
         );
 
         const unsub = onSnapshot(shareq, (snap) => {
@@ -221,7 +221,9 @@ export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
     const spinner = (props: { size: number }) => (
         <ActivityIndicator
             size={props.size * 1.5}
-            animating={stac.status === "pending"}
+            animating={
+                stac.status === "pending" || stac.status === "refreshing"
+            }
         />
     );
 

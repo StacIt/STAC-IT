@@ -15,6 +15,7 @@ import {
     doc,
     getDocs,
     getFirestore,
+    runTransaction,
     limit,
     onSnapshot,
     getDoc,
@@ -133,11 +134,40 @@ export default function Stac() {
         router.back();
     }
 
+    async function markExcludedAndRefreshing() {
+        try {
+            return runTransaction(getFirestore(), async (tx) => {
+                const thisDoc = await tx.get(stacRef);
+
+                if (!thisDoc.exists()) return;
+
+                const acts = thisDoc.data().itinerary?.activities;
+                if (!acts || acts.length === 0) return;
+
+                for (const act of acts) {
+                    for (const opt of act.options) {
+                        if (opt.tag !== "marked") {
+                            opt.tag = "exclude";
+                        }
+                    }
+                }
+
+                tx.update(stacRef, {
+                    status: "refreshing",
+                    itinerary: { activities: acts },
+                });
+            });
+        } catch (e) {
+            console.error("transaction failed: ", e);
+        }
+    }
+
     async function onRefreshAll() {
         const refresh_all_stac = httpsCallable(
             getFunctions(),
             "refresh_all_stac",
         );
+        await markExcludedAndRefreshing();
         const request: RefreshAllRequest = { doc_id: stacRef.id };
 
         await refresh_all_stac(JSON.stringify(request)).catch(console.error);
@@ -159,6 +189,25 @@ export default function Stac() {
             onPress: onRefreshAll,
         },
     ];
+
+    const loadingFab = (
+        <FAB
+            style={styles.loadingfab}
+            icon="plus"
+            loading={true}
+            visible={isFocused && ctx.data?.status === "refreshing"}
+        />
+    );
+    const groupFab = (
+        <FAB.Group
+            style={styles.fab}
+            icon={fab ? "close" : "plus"}
+            open={fab}
+            visible={isFocused && ctx.data?.status !== "refreshing"}
+            onStateChange={({ open }) => setFab(open)}
+            actions={actions}
+        />
+    );
 
     return (
         <StacContext value={ctx}>
@@ -192,14 +241,8 @@ export default function Stac() {
                 <Snackbar visible={!!snack} onDismiss={() => setSnack("")}>
                     {snack}
                 </Snackbar>
-                <FAB.Group
-                    style={styles.fab}
-                    icon={fab ? "close" : "plus"}
-                    open={fab}
-                    visible={isFocused}
-                    onStateChange={({ open }) => setFab(open)}
-                    actions={actions}
-                />
+                {loadingFab}
+                {groupFab}
             </Portal>
         </StacContext>
     );
@@ -223,6 +266,11 @@ const styling = ({ theme, insets }: StyleProps) => {
         },
         headerSub: {
             color: theme.colors.onPrimaryContainer,
+        },
+        loadingfab: {
+            position: "absolute",
+            right: 8 * 3,
+            bottom: 8 * 3,
         },
         fab: {
             position: "absolute",

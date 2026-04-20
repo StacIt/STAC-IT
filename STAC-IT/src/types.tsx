@@ -132,7 +132,7 @@ export interface StacRecord {
     budget: string;
     n_people: string;
     created_at: Timestamp;
-    status: "pending" | "ready";
+    status: "pending" | "ready" | "refreshing";
     itinerary: Itinerary | null;
 }
 
@@ -145,7 +145,7 @@ export interface StacRecordDb {
     budget: string;
     n_people: string;
     created_at: Timestamp;
-    status: "pending" | "ready";
+    status: "pending" | "ready" | "refreshing";
     itinerary: ItineraryDb | null;
 }
 
