@@ -50,6 +50,9 @@ export interface RefreshRequest {
     doc_id: string;
     index: number;
 }
+export interface RefreshAllRequest {
+    doc_id: string;
+}
 
 export interface CreateResponse {
     doc_id: string;

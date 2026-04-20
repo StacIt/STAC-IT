@@ -3,6 +3,7 @@ import { useStac, getStac, StacContext, StacContextValue } from "@/contexts";
 import { StyleProps, useStyles } from "@/styling";
 import {
     ActivityOptions,
+    RefreshAllRequest,
     Itinerary,
     StacRecord,
     newStacConverter,
@@ -21,6 +22,7 @@ import {
     updateDoc,
     where,
 } from "@react-native-firebase/firestore";
+import { getFunctions, httpsCallable } from "@react-native-firebase/functions";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -48,7 +50,6 @@ import {
 import { presentContactPickerAsync } from "expo-contacts";
 
 import { StacHeader } from "@/components/StacHeader";
-
 
 export default function Stac() {
     const { styles, theme, insets } = useStyles(styling);
@@ -132,7 +133,15 @@ export default function Stac() {
         router.back();
     }
 
-    function onRefresh() {}
+    async function onRefreshAll() {
+        const refresh_all_stac = httpsCallable(
+            getFunctions(),
+            "refresh_all_stac",
+        );
+        const request: RefreshAllRequest = { doc_id: stacRef.id };
+
+        await refresh_all_stac(JSON.stringify(request)).catch(console.error);
+    }
 
     const actions = [
         {
@@ -147,7 +156,7 @@ export default function Stac() {
         {
             icon: "refresh",
             label: "Refresh",
-            onPress: onRefresh,
+            onPress: onRefreshAll,
         },
     ];
 
