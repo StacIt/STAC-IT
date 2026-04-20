@@ -46,6 +46,11 @@ export interface CreateRequest {
     n_people: string;
 }
 
+export interface RefreshRequest {
+    doc_id: string;
+    index: number;
+}
+
 export interface CreateResponse {
     doc_id: string;
 }

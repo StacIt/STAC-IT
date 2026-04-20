@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { FAB, Portal } from "react-native-paper";
+import { useIsFocused } from "@react-navigation/native";
 
 import { InputSheet } from "@/components/InputSheet";
 import { StacLiveList } from "@/components/StacList";
@@ -18,6 +19,7 @@ export default function Home() {
     const auth = useAuth();
     const db = getFirestore();
     const router = useRouter();
+    const isFocused = useIsFocused();
 
     const [fab, setFab] = useState(false);
 
@@ -38,7 +40,7 @@ export default function Home() {
                 <FAB
                     icon="pencil-outline"
                     style={styles.fab}
-                    visible={fab}
+                    visible={isFocused && fab}
                     onPress={() => {
                         setFab(false);
                         inputRef.current?.open();

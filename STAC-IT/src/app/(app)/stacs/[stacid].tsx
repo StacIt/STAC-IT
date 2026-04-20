@@ -1,5 +1,5 @@
 import { ActivityView } from "@/components/Activity";
-import { StacContext } from "@/contexts";
+import { useStac, getStac, StacContext, StacContextValue } from "@/contexts";
 import { StyleProps, useStyles } from "@/styling";
 import {
     ActivityOptions,
@@ -16,94 +16,92 @@ import {
     getFirestore,
     limit,
     onSnapshot,
+    getDoc,
     query,
     updateDoc,
     where,
 } from "@react-native-firebase/firestore";
+import { useHeaderHeight } from "@react-navigation/elements";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as React from "react";
-import { useEffect, useState } from "react";
-import { FlatList, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useEffect, useState, useMemo } from "react";
+import {
+    Animated,
+    StyleSheet,
+    View,
+    useAnimatedValue,
+    useWindowDimensions,
+} from "react-native";
 import {
     ActivityIndicator,
     Card,
     FAB,
+    Avatar,
     Portal,
+    TouchableRipple,
+    List,
     Snackbar,
     Surface,
 } from "react-native-paper";
 
 import { presentContactPickerAsync } from "expo-contacts";
 
+import { StacHeader } from "@/components/StacHeader";
+
+
 export default function Stac() {
-    const { styles, theme } = useStyles(styling);
+    const { styles, theme, insets } = useStyles(styling);
     const { width, height } = useWindowDimensions();
 
     const router = useRouter();
+    const nav = useNavigation();
+
     const { stacid }: { stacid: string } = useLocalSearchParams();
-
-    const [data, setData] = useState<StacRecord | null>(null);
-
     const [selection, setSelection] = useState<boolean[][]>([[]]);
+    const [avatars, setAvatars] = useState<React.ReactElement[]>([]);
+
+    const stacRef = useMemo(() => {
+        return getStac(stacid);
+    }, [stacid]);
+
+    const [ctx, setCtx] = useState<StacContextValue>({
+        id: stacid,
+        ref: stacRef,
+    });
+    useEffect(() => {
+        const unsubscribe = onSnapshot(stacRef, (snap) => {
+            if (!snap.exists()) {
+                setCtx({ id: snap.id, data: undefined, ref: snap.ref });
+                return;
+            }
+            const data = snap.data();
+            nav.setOptions({ title: data.title });
+            const sel = snap.data().itinerary?.activities.map((a) => {
+                return Array<boolean>(a.options.length).fill(false);
+            });
+            if (sel) {
+                setSelection(sel);
+            }
+            setCtx({ id: snap.id, data, ref: snap.ref });
+        });
+
+        return unsubscribe;
+    }, [stacRef, nav, setCtx, setAvatars]);
 
     const [snack, setSnack] = useState("");
 
     const [fab, setFab] = useState(false);
+    const isFocused = useIsFocused();
 
-    useEffect(() => {
-        const db = collection(getFirestore(), "stacks_v2").withConverter(
-            newStacConverter,
-        );
-        const docRef = doc(db, stacid);
+    const scrollY = useAnimatedValue(0);
 
-        const unsub = onSnapshot(docRef, (snap) => {
-            if (snap.exists()) {
-                setData(snap.data());
-                const sel = snap.data().itinerary?.activities.map((a) => {
-                    return Array<boolean>(a.options.length).fill(false);
-                });
-                if (sel) {
-                    setSelection(sel);
-                }
-            }
-        });
-
-        return unsub;
-    }, [stacid]);
-
-    if (!data || data.status === "pending" || !data.itinerary) {
+    if (!ctx || ctx.data?.status === "pending" || !ctx.data?.itinerary) {
         return <ActivityIndicator size={128} />;
-    }
-
-    function renderHeader() {
-        if (!data) {
-            return null;
-        }
-        const options = {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-        } as const;
-        const datestr = data.period.begin.toLocaleDateString("en-US", options);
-        return (
-            <Surface style={styles.listHeader} elevation={4}>
-                <Card.Title
-                    titleStyle={styles.listHeaderText}
-                    titleVariant="headlineMedium"
-                    title={datestr}
-                    subtitle={data.location}
-                    subtitleStyle={styles.headerSub}
-                />
-            </Surface>
-        );
     }
 
     async function onShare() {
         const contact = await presentContactPickerAsync();
-        const stacdb = collection(getFirestore(), "stacks_v2").withConverter(
-            newStacConverter,
-        );
-        const docRef = doc(stacdb, stacid);
         const userdb = collection(getFirestore(), "users");
         if (contact && contact.emails && contact.emails.length > 0) {
             let q;
@@ -121,55 +119,26 @@ export default function Stac() {
             const resp = await getDocs(q);
             for (const u of resp.docs) {
                 const share_to = u.id;
-                await updateDoc(docRef, {
+                await updateDoc(stacRef, {
                     shared_with: arrayUnion(share_to),
                 });
-                setSnack(`shared with ${contact.firstName}`);
+                setSnack(`Shared with ${contact.firstName}`);
             }
         }
     }
 
     async function onDelete() {
-        const db = collection(getFirestore(), "stacks_v2").withConverter(
-            newStacConverter,
-        );
-        const docRef = doc(db, stacid);
-        await deleteDoc(docRef);
+        await deleteDoc(stacRef);
         router.back();
     }
 
     function onRefresh() {}
 
-    async function onSave() {
-        if (
-            !data ||
-            !data.itinerary ||
-            data.itinerary.activities.length === 0
-        ) {
-            return;
-        }
-        const acts = data.itinerary.activities;
-        console.log(selection);
-        const keep: ActivityOptions[] = acts.map((ao, i) => {
-            return {
-                ...ao,
-                options: ao.options.filter((opt, j) => selection[i][j]),
-            };
-        });
-        const newitin: Itinerary = { activities: keep };
-        const db = collection(getFirestore(), "stacks_v2").withConverter(
-            newStacConverter,
-        );
-        const docRef = doc(db, stacid);
-        await updateDoc(docRef, { itinerary: newitin });
-    }
-    const cansave = selection.every((v) => v.includes(true));
-
     const actions = [
         {
             icon: "delete",
             label: "Delete",
-            onPress: onDelete,
+            onPress: () => onDelete(),
             style: {
                 backgroundColor: theme.colors.tertiaryContainer,
             },
@@ -182,53 +151,47 @@ export default function Stac() {
         },
     ];
 
-    if (cansave) {
-        actions.push({
-            icon: "content-save",
-            label: "Save",
-            onPress: onSave,
-        });
-    }
     return (
-        <StacContext
-            value={doc(
-                collection(getFirestore(), "stacks_v2").withConverter(
-                    newStacConverter,
-                ),
-                stacid,
-            )}
-        >
-            <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-                {renderHeader()}
-                <FlatList
-                    data={data.itinerary.activities}
-                    renderItem={({ item, index }) => (
-                        <ActivityView
-                            data={item}
-                            index={index}
-                            selection={selection[index]}
-                            setSelection={(v) =>
-                                setSelection(selection.with(index, v))
-                            }
-                            onRefresh={() => {}}
-                        />
-                    )}
-                    ListFooterComponent={<View style={{ height: 200 }} />}
-                />
-                <Portal>
-                    <Snackbar visible={!!snack} onDismiss={() => setSnack("")}>
-                        {snack}
-                    </Snackbar>
-                    <FAB.Group
-                        style={styles.fab}
-                        icon={fab ? "close" : "plus"}
-                        open={fab}
-                        visible={true}
-                        onStateChange={({ open }) => setFab(open)}
-                        actions={actions}
+        <StacContext value={ctx}>
+            <Animated.FlatList
+                data={ctx.data?.itinerary.activities}
+                stickyHeaderIndices={[0]}
+                stickyHeaderHiddenOnScroll={true}
+                style={{
+                    flex: 1,
+                    backgroundColor: theme.colors.background,
+                }}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: true },
+                )}
+                renderItem={({ item, index }) => (
+                    <ActivityView
+                        data={item}
+                        index={index}
+                        selection={selection[index]}
+                        setSelection={(v) =>
+                            setSelection(selection.with(index, v))
+                        }
+                        onRefresh={() => {}}
                     />
-                </Portal>
-            </View>
+                )}
+                ListHeaderComponent={() => <StacHeader scrollY={scrollY} />}
+                ListFooterComponent={<View style={{ height: 200 }} />}
+            />
+            <Portal>
+                <Snackbar visible={!!snack} onDismiss={() => setSnack("")}>
+                    {snack}
+                </Snackbar>
+                <FAB.Group
+                    style={styles.fab}
+                    icon={fab ? "close" : "plus"}
+                    open={fab}
+                    visible={isFocused}
+                    onStateChange={({ open }) => setFab(open)}
+                    actions={actions}
+                />
+            </Portal>
         </StacContext>
     );
 }
@@ -242,7 +205,7 @@ const styling = ({ theme, insets }: StyleProps) => {
             flex: 1,
         },
         listHeader: {
-            margin: 0,
+            //margin: 0,
             backgroundColor: theme.colors.primaryContainer,
         },
         listHeaderText: {

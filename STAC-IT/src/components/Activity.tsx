@@ -1,80 +1,20 @@
+import { StyleProps, useStyles } from "@/styling";
+import { getFirestore, runTransaction } from "@react-native-firebase/firestore";
 import * as React from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import {
-    RefObject,
-    useReducer,
-    useImperativeHandle,
-    useRef,
-    useState,
-    useEffect,
-    useEffectEvent,
-} from "react";
-import {
-    BottomSheetHandle,
-    BottomSheetHandleProps,
-    BottomSheetModal,
-    BottomSheetView,
-    BottomSheetScrollView,
-    BottomSheetSectionList,
-    useBottomSheetScrollableCreator,
-} from "@gorhom/bottom-sheet";
-import {
-    collection,
-    deleteDoc,
-    doc,
-    addDoc,
-    getDocs,
-    query,
-    getDoc,
-    DocumentReference,
-    updateDoc,
-    where,
-    arrayRemove,
-    runTransaction,
-    Timestamp,
-    getFirestore,
-    orderBy,
-    onSnapshot,
-} from "@react-native-firebase/firestore";
-import {
+    Animated,
+    FlatList,
     StyleSheet,
     View,
-    Animated,
     useAnimatedValue,
-    ScrollView,
-    SectionList,
     useWindowDimensions,
-    FlatList,
 } from "react-native";
-import {
-    Button,
-    IconButton,
-    SegmentedButtons,
-    Card,
-    Portal,
-    Text,
-    Dialog,
-    ToggleButton,
-    Surface,
-    Divider,
-    ActivityIndicator,
-} from "react-native-paper";
-import { useStyles, StyleProps } from "@/styling";
-import { useFocusEffect } from "@react-navigation/native";
-import { useSharedValue } from "react-native-reanimated";
-import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
+import { getFunctions, httpsCallable } from "@react-native-firebase/functions";
+import { Card, IconButton, Surface, Text } from "react-native-paper";
 
-import {
-    CreateRequest,
-    CreateResponse,
-    StacRecord,
-    ActivityOptions,
-    Activity,
-    Period,
-    Itinerary,
-    fmtPeriod,
-    newStacConverter,
-} from "@/types";
-import { useAuth, useStac } from "@/contexts";
+import { useStac } from "@/contexts";
+import { Activity, ActivityOptions, fmtPeriod, RefreshRequest } from "@/types";
 
 export interface ActivityViewProps {
     data: ActivityOptions;
@@ -94,13 +34,9 @@ export function ActivityView({
 
     const { styles, theme } = useStyles(styling);
 
-    const stacRef = useStac();
+    const { data: stac, ref: stacRef } = useStac();
 
     const plural = data.options.length > 1;
-
-    function onSelect(i: number, v: boolean) {
-        setSelection(selection.with(i, v));
-    }
 
     async function doSelect(actidx: number, value: boolean) {
         try {
@@ -131,7 +67,7 @@ export function ActivityView({
                 const acts = thisDoc.data().itinerary?.activities;
                 if (!acts || acts.length === 0) return;
 
-                acts[index].options.splice(actidx, 1);
+                acts[index].options[actidx].tag = "exclude";
 
                 tx.update(stacRef, { itinerary: { activities: acts } });
             });
@@ -140,15 +76,55 @@ export function ActivityView({
         }
     }
 
+    async function markExcluded(optidx: number) {
+        try {
+            return runTransaction(getFirestore(), async (tx) => {
+                const thisDoc = await tx.get(stacRef);
+
+                if (!thisDoc.exists()) return;
+
+                const acts = thisDoc.data().itinerary?.activities;
+                if (!acts || acts.length === 0) return;
+
+                for (const act of acts[optidx].options) {
+                    if (act.tag !== "marked") {
+                        act.tag = "exclude";
+                    }
+                }
+
+                tx.update(stacRef, { itinerary: { activities: acts } });
+            });
+        } catch (e) {
+            console.error("transaction failed: ", e);
+        }
+    }
+
+    async function doRefresh(index: number) {
+        const refresh_stac = httpsCallable(getFunctions(), "refresh_stac");
+        const request: RefreshRequest = { doc_id: stacRef.id, index };
+
+        await markExcluded(index);
+
+        await refresh_stac(JSON.stringify(request)).catch(console.error);
+    }
+
+    const filtered_data = data.options.flatMap((value, index) => {
+        if (value.tag === "exclude") {
+            return [];
+        } else {
+            return { value, index };
+        }
+    });
+
     const slides = (
         <FlatList
-            data={data.options}
+            data={filtered_data}
             horizontal={true}
-            renderItem={({ item, index }) => {
+            renderItem={({ item: { value, index } }) => {
                 return (
                     <View style={{ width, justifyContent: "center" }}>
                         <ActivityCard
-                            data={item}
+                            data={value}
                             canSelect={plural}
                             onSelect={(v) => doSelect(index, v)}
                             canDelete={plural}
@@ -174,6 +150,14 @@ export function ActivityView({
                     subtitle={fmtPeriod(data.timing)}
                     subtitleStyle={{ color: theme.colors.outline }}
                     subtitleVariant="bodyMedium"
+                    right={() => {
+                        return (
+                            <IconButton
+                                icon="refresh"
+                                onPress={() => doRefresh(index)}
+                            />
+                        );
+                    }}
                 />
             </Surface>
             {slides}
@@ -184,7 +168,7 @@ export function ActivityView({
 export interface ActivityCardProps {
     data: Activity;
     onSelect: (v: boolean) => Promise<any>;
-    onDelete: () => void;
+    onDelete: () => Promise<any>;
     canDelete: boolean;
     canSelect: boolean;
     style?: object;
@@ -263,7 +247,7 @@ export function ActivityCard({
                     onPress={async () => {
                         if (delState) {
                             setDelLoading(true);
-                            await onDelete();
+                            await onDelete().then(() => setDelLoading(false));
                         } else {
                             setDelState(!delState);
                         }
@@ -292,6 +276,9 @@ export function ActivityCard({
         return () => clearTimeout(undo);
     }, [delState]);
 
+    if (data.tag === "exclude") {
+        return null;
+    }
     return (
         <Card style={[styles.card, style]}>
             <View style={styles.cardTitleContainer}>
