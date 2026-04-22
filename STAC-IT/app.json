@@ -14,6 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stac-it.app",
+      "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -83,7 +84,19 @@
         }
       ],
       "expo-font",
-      "expo-router"
+      "expo-router",
+      "expo-apple-authentication",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-asset",
+        {
+          "assets": [
+            "./assets/signin/dark",
+            "./assets/signin/neutral/"
+          ]
+        }
+      ],
+      "expo-image"
     ],
     "runtimeVersion": {
       "policy": "appVersion"

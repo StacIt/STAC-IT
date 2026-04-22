@@ -154,7 +154,9 @@ export function ActivityView({
                         return (
                             <IconButton
                                 icon="refresh"
-                                onPress={() => doRefresh(index)}
+                                onPress={() => {
+                                    doRefresh(index);
+                                }}
                             />
                         );
                     }}
@@ -244,10 +246,10 @@ export function ActivityCard({
                         delState ? colors.tertiaryContainer : undefined
                     }
                     animated={true}
-                    onPress={async () => {
+                    onPress={() => {
                         if (delState) {
                             setDelLoading(true);
-                            await onDelete().then(() => setDelLoading(false));
+                            onDelete().then(() => setDelLoading(false));
                         } else {
                             setDelState(!delState);
                         }
@@ -260,9 +262,9 @@ export function ActivityCard({
                     iconColor={markState ? colors.primary : undefined}
                     {...commonprops}
                     animated={false}
-                    onPress={async () => {
+                    onPress={() => {
                         setDelState(false);
-                        await onSelect(!markState);
+                        onSelect(!markState);
                     }}
                 />
             ) : null}

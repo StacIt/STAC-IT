@@ -12,7 +12,12 @@
           "package_name": "com.stacit.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1061792458880-6dcmnuea98o206hc7bi87dqem3o4ud1d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBuAqu1hK_PkeOjtJIC3Zdkiqz-GxIZSJs"
@@ -20,7 +25,20 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1061792458880-6dcmnuea98o206hc7bi87dqem3o4ud1d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1061792458880-e0270vmcb8dc9890m9nk1dre278f6b2p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.stac-it.app",
+                "app_store_id": "6742965123"
+              }
+            }
+          ]
         }
       }
     }

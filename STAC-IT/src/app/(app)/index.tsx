@@ -1,5 +1,5 @@
 import { getFirestore } from "@react-native-firebase/firestore";
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router";
 import * as React from "react";
 import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -11,6 +11,8 @@ import { StacLiveList } from "@/components/StacList";
 
 import { useAuth } from "@/contexts";
 import { StyleProps, useStyles } from "@/styling";
+
+import { Toolbar } from "@/components/Toolbar";
 
 export default function Home() {
     const { styles } = useStyles(styling);
@@ -24,30 +26,22 @@ export default function Home() {
     const [fab, setFab] = useState(false);
 
     return (
-        <View style={styles.container}>
-            <View style={styles.listContainer}>
-                <StacLiveList
-                    onPress={(stacid, title) =>
-                        router.navigate({
-                            pathname: "/stacs/[stacid]",
-                            params: { stacid, title },
-                        })
-                    }
-                />
+        <>
+            <Toolbar.Home onPress={() => {}} />
+            <View style={styles.container}>
+                <View style={styles.listContainer}>
+                    <StacLiveList
+                        onPress={(stacid, title) =>
+                            router.navigate({
+                                pathname: "/stacs/[stacid]",
+                                params: { stacid, title },
+                            })
+                        }
+                    />
+                </View>
+                <InputSheet ref={inputRef} onStateChange={(v) => setFab(!v)} />
             </View>
-            <InputSheet ref={inputRef} onStateChange={(v) => setFab(!v)} />
-            <Portal>
-                <FAB
-                    icon="pencil-outline"
-                    style={styles.fab}
-                    visible={isFocused && fab}
-                    onPress={() => {
-                        setFab(false);
-                        inputRef.current?.open();
-                    }}
-                />
-            </Portal>
-        </View>
+        </>
     );
 }
 
