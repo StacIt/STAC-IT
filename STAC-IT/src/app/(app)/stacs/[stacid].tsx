@@ -234,7 +234,7 @@ export default function Stac() {
     );
 
     const hasCullable = ctx.data?.itinerary.activities.some((opt) =>
-        opt.options.some((act) => act.tag === ""),
+        opt.options.some((act) => act.tag !== "marked"),
     );
 
     const canSave =
