@@ -13,9 +13,79 @@ import { StacLiveList } from "@/components/StacList";
 import { useAuth } from "@/contexts";
 import { StyleProps, useStyles } from "@/styling";
 
-import { ToolbarProps, ToolbarHomeProps } from "@/components/Toolbar";
+import { Host, ProgressView } from "@expo/ui/swift-ui";
+import { progressViewStyle } from "@expo/ui/swift-ui/modifiers";
 
-export module Toolbar {
+import {
+    ToolbarProps,
+    ToolbarHomeProps,
+    ToolbarStacViewProps,
+} from "@/components/Toolbar";
+
+export namespace Toolbar {
+    export function StacView({
+        onShare,
+        onDelete,
+        onRefresh,
+        canRefresh,
+        refreshing,
+        canSave,
+        onSave,
+    }: ToolbarStacViewProps) {
+        const [saving, setSaving] = useState(false);
+        const savebtn = (
+            <>
+                <Stack.Toolbar.Spacer />
+                <Stack.Toolbar.Button
+                    icon="checkmark"
+                    selected={saving}
+                    onPress={() => {
+                        setSaving(true);
+                        onSave().finally(() => setSaving(false));
+                    }}
+                />
+            </>
+        );
+        const spinner = (
+            <Stack.Toolbar.View>
+                <Host style={{ flex: 1 }}>
+                    <ProgressView modifiers={[progressViewStyle("circular")]} />
+                </Host>
+            </Stack.Toolbar.View>
+        );
+        const refreshBtn = canRefresh ? (
+            <Stack.Toolbar.Button
+                icon="arrow.clockwise"
+                selected={refreshing}
+                onPress={() => onRefresh()}
+            />
+        ) : null;
+        return (
+            <>
+                <Stack.Toolbar placement="right">
+                    <Stack.Toolbar.Menu icon="ellipsis">
+                        <Stack.Toolbar.MenuAction
+                            icon="trash"
+                            destructive
+                            onPress={onDelete}
+                        >
+                            Delete
+                        </Stack.Toolbar.MenuAction>
+                    </Stack.Toolbar.Menu>
+                </Stack.Toolbar>
+                <Stack.Toolbar>
+                    <Stack.Toolbar.Button
+                        icon="square.and.arrow.up"
+                        onPress={() => onShare()}
+                    />
+                    <Stack.Toolbar.Spacer />
+                    {refreshing ? spinner : refreshBtn}
+                    {canSave ? savebtn : null}
+                </Stack.Toolbar>
+            </>
+        );
+    }
+
     export function Home({ onPress }: ToolbarHomeProps) {
         return (
             <>
@@ -31,7 +101,10 @@ export module Toolbar {
                 </Stack.Toolbar>
                 <Stack.Toolbar>
                     <Stack.Toolbar.Spacer />
-                    <Stack.Toolbar.Button icon="square.and.pencil" />
+                    <Stack.Toolbar.Button
+                        icon="square.and.pencil"
+                        onPress={onPress}
+                    />
                 </Stack.Toolbar>
             </>
         );

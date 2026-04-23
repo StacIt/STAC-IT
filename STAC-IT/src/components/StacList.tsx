@@ -25,6 +25,7 @@ import {
     Text,
 } from "react-native-paper";
 import { StacRecord, newStacConverter } from "../types";
+import { SymbolView } from "expo-symbols";
 
 export interface StacLiveListProps {
     onPress: (id: string, title: string) => void;
@@ -101,10 +102,11 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         const shareq = query(
             db,
             where("shared_with", "array-contains", user.uid),
-            where("status", "==", ["ready", "refreshing"]),
+            where("status", "in", ["ready", "refreshing"]),
         );
 
         const unsub = onSnapshot(shareq, (snap) => {
+            console.log(snap.docs);
             const ndata = snap.docs
                 .map((doc): [string, StacRecord] => [doc.id, doc.data()])
                 .sort(([i, a], [j, b]) => {
@@ -115,12 +117,14 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         return unsub;
     }, [user]);
 
-    const data = [
+    let data = [
         { title: "Pending", data: pendingStacs },
         { title: "Current", data: userStacs },
         { title: "Past", data: pastUserStacs },
         { title: "Shared with me", data: sharedStacs },
     ];
+
+    data = data.filter((row) => row.data.length > 0);
 
     function renderHeader(title: string, data: [string, StacRecord][]) {
         if (data.length > 0) {
@@ -136,6 +140,18 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
         } else {
             return null;
         }
+    }
+
+    function renderEmpty() {
+        return (
+            <Surface style={styles.header}>
+                <Card.Title
+                    titleStyle={styles.headerText}
+                    titleVariant="headlineMedium"
+                    title="No stacs yet"
+                />
+            </Surface>
+        );
     }
 
     return (
@@ -157,6 +173,7 @@ export function StacLiveList({ onPress }: StacLiveListProps) {
                 renderHeader(title, data)
             }
             SectionSeparatorComponent={Divider}
+            ListEmptyComponent={renderEmpty}
         />
     );
 }
@@ -175,6 +192,17 @@ export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
         month: "short",
     });
     const day = stac.period.begin.getDate();
+    const symname = `${day}.calendar`;
+
+    function mksymbol({ size }: { size: number }) {
+        return (
+            <SymbolView
+                name={symname as any}
+                size={size}
+                style={{ bottom: -4 }}
+            />
+        );
+    }
 
     const ico = ({ size }: { size: number }) => {
         return (
@@ -183,40 +211,34 @@ export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
                     padding: 0,
                     margin: 0,
                     gap: 0,
+                    flex: 1,
                     rowGap: 0,
+                    justifyContent: "center",
+                    flexDirection: "column",
                 }}
             >
                 <Text
                     variant="labelSmall"
                     style={{
-                        marginTop: 3,
+                        top: 2,
                         padding: 0,
                         textAlign: "center",
-                        color: theme.colors.onPrimary,
-                        fontSize: size / 2 + 4,
-                        borderWidth: 0,
+                        color: theme.colors.onPrimaryContainer,
+                        fontSize: size / 2.75,
                     }}
                 >
                     {month}
                 </Text>
-                <Text
-                    variant="labelSmall"
-                    style={{
-                        marginTop: -4,
-                        borderWidth: 0,
-                        padding: 0,
-                        textAlign: "center",
-                        color: theme.colors.onPrimary,
-                        fontSize: size / 2 + 1,
-                    }}
-                >
-                    {day}
-                </Text>
+                <SymbolView
+                    name={symname as any}
+                    size={size}
+                    style={{ bottom: -2 }}
+                    type="hierarchical"
+                    tintColor={theme.colors.tertiary}
+                />
             </View>
         );
     };
-
-    const mkavatar = (props: object) => <Avatar.Icon {...props} icon={ico} />;
 
     const spinner = (props: { size: number }) => (
         <ActivityIndicator
@@ -237,7 +259,7 @@ export function StacSummaryCard({ stac, onPress }: SummaryCardProps) {
                     subtitleStyle={styles.subtitle}
                     subtitleVariant="bodyMedium"
                     subtitle={stac.location}
-                    left={mkavatar}
+                    left={ico}
                     right={spinner}
                     rightStyle={styles.spinnerContainer}
                     style={styles.titleContainer}

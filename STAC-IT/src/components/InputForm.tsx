@@ -8,6 +8,7 @@ import {
     useReducer,
     useState,
 } from "react";
+import Animated from "react-native-reanimated";
 import { StyleSheet, View } from "react-native";
 import {
     Button,
@@ -22,13 +23,15 @@ import validate from "validator";
 
 import { CreateRequest, Period } from "@/types";
 
-import { StyleProps, useStyles } from "@/styling";
+import { StyleProps, useStyles, withOpacity } from "@/styling";
 
 import ActivityInput from "@/components/ActivityInput";
 
 export interface InputFormMethods {
     submit: () => Promise<CreateRequest>;
 }
+
+const AniText = Animated.createAnimatedComponent(Text);
 
 export type InputForm = InputFormMethods;
 
@@ -75,8 +78,13 @@ function formHandler(state: CreateRequest, action: FormAction) {
         }
         case "set_start": {
             const begin = new Date(state.period.begin);
+            const end = new Date(state.period.end);
+            const diff = end.getTime() - begin.getTime();
             begin.setHours(action.hours, action.minutes);
-            return { ...state, period: { ...state.period, begin } };
+            if (!(begin > end)) {
+                end.setTime(begin.getTime() + diff);
+            }
+            return { ...state, period: { begin, end } };
         }
         case "set_end": {
             const end = new Date(state.period.end);
@@ -184,7 +192,7 @@ export function InputForm({
     onValidate,
     visible,
 }: InputFormProps) {
-    const { styles } = useStyles(styling);
+    const { styles, theme } = useStyles(styling);
 
     const [state, raw_dispatch] = useReducer(
         formHandler,
@@ -206,6 +214,8 @@ export function InputForm({
         onDirty();
     };
 
+    const badEndTime = end < begin;
+
     useImperativeHandle(ref, () => {
         return {
             async submit() {
@@ -214,8 +224,13 @@ export function InputForm({
         };
     }, [state]);
 
+    useEffect(() => {
+        if (begin > end) {
+        }
+    }, [begin, end]);
+
     const content = (
-        <>
+        <View style={styles.container}>
             <View style={styles.titleContainer}>
                 <TextInput
                     label="Title"
@@ -241,6 +256,9 @@ export function InputForm({
                 <Button
                     mode="contained-tonal"
                     onPress={() => setShowStartTimePicker(true)}
+                    buttonColor={
+                        badEndTime ? theme.colors.tertiaryContainer : undefined
+                    }
                     style={styles.timeButton}
                 >
                     {begin.toLocaleTimeString([], {
@@ -274,6 +292,9 @@ export function InputForm({
                 }}
             />
             <TimePickerModal
+                hours={begin.getHours()}
+                minutes={begin.getMinutes()}
+                animationType="fade"
                 locale="en"
                 visible={showStartTimePicker}
                 onDismiss={() => setShowStartTimePicker(false)}
@@ -291,7 +312,7 @@ export function InputForm({
                     setShowEndTimePicker(false);
                 }}
             />
-            <View style={styles.rowContainer}>
+            <View style={[styles.rowContainer, { gap: 8 }]}>
                 <TextInput
                     style={styles.cityInput}
                     label="City"
@@ -310,14 +331,12 @@ export function InputForm({
                     maxLength={2}
                 />
             </View>
-            <Divider style={styles.divider} />
             <ActivityInput
                 activities={state.activities}
                 setActivities={(activities) =>
                     dispatch({ type: "update", activities })
                 }
             />
-            <Divider style={styles.divider} />
             <Text style={styles.radioButtonLabel}>Number of People</Text>
             <SegmentedButtons
                 style={styles.radioButton}
@@ -349,7 +368,7 @@ export function InputForm({
                     { value: "3", label: "$$$" },
                 ]}
             />
-        </>
+        </View>
     );
 
     return visible ? content : null;
@@ -357,6 +376,10 @@ export function InputForm({
 
 const styling = ({ theme }: StyleProps) => {
     return StyleSheet.create({
+        container: {
+            flex: 1,
+            gap: 8,
+        },
         contentContainer: {
             paddingHorizontal: 12,
             flexDirection: "column",

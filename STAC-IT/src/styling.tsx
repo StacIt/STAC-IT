@@ -23,3 +23,16 @@ export function useStyles<T>(factory: StyleFn<T>): {
 
     return { styles, theme, insets };
 }
+
+export function withOpacity(color: string, alpha: number): string {
+    const match = color.match(
+        /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)/i,
+    );
+
+    if (!match) {
+        throw new Error(`Unsupported color format: ${color}`);
+    }
+
+    const [, r, g, b] = match;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}

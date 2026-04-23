@@ -51,6 +51,7 @@ import {
 import { presentContactPickerAsync } from "expo-contacts";
 
 import { StacHeader } from "@/components/StacHeader";
+import { Toolbar } from "@/components/Toolbar";
 
 export default function Stac() {
     const { styles, theme, insets } = useStyles(styling);
@@ -173,6 +174,29 @@ export default function Stac() {
         await refresh_all_stac(JSON.stringify(request)).catch(console.error);
     }
 
+    async function onSave() {
+        try {
+            return runTransaction(getFirestore(), async (tx) => {
+                const thisDoc = await tx.get(stacRef);
+
+                if (!thisDoc.exists()) return;
+
+                const acts = thisDoc.data().itinerary?.activities;
+                if (!acts || acts.length === 0) return;
+
+                for (const act of acts) {
+                    act.options = act.options.filter((a) => a.tag === "marked");
+                }
+
+                tx.update(stacRef, {
+                    itinerary: { activities: acts },
+                });
+            });
+        } catch (e) {
+            console.error("transaction failed: ", e);
+        }
+    }
+
     const actions = [
         {
             icon: "delete",
@@ -209,8 +233,29 @@ export default function Stac() {
         />
     );
 
+    const hasCullable = ctx.data?.itinerary.activities.some((opt) =>
+        opt.options.some((act) => act.tag === ""),
+    );
+
+    const canSave =
+        ctx.data?.itinerary.activities.every((opt) =>
+            opt.options.some((act) => act.tag === "marked"),
+        ) && hasCullable;
+
+    const canrefresh = ctx?.data.status === "ready";
+    const refreshing = ctx?.data.status === "refreshing";
+
     return (
         <StacContext value={ctx}>
+            <Toolbar.StacView
+                canRefresh={canrefresh}
+                onRefresh={onRefreshAll}
+                onDelete={onDelete}
+                onShare={onShare}
+                onSave={onSave}
+                canSave={canSave}
+                refreshing={refreshing}
+            />
             <Animated.FlatList
                 data={ctx.data?.itinerary.activities}
                 stickyHeaderIndices={[0]}
@@ -241,8 +286,6 @@ export default function Stac() {
                 <Snackbar visible={!!snack} onDismiss={() => setSnack("")}>
                     {snack}
                 </Snackbar>
-                {loadingFab}
-                {groupFab}
             </Portal>
         </StacContext>
     );

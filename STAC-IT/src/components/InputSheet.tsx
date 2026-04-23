@@ -14,9 +14,10 @@ import {
     useRef,
 } from "react";
 
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, BoxShadowValue, useColorScheme } from "react-native";
 import {
     ActivityIndicator,
+    Surface,
     Button,
     Dialog,
     IconButton,
@@ -241,6 +242,7 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
 
     const sheet = useRef<BottomSheetModal>(null);
     const form = useRef<InputForm>(null);
+    const scheme = useColorScheme();
 
     const { user } = useAuth();
 
@@ -307,7 +309,6 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
     const loadingWheel = (
         <ActivityIndicator size={128} animating={state.isLoading()} />
     );
-
     return (
         <>
             <Portal>
@@ -331,6 +332,7 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
             <View>
                 <BottomSheetModal
                     handleComponent={renderHeader}
+                    style={styles.sheet}
                     topInset={insets.top}
                     ref={sheet}
                     backgroundStyle={styles.container}
@@ -365,10 +367,11 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
 const styling = ({ theme }: StyleProps) => {
     return StyleSheet.create({
         container: {
-            backgroundColor: theme.colors.background,
+            backgroundColor: theme.colors.elevation.level1,
         },
+        sheet: { shadowOpacity: 0.15, shadowRadius: 8 },
         contentContainer: {
-            paddingHorizontal: 12,
+            paddingHorizontal: 8,
             flexDirection: "column",
             paddingBottom: 16,
             gap: 4,

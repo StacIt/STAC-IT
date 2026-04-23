@@ -45,26 +45,13 @@ import { useHeaderHeight } from "@react-navigation/elements";
 
 import { ActivityView } from "@/components/Activity";
 import { StacContext, useStac, useAuth } from "@/contexts";
-import { StyleProps, useStyles } from "@/styling";
+import { StyleProps, useStyles, withOpacity } from "@/styling";
 import {
     ActivityOptions,
     Itinerary,
     StacRecord,
     newStacConverter,
 } from "@/types";
-
-function withOpacity(color: string, alpha: number): string {
-    const match = color.match(
-        /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)/i,
-    );
-
-    if (!match) {
-        throw new Error(`Unsupported color format: ${color}`);
-    }
-
-    const [, r, g, b] = match;
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 function initials(str: string) {
     return str
@@ -110,12 +97,30 @@ export function StacHeader({ children, scrollY }: StacHeaderProps) {
     const [sharedUsers, setSharedUsers] = useState<
         { uid: string; name: string }[]
     >([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const [ownerName, setOwnerName] = useState("");
 
     useEffect(() => {
+        const userdb = collection(getFirestore(), "users");
+        async function getOwner() {
+            if (!data) {
+                return;
+            }
+            if (data.owner !== user.uid) {
+                const ownerDoc = await getDoc(doc(userdb, data.owner));
+                const name =
+                    (ownerDoc.exists() && ownerDoc.data().fullName) ??
+                    "unknown";
+                setOwnerName(name);
+            } else {
+                setOwnerName("you");
+            }
+        }
         async function getShared() {
-            const userdb = collection(getFirestore(), "users");
             let i = 0;
             if (!data || data.shared_with.length === 0) {
+                setSharedUsers([]);
+                setIsOpen(false);
                 return;
             }
             const q = query(
@@ -131,9 +136,9 @@ export function StacHeader({ children, scrollY }: StacHeaderProps) {
             setSharedUsers(shared_udata);
         }
         getShared();
-    }, [data]);
+        getOwner();
+    }, [data, user.uid]);
 
-    const [isOpen, setIsOpen] = useState(false);
     const chevronRotV = useAnimatedValue(0);
 
     const drawerHeightV = useAnimatedValue(0);
@@ -188,7 +193,9 @@ export function StacHeader({ children, scrollY }: StacHeaderProps) {
                 animated={true}
                 size={8 * 2}
                 mode="contained"
-                onPress={() => removeShare(uid)}
+                onPress={() => {
+                    removeShare(uid);
+                }}
                 style={{
                     height: 8 * 2.5,
                     width: 8 * 2.5,
@@ -212,6 +219,22 @@ export function StacHeader({ children, scrollY }: StacHeaderProps) {
         );
     });
 
+    const sharedTray = (
+        <View style={{ flexDirection: "row" }}>
+            <View style={styles.sharedContainer}>
+                <View style={styles.sharedAvatars}>{avatars}</View>
+            </View>
+            <View style={styles.sharedEditContainer}>
+                <IconButton
+                    animated={true}
+                    icon={editShare ? "pencil-off-outline" : "pencil-outline"}
+                    size={8 * 4}
+                    onPress={() => setEditShare((v) => !v)}
+                />
+            </View>
+        </View>
+    );
+
     const drawer = (
         <Animated.View
             style={{ overflow: "hidden", width: "100%", height: drawerHeight }}
@@ -226,26 +249,15 @@ export function StacHeader({ children, scrollY }: StacHeaderProps) {
             >
                 <Surface style={styles.sharedTextContainer} elevation={3}>
                     <Text variant="labelMedium" style={styles.sharedWithText}>
-                        Shared with:
+                        {has_shared ? "Shared with:" : "Shared with no one"}
                     </Text>
                 </Surface>
-                <View style={{ flexDirection: "row" }}>
-                    <View style={styles.sharedContainer}>
-                        <View style={styles.sharedAvatars}>{avatars}</View>
-                    </View>
-                    <View style={styles.sharedEditContainer}>
-                        <IconButton
-                            animated={true}
-                            icon={
-                                editShare
-                                    ? "pencil-off-outline"
-                                    : "pencil-outline"
-                            }
-                            size={8 * 4}
-                            onPress={() => setEditShare((v) => !v)}
-                        />
-                    </View>
-                </View>
+                {has_shared ? sharedTray : <View style={{ height: 4 }} />}
+                <Surface style={styles.sharedTextContainer} elevation={3}>
+                    <Text variant="labelMedium" style={styles.sharedWithText}>
+                        {`Created by ${ownerName}`}
+                    </Text>
+                </Surface>
             </Surface>
         </Animated.View>
     );
@@ -271,7 +283,7 @@ export function StacHeader({ children, scrollY }: StacHeaderProps) {
                     title={datestr}
                     subtitle={data?.location}
                     subtitleStyle={styles.headerSub}
-                    right={() => (has_shared ? chevron : null)}
+                    right={() => chevron}
                 />
                 {drawer}
             </Surface>

@@ -75,12 +75,14 @@ export interface ActivityOptionsDb {
     label: string;
     options: Activity[];
     timing: PeriodDb;
+    tag?: string;
 }
 
 export interface ActivityOptions {
     label: string;
     options: Activity[];
     timing: Period;
+    tag?: string;
 }
 
 function activityOptionsToDb(value: ActivityOptions): ActivityOptionsDb {
@@ -88,6 +90,7 @@ function activityOptionsToDb(value: ActivityOptions): ActivityOptionsDb {
         label: value.label,
         options: value.options,
         timing: periodToDb(value.timing),
+        tag: value.tag,
     };
 }
 
@@ -96,6 +99,7 @@ function activityOptionsFromDb(value: ActivityOptionsDb): ActivityOptions {
         label: value.label,
         options: value.options,
         timing: periodFromDb(value.timing),
+        tag: value.tag,
     };
 }
 

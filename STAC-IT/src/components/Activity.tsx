@@ -11,7 +11,14 @@ import {
     useWindowDimensions,
 } from "react-native";
 import { getFunctions, httpsCallable } from "@react-native-firebase/functions";
-import { Card, IconButton, Surface, Text } from "react-native-paper";
+import {
+    Card,
+    IconButton,
+    Surface,
+    Text,
+    ActivityIndicator,
+} from "react-native-paper";
+import { SymbolView } from "expo-symbols";
 
 import { useStac } from "@/contexts";
 import { Activity, ActivityOptions, fmtPeriod, RefreshRequest } from "@/types";
@@ -37,6 +44,9 @@ export function ActivityView({
     const { data: stac, ref: stacRef } = useStac();
 
     const plural = data.options.length > 1;
+
+    const isRefreshing =
+        stac?.itinerary?.activities[index].tag === "refreshing";
 
     async function doSelect(actidx: number, value: boolean) {
         try {
@@ -91,6 +101,7 @@ export function ActivityView({
                         act.tag = "exclude";
                     }
                 }
+                acts[optidx].tag = "refreshing";
 
                 tx.update(stacRef, { itinerary: { activities: acts } });
             });
@@ -140,6 +151,16 @@ export function ActivityView({
         />
     );
 
+    const refreshControl = (
+        <IconButton
+            icon="refresh"
+            onPress={() => {
+                doRefresh(index);
+            }}
+            loading={isRefreshing}
+        />
+    );
+
     return (
         <View>
             <Surface style={styles.header}>
@@ -150,16 +171,7 @@ export function ActivityView({
                     subtitle={fmtPeriod(data.timing)}
                     subtitleStyle={{ color: theme.colors.outline }}
                     subtitleVariant="bodyMedium"
-                    right={() => {
-                        return (
-                            <IconButton
-                                icon="refresh"
-                                onPress={() => {
-                                    doRefresh(index);
-                                }}
-                            />
-                        );
-                    }}
+                    right={() => refreshControl}
                 />
             </Surface>
             {slides}

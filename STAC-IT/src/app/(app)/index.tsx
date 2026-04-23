@@ -27,7 +27,7 @@ export default function Home() {
 
     return (
         <>
-            <Toolbar.Home onPress={() => {}} />
+            <Toolbar.Home onPress={() => inputRef.current!.open()} />
             <View style={styles.container}>
                 <View style={styles.listContainer}>
                     <StacLiveList
