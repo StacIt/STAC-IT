@@ -2,7 +2,7 @@ import { getFirestore } from "@react-native-firebase/firestore";
 import { useRouter, Stack } from "expo-router";
 import * as React from "react";
 import { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 import { FAB, Portal } from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 
