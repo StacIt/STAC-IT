@@ -3,13 +3,15 @@ import * as Location from "expo-location";
 import * as React from "react";
 import {
     ComponentProps,
+    ComponentPropsWithRef,
     useEffect,
     useImperativeHandle,
     useReducer,
     useState,
+    useRef,
 } from "react";
 import Animated from "react-native-reanimated";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Keyboard, TextInput } from "react-native";
 import {
     Button,
     Divider,
@@ -30,8 +32,6 @@ import ActivityInput from "@/components/ActivityInput";
 export interface InputFormMethods {
     submit: () => Promise<CreateRequest>;
 }
-
-const AniText = Animated.createAnimatedComponent(Text);
 
 export type InputForm = InputFormMethods;
 
@@ -109,7 +109,9 @@ function formHandler(state: CreateRequest, action: FormAction) {
     }
 }
 
-function TextInput({ ...props }: ComponentProps<typeof PaperTextInput>) {
+function KbTextInput({
+    ...props
+}: ComponentPropsWithRef<typeof PaperTextInput>) {
     return (
         <PaperTextInput {...props} render={(p) => <SheetTextInput {...p} />} />
     );
@@ -203,6 +205,11 @@ export function InputForm({
 
     useEffect(() => onValidate(formValidate(state)), [state, onValidate]);
 
+    const titleRef = useRef<TextInput>(null);
+    const cityRef = useRef<TextInput>(null);
+    const stateRef = useRef<TextInput>(null);
+    const actRef = useRef<TextInput>(null);
+
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showStartTimePicker, setShowStartTimePicker] = useState(false);
     const [showEndTimePicker, setShowEndTimePicker] = useState(false);
@@ -232,7 +239,12 @@ export function InputForm({
     const content = (
         <View style={styles.container}>
             <View style={styles.titleContainer}>
-                <TextInput
+                <KbTextInput
+                    ref={titleRef}
+                    enterKeyHint="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => cityRef.current?.focus()}
+                    selectTextOnFocus={true}
                     label="Title"
                     style={styles.titleInput}
                     mode="outlined"
@@ -313,14 +325,24 @@ export function InputForm({
                 }}
             />
             <View style={[styles.rowContainer, { gap: 8 }]}>
-                <TextInput
+                <KbTextInput
+                    ref={cityRef}
+                    submitBehavior="submit"
+                    onSubmitEditing={() => stateRef.current?.focus()}
+                    selectTextOnFocus={true}
+                    enterKeyHint="next"
                     style={styles.cityInput}
                     label="City"
                     mode="outlined"
                     value={state.city}
                     onChangeText={(city) => dispatch({ type: "update", city })}
                 />
-                <TextInput
+                <KbTextInput
+                    ref={stateRef}
+                    submitBehavior="submit"
+                    onSubmitEditing={() => actRef.current?.focus()}
+                    selectTextOnFocus={true}
+                    enterKeyHint="next"
                     style={styles.stateInput}
                     label="State"
                     mode="outlined"
@@ -332,6 +354,7 @@ export function InputForm({
                 />
             </View>
             <ActivityInput
+                ref={actRef}
                 activities={state.activities}
                 setActivities={(activities) =>
                     dispatch({ type: "update", activities })

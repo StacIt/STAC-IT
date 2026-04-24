@@ -14,7 +14,13 @@ import {
     useRef,
 } from "react";
 
-import { StyleSheet, View, BoxShadowValue, useColorScheme } from "react-native";
+import {
+    StyleSheet,
+    View,
+    BoxShadowValue,
+    useColorScheme,
+    Keyboard,
+} from "react-native";
 import {
     ActivityIndicator,
     Surface,
@@ -254,6 +260,7 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
         () => new ClosedState(null),
     );
 
+
     useImperativeHandle(
         ref,
         () => ({
@@ -339,6 +346,7 @@ export function InputSheet({ ref, onStateChange }: InputSheetProps) {
                     enableDynamicSizing={true}
                     keyboardBehavior="interactive"
                     keyboardBlurBehavior="restore"
+                    enableBlurKeyboardOnGesture={true}
                     snapPoints={["10%", "100%"]}
                     index={1}
                     onDismiss={() => dispatch({ type: "close" })}
