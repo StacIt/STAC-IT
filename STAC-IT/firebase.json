@@ -1,0 +1,5 @@
+{
+  "react-native": {
+    "app_log_level": "debug",
+  }
+}
